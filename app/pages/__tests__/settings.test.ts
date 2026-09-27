@@ -40,14 +40,23 @@ function buildClerkUser(overrides: Partial<MockClerkUser> = {}): MockClerkUser {
 // .btn--outline in the document") so a future row that happens to render an
 // outline-style button earlier in the page (e.g. the billing section's
 // manage-subscription button on a paid plan) can never be mistaken for it.
+// Guards with `.exists()` before `.text()` — a `.opt-row` without a `.lbl b`
+// (billing, prefs, privacy, danger all have different markup) would otherwise
+// throw from inside `.find()`'s callback and fail every password test with a
+// confusing error.
 function findPasswordRow(wrapper: ReturnType<typeof mount>) {
-  return wrapper
-    .findAll(".opt-row")
-    .find((row) => row.find(".lbl b").text() === "Password");
+  return wrapper.findAll(".opt-row").find((row) => {
+    const label = row.find(".lbl b");
+    return label.exists() && label.text() === "Password";
+  });
 }
 
-function findPasswordLabel(wrapper: ReturnType<typeof mount>) {
-  return findPasswordRow(wrapper)?.find(".lbl");
+function findPasswordStatus(wrapper: ReturnType<typeof mount>) {
+  return findPasswordRow(wrapper)?.find(".lbl p");
+}
+
+function findPasswordButton(wrapper: ReturnType<typeof mount>) {
+  return findPasswordRow(wrapper)?.find(".btn--outline");
 }
 
 const DEFAULT_STATS_DATA = {
@@ -714,7 +723,7 @@ describe("Settings page (/settings)", () => {
   it("shows no password-status line while the Clerk user hasn't loaded (no fabricated date)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
 
-    expect(findPasswordLabel(wrapper)?.find("p").exists()).toBe(false);
+    expect(findPasswordStatus(wrapper)?.exists()).toBe(false);
   });
 
   it("shows an honest no-password message for an OAuth-only account, not a fabricated date", async () => {
@@ -722,7 +731,7 @@ describe("Settings page (/settings)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
     await wrapper.vm.$nextTick();
 
-    expect(findPasswordLabel(wrapper)?.find("p").text()).toBe(
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
       "No password set — you sign in with a connected account.",
     );
   });
@@ -732,7 +741,7 @@ describe("Settings page (/settings)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
     await wrapper.vm.$nextTick();
 
-    const statusText = findPasswordLabel(wrapper)?.find("p").text();
+    const statusText = findPasswordStatus(wrapper)?.text();
     expect(statusText).not.toMatch(/ago/i);
     expect(statusText).toBe("Change your password any time below.");
   });
@@ -741,20 +750,16 @@ describe("Settings page (/settings)", () => {
     // clerkUserRef starts null via beforeEach — the Clerk user hasn't loaded yet.
     const wrapper = mount(SettingsPage, globalConfig);
 
-    expect(findPasswordLabel(wrapper)?.find("p").exists()).toBe(false);
-    expect(findPasswordRow(wrapper)?.find(".btn--outline").text()).toBe(
-      "change password",
-    );
+    expect(findPasswordStatus(wrapper)?.exists()).toBe(false);
+    expect(findPasswordButton(wrapper)?.text()).toBe("change password");
 
     clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
     await wrapper.vm.$nextTick();
 
-    expect(findPasswordLabel(wrapper)?.find("p").text()).toBe(
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
       "Change your password any time below.",
     );
-    expect(findPasswordRow(wrapper)?.find(".btn--outline").text()).toBe(
-      "change password",
-    );
+    expect(findPasswordButton(wrapper)?.text()).toBe("change password");
   });
 
   it("offers to set (not change) a password for an OAuth-only account", async () => {
@@ -762,8 +767,26 @@ describe("Settings page (/settings)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
     await wrapper.vm.$nextTick();
 
-    const changePasswordBtn = findPasswordRow(wrapper)?.find(".btn--outline");
-    expect(changePasswordBtn?.text()).toBe("set password");
+    expect(findPasswordButton(wrapper)?.text()).toBe("set password");
+  });
+
+  it("switches from 'set password' back to 'change password' once an OAuth-only user adds one", async () => {
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: false });
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordButton(wrapper)?.text()).toBe("set password");
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
+      "No password set — you sign in with a connected account.",
+    );
+
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordButton(wrapper)?.text()).toBe("change password");
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
+      "Change your password any time below.",
+    );
   });
 
   it("shows password error when passwords do not match", async () => {

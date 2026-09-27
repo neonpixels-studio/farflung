@@ -776,6 +776,9 @@ watch(
 // *any* profile change (name, avatar, etc.), so it can't stand in for one
 // without falsely implying a recent password change. Rather than fabricate
 // a date, surface only what's actually known: whether a password is set.
+// Confirmed against the installed @clerk/nuxt 3.1.3 (@clerk/shared 4.33.0)
+// user resource types — re-check here if that package is ever bumped to a
+// new major version.
 const passwordStatusMessage = computed<string>(() => {
   if (!user.value) {
     return "";
