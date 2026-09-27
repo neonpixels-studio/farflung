@@ -151,6 +151,60 @@ describe("useClerkGatedFetch", () => {
     expect(retryGeneration.value).toBe(1);
   });
 
+  // #289: with `server: true`, a signed-in owner's initial load can resolve
+  // entirely during SSR; Nuxt then reuses that SSR payload on hydration and
+  // never invokes the caller's useAsyncData handler (and therefore never
+  // calls gate()) client-side for that first load. Without a fallback,
+  // nothing would ever start watching canRetryAuthenticated, so the owner's
+  // session resolving afterward would never trigger the authenticated retry
+  // (see guides/[id].vue, trips/[id].vue, u/[id].vue).
+  it("starts watching for retries even if gate() is never called on the client", async () => {
+    const isClerkLoaded = ref(false);
+    const isSignedIn = ref(false);
+    const canRetryAuthenticated = computed(
+      () => isClerkLoaded.value && isSignedIn.value,
+    );
+    const { retryGeneration } = useClerkGatedFetch(
+      isClerkLoaded,
+      canRetryAuthenticated,
+    );
+
+    // gate() is deliberately never called — simulating the SSR-payload-reuse
+    // case above.
+    await nextTick();
+
+    isClerkLoaded.value = true;
+    isSignedIn.value = true;
+    await nextTick();
+
+    expect(retryGeneration.value).toBe(1);
+  });
+
+  it("does not start the retry-watch fallback once gate() has already run (no double registration)", async () => {
+    // Regression guard for the fallback above: a normal gate() call must
+    // remain the only thing driving retryGeneration, not gate() plus a
+    // redundant second watcher from the fallback.
+    const isClerkLoaded = ref(true);
+    const isSignedIn = ref(false);
+    const canRetryAuthenticated = computed(
+      () => isClerkLoaded.value && isSignedIn.value,
+    );
+    const { gate, retryGeneration } = useClerkGatedFetch(
+      isClerkLoaded,
+      canRetryAuthenticated,
+    );
+    gate(vi.fn().mockResolvedValue("result"));
+
+    // Let the fallback's own nextTick check run; it must see gate() already
+    // ran and no-op.
+    await nextTick();
+
+    isSignedIn.value = true;
+    await nextTick();
+
+    expect(retryGeneration.value).toBe(1);
+  });
+
   it("clears a pending timer/watch on scope disposal so a torn-down page's fetch never fires later", async () => {
     // Regression guard: without this cleanup, a gate() call left pending when
     // a page unmounts (e.g. the visitor navigates away before Clerk resolves)

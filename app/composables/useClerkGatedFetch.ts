@@ -24,6 +24,15 @@
  * watching for retries until it settles, so the very same auth resolution
  * that produced the gate's own (already-correct) request never also
  * increments `retryGeneration` and triggers a redundant duplicate.
+ *
+ * With `server: true` (#289), `gate()` also runs during SSR, where it always
+ * resolves immediately and anonymously (see the import.meta.server branch
+ * below). Nuxt then reuses that SSR-fetched payload on hydration and never
+ * re-invokes the handler — so `gate()` itself never runs client-side for that
+ * initial load, and nothing would ever start watching `canRetryAuthenticated`
+ * for a signed-in owner's retry. The one-time `nextTick` fallback below
+ * covers exactly that gap: if nothing called `gate()` by the end of the
+ * current synchronous setup, it starts the retry watch itself.
  */
 export const CLERK_BOOTSTRAP_TIMEOUT_MS = 2000;
 
@@ -42,9 +51,15 @@ export function useClerkGatedFetch(
 
   const retryGeneration = ref(0);
   let stopWatchingForRetries: (() => void) | null = null;
+  let isDisposed = false;
+
+  // Whether *any* gate() call has run yet during this setup. Checked by the
+  // nextTick fallback below — see its own comment for why this exists.
+  let hasGateRun = false;
 
   if (getCurrentScope()) {
     onScopeDispose(() => {
+      isDisposed = true;
       pendingCleanups.forEach((cleanup) => cleanup());
       pendingCleanups.clear();
       stopWatchingForRetries?.();
@@ -63,9 +78,24 @@ export function useClerkGatedFetch(
     });
   }
 
+  // Fallback for the SSR-then-hydration-reuse gap (see the doc comment
+  // above): deferred past the current synchronous setup (when the caller's
+  // useAsyncData handler — and therefore gate() — normally runs, if it runs
+  // at all) so it only ever acts when nothing else already did.
+  // startWatchingForRetries() is itself idempotent, so this is a no-op
+  // whenever gate() ran for real; `isDisposed` guards the rare case where the
+  // component/scope tore down before this microtask fired.
+  nextTick(() => {
+    if (isDisposed || hasGateRun) {
+      return;
+    }
+    startWatchingForRetries();
+  });
+
   function gate<FetchResult>(
     fetchFn: () => Promise<FetchResult>,
   ): Promise<FetchResult> {
+    hasGateRun = true;
     pendingCleanups.forEach((cleanup) => cleanup());
 
     // Clerk's server middleware is disabled fleet-wide (skipServerMiddleware,

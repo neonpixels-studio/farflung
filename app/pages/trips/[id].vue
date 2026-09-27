@@ -489,18 +489,13 @@ function fetchTripDetail(): Promise<void> {
   return gateOnClerkLoad(() => tripsStore.fetchTripById(tripId.value));
 }
 
-// `server: true` (was `server: false`): this now also runs during SSR, so a
-// non-JS crawler following a shared link sees the trip's real name/facts in
-// the initial HTML — including useOgMeta's og:title/og:description/og:image
-// below — instead of the generic fallback (#289). Safe server-side because
-// gateOnClerkLoad fires immediately (never waits) when import.meta.server is
-// true (see useClerkGatedFetch): Clerk's server middleware is disabled
-// fleet-wide (skipServerMiddleware), so getToken can never resolve there
-// anyway, meaning the SSR fetch is always anonymous — exactly what an
-// anonymous visitor's client fetch would have produced, just without the
-// wait. Nuxt reuses that SSR-fetched Pinia state on hydration rather than
-// re-requesting it, so an anonymous visitor's browser never duplicates the
-// request the server already made.
+// `server: true`: also runs during SSR, so a non-JS crawler following a
+// shared link sees the trip's real name/facts — including useOgMeta's
+// og:title/og:description/og:image below — instead of the generic fallback
+// (#289). Safe server-side: see useClerkGatedFetch's import.meta.server
+// fast-path for why this is always an anonymous, non-blocking fetch there,
+// and why Nuxt reusing that data on hydration means an anonymous visitor's
+// browser never duplicates the request.
 //
 // Watch retryGeneration as well as the id: a signed-in owner's session
 // resolving after the fetch above already fired (e.g. signing in without a
