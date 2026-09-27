@@ -5,7 +5,7 @@
 // priority over whatever this app passes as a component prop. Reusing that
 // name here would mean an untrusted value could reach Clerk's own redirect
 // handling before (or instead of) the validation in getSafeRedirectPath ever
-// ran. return_to is app-owned and only ever read by login.vue below.
+// ran. return_to is app-owned and only ever read by pages/login.vue.
 export const AUTH_REDIRECT_QUERY_PARAM = "return_to";
 
 const LOGIN_PATH = "/login";

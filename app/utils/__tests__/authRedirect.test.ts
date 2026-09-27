@@ -6,7 +6,7 @@ import {
 } from "../authRedirect";
 
 describe("buildLoginPath", () => {
-  it("appends the current path as a redirect_url query param", () => {
+  it("appends the current path as a return_to query param", () => {
     expect(buildLoginPath("/trips/abc123")).toBe(
       `/login?${AUTH_REDIRECT_QUERY_PARAM}=%2Ftrips%2Fabc123`,
     );
