@@ -34,17 +34,31 @@ export function buildLoginPath(currentPath: string): string {
   return `${LOGIN_PATH}?${AUTH_REDIRECT_QUERY_PARAM}=${encodeURIComponent(currentPath)}`;
 }
 
+// True for a path that a browser would treat as protocol-relative (host-only,
+// no scheme) if it were ever assigned to a link/navigation target — "//host"
+// or the backslash variant some browsers normalize the same way.
+function isProtocolRelative(path: string): boolean {
+  return path.startsWith("//") || path.startsWith("/\\");
+}
+
 /**
  * Validates an untrusted return_to query value before it's ever used to
  * navigate, so a crafted /login?return_to=https://evil.com (or a
  * protocol-relative //evil.com, or a value a browser's URL parser would
- * normalize into one — a backslash variant like /\evil.com, or one hiding a
- * stripped tab/newline like "/\t/evil.com") can't turn the sign-in flow into
- * an open redirect. Parses rawValue against a fixed placeholder origin using
- * the same WHATWG URL algorithm a browser uses, then requires the parsed
- * origin to still match that placeholder — i.e. rawValue must resolve to a
- * same-origin path, never a different host. Only the path/search/hash is
- * returned; the placeholder origin itself is never part of the output.
+ * normalize into one — a backslash variant like /\evil.com, a stripped
+ * tab/newline like "/\t/evil.com", or dot-segments that collapse down to one
+ * like "/.//evil.com") can't turn the sign-in flow into an open redirect.
+ * Parses rawValue against a fixed placeholder origin using the same WHATWG
+ * URL algorithm a browser uses, then requires the parsed origin to still
+ * match that placeholder — i.e. rawValue must resolve to a same-origin path,
+ * never a different host. That check alone isn't sufficient: the URL parser
+ * can normalize a dotted/relative input into an *output* pathname that is
+ * itself protocol-relative (e.g. "/.//evil.com" parses with the placeholder
+ * origin intact, but normalizes its own pathname to "//evil.com"), so the
+ * built path/search/hash is re-checked with isProtocolRelative below before
+ * ever being returned. Also refuses a value that resolves back to the login
+ * page itself, so a crafted return_to can't bounce a visitor straight back to
+ * /login after they've just signed in.
  */
 export function getSafeRedirectPath(rawValue: unknown): string | null {
   if (typeof rawValue !== "string" || !rawValue.startsWith("/")) {
@@ -59,5 +73,12 @@ export function getSafeRedirectPath(rawValue: unknown): string | null {
   if (parsed.origin !== VALIDATION_BASE_ORIGIN) {
     return null;
   }
-  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  if (parsed.pathname === LOGIN_PATH) {
+    return null;
+  }
+  const safePath = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  if (isProtocolRelative(safePath)) {
+    return null;
+  }
+  return safePath;
 }

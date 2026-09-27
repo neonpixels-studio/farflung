@@ -69,4 +69,18 @@ describe("getSafeRedirectPath", () => {
   it("rejects a newline-hidden protocol-relative URL a browser's URL parser would strip and normalize", () => {
     expect(getSafeRedirectPath("/\n/evil.com")).toBeNull();
   });
+
+  it("rejects a dot-segment value that normalizes to a protocol-relative output", () => {
+    // The origin check alone isn't enough here: "/.//evil.com" resolves
+    // against the placeholder origin (so parsed.origin still matches), but
+    // the URL parser's own dot-segment collapsing turns its pathname into
+    // "//evil.com" - protocol-relative once returned to the caller.
+    expect(getSafeRedirectPath("/.//evil.com")).toBeNull();
+    expect(getSafeRedirectPath("/..//evil.com")).toBeNull();
+  });
+
+  it("rejects a value that resolves back to the login page itself", () => {
+    expect(getSafeRedirectPath("/login")).toBeNull();
+    expect(getSafeRedirectPath("/login?foo=1")).toBeNull();
+  });
 });

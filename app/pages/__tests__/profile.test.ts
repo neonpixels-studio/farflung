@@ -32,14 +32,18 @@ vi.stubGlobal("useRoute", () => ({
   get path() {
     return `/u/${routeParams.id}`;
   },
+  // Deliberately distinct from `path` above (adds a query string): this is
+  // what the page's sign-in links must carry through /login (#292). If a
+  // page mistakenly read route.path instead of route.fullPath, the href
+  // assertions below would catch it, since they'd be missing "?tab=guides".
   get fullPath() {
-    return `/u/${routeParams.id}`;
+    return `/u/${routeParams.id}?tab=guides`;
   },
 }));
 
 // The expected /login href once the profile's own URL (see the useRoute stub
 // above) is carried through as the redirect param (#292).
-const EXPECTED_SIGN_IN_HREF = `/login?${AUTH_REDIRECT_QUERY_PARAM}=%2Fu%2Fuser-1`;
+const EXPECTED_SIGN_IN_HREF = `/login?${AUTH_REDIRECT_QUERY_PARAM}=%2Fu%2Fuser-1%3Ftab%3Dguides`;
 
 // #269 og/twitter meta coverage below reads this trackable useSeoMeta stub.
 const useSeoMetaMock = stubOgMetaGlobals();
