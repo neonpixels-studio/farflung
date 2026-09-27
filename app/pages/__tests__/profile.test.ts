@@ -19,6 +19,7 @@ import {
   lastSeoMetaCall,
   stubOgMetaGlobals,
 } from "~/composables/__tests__/ogMetaTestUtils";
+import { AUTH_REDIRECT_QUERY_PARAM } from "~/utils/authRedirect";
 
 // The profile route is keyed by the target user's id. Reactive so a test can
 // simulate the viewer navigating to another profile mid-interaction. `path`
@@ -37,8 +38,8 @@ vi.stubGlobal("useRoute", () => ({
 }));
 
 // The expected /login href once the profile's own URL (see the useRoute stub
-// above) is carried through as the redirect_url param (#292).
-const EXPECTED_SIGN_IN_HREF = "/login?redirect_url=%2Fu%2Fuser-1";
+// above) is carried through as the redirect param (#292).
+const EXPECTED_SIGN_IN_HREF = `/login?${AUTH_REDIRECT_QUERY_PARAM}=%2Fu%2Fuser-1`;
 
 // #269 og/twitter meta coverage below reads this trackable useSeoMeta stub.
 const useSeoMetaMock = stubOgMetaGlobals();

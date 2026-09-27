@@ -61,4 +61,12 @@ describe("getSafeRedirectPath", () => {
   it("rejects a path with no leading slash", () => {
     expect(getSafeRedirectPath("trips/abc123")).toBeNull();
   });
+
+  it("rejects a tab-hidden protocol-relative URL a browser's URL parser would strip and normalize", () => {
+    expect(getSafeRedirectPath("/\t/evil.com")).toBeNull();
+  });
+
+  it("rejects a newline-hidden protocol-relative URL a browser's URL parser would strip and normalize", () => {
+    expect(getSafeRedirectPath("/\n/evil.com")).toBeNull();
+  });
 });

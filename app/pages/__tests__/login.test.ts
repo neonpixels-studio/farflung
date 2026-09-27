@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import LoginPage from "../login.vue";
+import { AUTH_REDIRECT_QUERY_PARAM } from "~/utils/authRedirect";
 
-// Overridden per-test (#292) to simulate a redirect_url query param carried
-// over from a "sign in to ..." link elsewhere in the app.
+// Overridden per-test (#292) to simulate a return_to query param carried over
+// from a "sign in to ..." link elsewhere in the app.
 let routeQuery: Record<string, unknown> = {};
 vi.stubGlobal("useRoute", () => ({ query: routeQuery }));
 
 const signInStub = {
   template: '<div class="clerk-sign-in" />',
-  props: ["fallbackRedirectUrl"],
+  props: ["fallbackRedirectUrl", "signUpFallbackRedirectUrl"],
 };
 
 const globalConfig = {
@@ -57,26 +58,32 @@ describe("Login page (/login)", () => {
     expect(wrapper.html()).toContain("Miles logged");
   });
 
-  it("passes a redirect_url query param through to Clerk's SignIn as fallbackRedirectUrl (#292)", () => {
-    routeQuery = { redirect_url: "/trips/abc123" };
+  it("passes a return_to query param through to Clerk's SignIn as both fallback redirect props (#292)", () => {
+    routeQuery = { [AUTH_REDIRECT_QUERY_PARAM]: "/trips/abc123" };
     const wrapper = mount(LoginPage, globalConfig);
 
     const signIn = wrapper.findComponent(signInStub);
     expect(signIn.props("fallbackRedirectUrl")).toBe("/trips/abc123");
+    // Bound to sign-up's fallback too, so a visitor without an account who
+    // signs up instead (from the same embedded form) lands on the same
+    // destination as a visitor who signs in (#292).
+    expect(signIn.props("signUpFallbackRedirectUrl")).toBe("/trips/abc123");
   });
 
-  it("does not pass an absolute-URL redirect_url through, to prevent an open redirect (#292)", () => {
-    routeQuery = { redirect_url: "https://evil.com" };
+  it("does not pass an absolute-URL return_to through, to prevent an open redirect (#292)", () => {
+    routeQuery = { [AUTH_REDIRECT_QUERY_PARAM]: "https://evil.com" };
     const wrapper = mount(LoginPage, globalConfig);
 
     const signIn = wrapper.findComponent(signInStub);
-    expect(signIn.props("fallbackRedirectUrl")).toBeNull();
+    expect(signIn.props("fallbackRedirectUrl")).toBeUndefined();
+    expect(signIn.props("signUpFallbackRedirectUrl")).toBeUndefined();
   });
 
-  it("passes null when no redirect_url query param is present", () => {
+  it("omits both fallback redirect props when no return_to query param is present", () => {
     const wrapper = mount(LoginPage, globalConfig);
 
     const signIn = wrapper.findComponent(signInStub);
-    expect(signIn.props("fallbackRedirectUrl")).toBeNull();
+    expect(signIn.props("fallbackRedirectUrl")).toBeUndefined();
+    expect(signIn.props("signUpFallbackRedirectUrl")).toBeUndefined();
   });
 });
