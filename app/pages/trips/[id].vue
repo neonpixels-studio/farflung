@@ -21,7 +21,7 @@
       </NuxtLink>
       <NuxtLink
         v-if="isClerkLoaded && !isSignedIn"
-        to="/login"
+        :to="signInHref"
         class="empty-state__signin"
       >
         Sign in to view your trips
@@ -43,7 +43,7 @@
       Trip not found.
       <NuxtLink
         v-if="isClerkLoaded && !isSignedIn"
-        to="/login"
+        :to="signInHref"
         class="empty-state__signin"
       >
         Sign in to view your trips
@@ -401,6 +401,7 @@ import {
   extractErrorMessage,
   extractServerErrorMessage,
 } from "~/utils/extractErrorMessage";
+import { buildLoginPath } from "~/utils/authRedirect";
 
 // No auth middleware: a public trip must open for anonymous visitors following
 // a shared link. The GET endpoint enforces visibility — a private trip returns
@@ -411,6 +412,9 @@ definePageMeta({ layout: "app" });
 
 const route = useRoute();
 const tripId = computed(() => String(route.params.id));
+// Carries this trip's URL through /login so a signed-out owner arriving from
+// a bookmark/expired session lands back here after signing in (#292).
+const signInHref = computed(() => buildLoginPath(route.fullPath));
 
 const tripsStore = useTripsStore();
 const { user: clerkUser } = useClerkUser();

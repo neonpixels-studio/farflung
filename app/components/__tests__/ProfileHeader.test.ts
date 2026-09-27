@@ -110,6 +110,23 @@ describe("ProfileHeader", () => {
     expect(signInLink.attributes("href")).toBe("/login");
   });
 
+  it("carries a caller-provided sign-in redirect through the link (#292)", () => {
+    const wrapper = mount(ProfileHeader, {
+      ...globalConfig,
+      props: {
+        ...BASE_PROPS,
+        viewerIsSignedIn: false,
+        viewerAuthLoaded: true,
+        signInHref: "/login?redirect_url=%2Fu%2Felsa",
+      },
+    });
+
+    const signInLink = wrapper.find("a");
+    expect(signInLink.attributes("href")).toBe(
+      "/login?redirect_url=%2Fu%2Felsa",
+    );
+  });
+
   it("shows neither a follow button nor a sign-in prompt while auth is still resolving", () => {
     const wrapper = mount(ProfileHeader, {
       ...globalConfig,

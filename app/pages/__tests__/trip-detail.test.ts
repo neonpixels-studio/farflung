@@ -24,6 +24,9 @@ vi.stubGlobal("useRoute", () => ({
   get path() {
     return `/trips/${routeParams.id}`;
   },
+  get fullPath() {
+    return `/trips/${routeParams.id}`;
+  },
 }));
 
 // #269 og/twitter meta coverage below reads this trackable useSeoMeta stub.

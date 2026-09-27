@@ -31,7 +31,14 @@ vi.stubGlobal("useRoute", () => ({
   get path() {
     return `/u/${routeParams.id}`;
   },
+  get fullPath() {
+    return `/u/${routeParams.id}`;
+  },
 }));
+
+// The expected /login href once the profile's own URL (see the useRoute stub
+// above) is carried through as the redirect_url param (#292).
+const EXPECTED_SIGN_IN_HREF = "/login?redirect_url=%2Fu%2Fuser-1";
 
 // #269 og/twitter meta coverage below reads this trackable useSeoMeta stub.
 const useSeoMetaMock = stubOgMetaGlobals();
@@ -382,7 +389,7 @@ describe("profile page", () => {
     const signInLink = wrapper
       .findAll("a")
       .find((link) => link.text().toLowerCase().includes("sign in"));
-    expect(signInLink?.attributes("href")).toBe("/login");
+    expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
   });
 
   it("omits the sign-in link in the unavailable state for a signed-in viewer", () => {
@@ -428,7 +435,7 @@ describe("profile page", () => {
       const signInLink = wrapper
         .findAll("a")
         .find((link) => link.text().toLowerCase().includes("sign in"));
-      expect(signInLink?.attributes("href")).toBe("/login");
+      expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
     } finally {
       vi.useRealTimers();
     }
@@ -557,7 +564,7 @@ describe("profile page", () => {
     const signInLink = wrapper
       .findAll("a")
       .find((link) => link.text().toLowerCase().includes("sign in"));
-    expect(signInLink?.attributes("href")).toBe("/login");
+    expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
   });
 
   it("shows neither a follow button nor a sign-in prompt before Clerk resolves or its bootstrap timeout lapses", () => {
@@ -603,7 +610,7 @@ describe("profile page", () => {
       const signInLink = wrapper
         .findAll("a")
         .find((link) => link.text().toLowerCase().includes("sign in"));
-      expect(signInLink?.attributes("href")).toBe("/login");
+      expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
     } finally {
       vi.useRealTimers();
     }

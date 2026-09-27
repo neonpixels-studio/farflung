@@ -49,6 +49,7 @@
           <AppThemeToggle />
         </div>
         <SignIn
+          :fallback-redirect-url="safeRedirectPath"
           :appearance="{
             variables: {
               colorPrimary: '#a855f7',
@@ -67,10 +68,27 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { formatCompact } from "~/utils/formatNumber";
+import {
+  AUTH_REDIRECT_QUERY_PARAM,
+  getSafeRedirectPath,
+} from "~/utils/authRedirect";
 
 useHead({ title: "Wanderist — Sign in" });
 definePageMeta({ layout: false });
+
+// Every "sign in to ..." link across profile/trips/guides carries the
+// visitor's origin path via redirect_url (see buildLoginPath in
+// utils/authRedirect); this validates it before ever handing it to Clerk so a
+// crafted redirect_url can't turn sign-in into an open redirect (#292).
+// fallbackRedirectUrl only applies when Clerk has no other redirect already
+// in flight (e.g. an email verification link), so it never clobbers Clerk's
+// own multi-step auth flows.
+const route = useRoute();
+const safeRedirectPath = computed(() =>
+  getSafeRedirectPath(route.query[AUTH_REDIRECT_QUERY_PARAM]),
+);
 
 // Representative placeholder values for the marketing panel.
 // Always displayed — the login page is public and should never reflect a
