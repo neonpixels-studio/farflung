@@ -779,23 +779,31 @@ watch(
 // Confirmed against the installed @clerk/nuxt 3.1.3 (@clerk/shared 4.33.0)
 // user resource types — re-check here if that package is ever bumped to a
 // new major version.
-const passwordStatusMessage = computed<string>(() => {
+//
+// Single source of truth for that tri-state, so the status copy and the
+// button label below can never contradict each other (e.g. offering to
+// "change" a password the status line just said doesn't exist).
+type PasswordState = "unknown" | "none" | "set";
+
+const passwordState = computed<PasswordState>(() => {
   if (!user.value) {
+    return "unknown";
+  }
+  return user.value.passwordEnabled ? "set" : "none";
+});
+
+const passwordStatusMessage = computed<string>(() => {
+  if (passwordState.value === "unknown") {
     return "";
   }
-  if (!user.value.passwordEnabled) {
+  if (passwordState.value === "none") {
     return "No password set — you sign in with a connected account.";
   }
   return "Change your password any time below.";
 });
 
-// Mirrors passwordStatusMessage's passwordEnabled check so the button copy
-// never contradicts it (e.g. offering to "change" a password that, per the
-// message above, doesn't exist).
 const passwordActionLabel = computed<string>(() =>
-  user.value && !user.value.passwordEnabled
-    ? "set password"
-    : "change password",
+  passwordState.value === "none" ? "set password" : "change password",
 );
 
 // Populate from defaults immediately (before the API call) so the form is not
