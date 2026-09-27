@@ -41,6 +41,15 @@ function isProtocolRelative(path: string): boolean {
   return path.startsWith("//") || path.startsWith("/\\");
 }
 
+// True for a pathname that resolves to the login route itself. Vue Router's
+// default matching is case-insensitive and ignores a trailing slash, so
+// "/LOGIN" and "/login/" reach the same route as "/login" even though they
+// aren't the exact same string — normalize both sides before comparing so
+// none of those variants slip past the self-bounce guard below.
+function isLoginPath(pathname: string): boolean {
+  return pathname.replace(/\/+$/, "").toLowerCase() === LOGIN_PATH;
+}
+
 /**
  * Validates an untrusted return_to query value before it's ever used to
  * navigate, so a crafted /login?return_to=https://evil.com (or a
@@ -57,8 +66,9 @@ function isProtocolRelative(path: string): boolean {
  * origin intact, but normalizes its own pathname to "//evil.com"), so the
  * built path/search/hash is re-checked with isProtocolRelative below before
  * ever being returned. Also refuses a value that resolves back to the login
- * page itself, so a crafted return_to can't bounce a visitor straight back to
- * /login after they've just signed in.
+ * page itself (via isLoginPath, case- and trailing-slash-insensitive to match
+ * Vue Router's own route matching), so a crafted return_to can't bounce a
+ * visitor straight back to /login after they've just signed in.
  */
 export function getSafeRedirectPath(rawValue: unknown): string | null {
   if (typeof rawValue !== "string" || !rawValue.startsWith("/")) {
@@ -73,7 +83,7 @@ export function getSafeRedirectPath(rawValue: unknown): string | null {
   if (parsed.origin !== VALIDATION_BASE_ORIGIN) {
     return null;
   }
-  if (parsed.pathname === LOGIN_PATH) {
+  if (isLoginPath(parsed.pathname)) {
     return null;
   }
   const safePath = `${parsed.pathname}${parsed.search}${parsed.hash}`;

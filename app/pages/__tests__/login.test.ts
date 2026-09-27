@@ -70,14 +70,25 @@ describe("Login page (/login)", () => {
     expect(signIn.props("signUpFallbackRedirectUrl")).toBe("/trips/abc123");
   });
 
-  it("does not pass an absolute-URL return_to through, to prevent an open redirect (#292)", () => {
-    routeQuery = { [AUTH_REDIRECT_QUERY_PARAM]: "https://evil.com" };
-    const wrapper = mount(LoginPage, globalConfig);
+  it.each([
+    ["an absolute URL to another origin", "https://evil.com"],
+    ["a protocol-relative URL", "//evil.com"],
+    [
+      "a dot-segment value that normalizes to protocol-relative",
+      "/.//evil.com",
+    ],
+    ["a value that resolves back to the login page itself", "/login"],
+  ])(
+    "does not pass %s through, to prevent an open redirect or self-bounce (#292)",
+    (_description, unsafeValue) => {
+      routeQuery = { [AUTH_REDIRECT_QUERY_PARAM]: unsafeValue };
+      const wrapper = mount(LoginPage, globalConfig);
 
-    const signIn = wrapper.findComponent(signInStub);
-    expect(signIn.props("fallbackRedirectUrl")).toBeUndefined();
-    expect(signIn.props("signUpFallbackRedirectUrl")).toBeUndefined();
-  });
+      const signIn = wrapper.findComponent(signInStub);
+      expect(signIn.props("fallbackRedirectUrl")).toBeUndefined();
+      expect(signIn.props("signUpFallbackRedirectUrl")).toBeUndefined();
+    },
+  );
 
   it("omits both fallback redirect props when no return_to query param is present", () => {
     const wrapper = mount(LoginPage, globalConfig);

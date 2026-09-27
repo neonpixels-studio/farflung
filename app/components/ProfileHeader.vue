@@ -35,34 +35,33 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    displayName: string;
-    handleLabel: string;
-    homeBase: string | null;
-    isSelf: boolean;
-    following: boolean;
-    pending: boolean;
-    // Both derived from Clerk: an anonymous visitor (a shared profile link is
-    // openable without auth, see #279) can view the profile but not follow it.
-    // viewerAuthLoaded gates the prompt so it doesn't flash for a viewer who
-    // turns out to be signed in a moment later. Unlike a plain isClerkLoaded
-    // pass-through, the page also flips this once its own fetch's bootstrap
-    // timeout lapses (see u/[id].vue's viewerAuthResolved) — the profile can
-    // render fully via that same timeout's anonymous fallback, so a viewer
-    // whose Clerk script never resolves at all (ad blocker, flaky CDN) would
-    // otherwise be stuck on a fully-loaded page with no follow affordance and
-    // no way to sign in.
-    viewerIsSignedIn: boolean;
-    viewerAuthLoaded: boolean;
-    // Pre-built via buildLoginPath(route.fullPath) by the parent page, so an
-    // authenticating visitor returns to this profile instead of the default
-    // post-login destination (#292). Defaults to bare /login so existing
-    // callers/tests that don't pass it keep working.
-    signInHref?: string;
-  }>(),
-  { signInHref: "/login" },
-);
+defineProps<{
+  displayName: string;
+  handleLabel: string;
+  homeBase: string | null;
+  isSelf: boolean;
+  following: boolean;
+  pending: boolean;
+  // Both derived from Clerk: an anonymous visitor (a shared profile link is
+  // openable without auth, see #279) can view the profile but not follow it.
+  // viewerAuthLoaded gates the prompt so it doesn't flash for a viewer who
+  // turns out to be signed in a moment later. Unlike a plain isClerkLoaded
+  // pass-through, the page also flips this once its own fetch's bootstrap
+  // timeout lapses (see u/[id].vue's viewerAuthResolved) — the profile can
+  // render fully via that same timeout's anonymous fallback, so a viewer
+  // whose Clerk script never resolves at all (ad blocker, flaky CDN) would
+  // otherwise be stuck on a fully-loaded page with no follow affordance and
+  // no way to sign in.
+  viewerIsSignedIn: boolean;
+  viewerAuthLoaded: boolean;
+  // Pre-built via buildLoginPath(route.fullPath) by the parent page, so an
+  // authenticating visitor returns to this profile instead of the default
+  // post-login destination (#292). Required (no default): the one production
+  // caller (u/[id].vue) always computes and passes it, and a future caller
+  // that forgets it should fail a type check rather than silently falling
+  // back to a bare, destination-less /login.
+  signInHref: string;
+}>();
 
 defineEmits<{ toggle: [] }>();
 </script>

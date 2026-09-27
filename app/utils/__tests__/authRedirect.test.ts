@@ -83,4 +83,13 @@ describe("getSafeRedirectPath", () => {
     expect(getSafeRedirectPath("/login")).toBeNull();
     expect(getSafeRedirectPath("/login?foo=1")).toBeNull();
   });
+
+  it("rejects login-page variants Vue Router would still match as /login", () => {
+    // Vue Router's default matching is case-insensitive and ignores a
+    // trailing slash, so these reach the login route despite not being the
+    // exact string "/login".
+    expect(getSafeRedirectPath("/login/")).toBeNull();
+    expect(getSafeRedirectPath("/LOGIN")).toBeNull();
+    expect(getSafeRedirectPath("/LOGIN?foo=1")).toBeNull();
+  });
 });
