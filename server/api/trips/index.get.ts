@@ -4,7 +4,7 @@ import { getDb } from "../../db/index";
 import { trips, TRIP_STATUS } from "../../db/schema";
 import { requireUser } from "../../utils/auth";
 import { MAX_PAGE, parsePageParam, pageToOffset } from "../../utils/pagination";
-import { deriveTripStatus, lapsedEndDateCutoff } from "../../utils/tripStatus";
+import { withDerivedStatus, lapsedEndDateCutoff } from "../../utils/tripStatus";
 
 const VALID_STATUSES = [
   TRIP_STATUS.ONGOING,
@@ -144,10 +144,7 @@ export default defineEventHandler(async (event) => {
   // status returned to the client must be the derived one — a lapsed trip
   // must never render as ongoing/upcoming while it's already excluded from
   // the active-trip count elsewhere (see server/utils/tripStatus.ts).
-  const derivedRows = rows.map((row) => ({
-    ...row,
-    status: deriveTripStatus(row, now),
-  }));
+  const derivedRows = rows.map((row) => withDerivedStatus(row, now));
 
   return {
     trips: derivedRows,

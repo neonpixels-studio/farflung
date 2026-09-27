@@ -70,6 +70,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
     eq: mockEq,
     asc: mockAsc,
     desc: mockDesc,
+    and: vi.fn(actual.and),
     or: vi.fn(actual.or),
     lt: vi.fn(actual.lt),
     isNotNull: vi.fn(actual.isNotNull),
@@ -77,7 +78,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
   };
 });
 
-import { or, lt, isNotNull, not } from "drizzle-orm";
+import { and, or, lt, isNotNull, not } from "drizzle-orm";
 import { trips } from "../../../server/db/schema";
 import { lapsedEndDateCutoff } from "../../../server/utils/tripStatus";
 
@@ -455,11 +456,19 @@ describe("GET /api/trips", () => {
 
       await (handler as (event: object) => unknown)(buildEvent());
 
-      // The "past" branch matches eq(status, 'past') OR the lapsed condition.
-      expect(mockEq).toHaveBeenCalledWith(trips.status, "past");
-      expect(or).toHaveBeenCalled();
-      expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
-      expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
+      // The "past" branch must match eq(status, 'past') OR the lapsed
+      // condition specifically — not just that `or`/`isNotNull`/`lt` were
+      // called somewhere, but that `or` combines exactly these two.
+      const expectedPastCondition = mockEq(trips.status, "past");
+      const expectedLapsedCondition = and(
+        isNotNull(trips.endDate),
+        lt(trips.endDate, lapsedEndDateCutoff(NOW)),
+      );
+
+      expect(or).toHaveBeenCalledWith(
+        expectedPastCondition,
+        expectedLapsedCondition,
+      );
       expect(not).not.toHaveBeenCalled();
     });
 
@@ -468,10 +477,20 @@ describe("GET /api/trips", () => {
 
       await (handler as (event: object) => unknown)(buildEvent());
 
-      expect(mockEq).toHaveBeenCalledWith(trips.status, "ongoing");
-      expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
-      expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
-      expect(not).toHaveBeenCalled();
+      // The "ongoing" branch must AND the stored-status match with the
+      // negation of the lapsed condition specifically.
+      const expectedStatusCondition = mockEq(trips.status, "ongoing");
+      const expectedLapsedCondition = and(
+        isNotNull(trips.endDate),
+        lt(trips.endDate, lapsedEndDateCutoff(NOW)),
+      );
+      const expectedNotLapsed = not(expectedLapsedCondition);
+
+      expect(not).toHaveBeenCalledWith(expectedLapsedCondition);
+      expect(and).toHaveBeenCalledWith(
+        expectedStatusCondition,
+        expectedNotLapsed,
+      );
     });
   });
 });

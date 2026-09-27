@@ -30,7 +30,7 @@ import {
   publiclyVisibleAuthorCondition,
   subscriptionEntitlesPublicProfile,
 } from "./publicVisibility";
-import { deriveTripStatus } from "./tripStatus";
+import { withDerivedStatus } from "./tripStatus";
 
 export type Database = ReturnType<typeof getDb>;
 
@@ -371,7 +371,7 @@ export async function fetchPublicTrips(
     // (issue #291).
     trips: rows
       .slice(0, PROFILE_TRIPS_PAGE_SIZE)
-      .map((row) => ({ ...row, status: deriveTripStatus(row) })),
+      .map((row) => withDerivedStatus(row)),
     hasMore: rows.length > PROFILE_TRIPS_PAGE_SIZE,
   };
 }

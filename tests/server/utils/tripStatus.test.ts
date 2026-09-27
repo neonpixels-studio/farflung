@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   isTripCountedAsActive,
   deriveTripStatus,
+  withDerivedStatus,
   lapsedEndDateCutoff,
 } from "../../../server/utils/tripStatus";
 import { TRIP_STATUS } from "../../../server/db/schema";
@@ -162,6 +163,33 @@ describe("deriveTripStatus", () => {
   });
 });
 
+describe("withDerivedStatus", () => {
+  it("overwrites status with the derived value while preserving every other field", () => {
+    const trip = {
+      id: "trip-1",
+      name: "Stale Trip",
+      status: TRIP_STATUS.ONGOING,
+      endDate: PAST_DATE,
+    };
+
+    expect(withDerivedStatus(trip, NOW)).toEqual({
+      ...trip,
+      status: TRIP_STATUS.PAST,
+    });
+  });
+
+  it("leaves the object unchanged (aside from status) when the stored status is already current", () => {
+    const trip = {
+      id: "trip-2",
+      name: "Live Trip",
+      status: TRIP_STATUS.UPCOMING,
+      endDate: FUTURE_DATE,
+    };
+
+    expect(withDerivedStatus(trip, NOW)).toEqual(trip);
+  });
+});
+
 describe("lapsedEndDateCutoff", () => {
   it("returns the UTC start of the given day, discarding any time-of-day component", () => {
     const midDay = new Date("2026-06-15T18:32:04.000Z");
@@ -180,7 +208,6 @@ describe("lapsedEndDateCutoff", () => {
     const cutoff = lapsedEndDateCutoff(NOW);
     const justBeforeCutoff = new Date(cutoff.getTime() - 1);
 
-    expect(justBeforeCutoff < cutoff).toBe(true);
     expect(
       isTripCountedAsActive(
         { status: TRIP_STATUS.ONGOING, endDate: justBeforeCutoff },
@@ -188,7 +215,6 @@ describe("lapsedEndDateCutoff", () => {
       ),
     ).toBe(false);
 
-    expect(cutoff < cutoff).toBe(false);
     expect(
       isTripCountedAsActive(
         { status: TRIP_STATUS.ONGOING, endDate: cutoff },

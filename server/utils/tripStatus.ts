@@ -76,6 +76,22 @@ export function deriveTripStatus(
 }
 
 /**
+ * Returns `trip` with its `status` field overwritten by `deriveTripStatus`,
+ * preserving every other field verbatim. Shared by every read path that
+ * already has the full row shape in hand (a single-trip lookup, or a list
+ * whose rows get relabeled after the fact) so "spread the row, replace
+ * status" isn't repeated at each call site — see trip-queries.ts's
+ * loadReadableTrip, profile-queries.ts's fetchPublicTrips, and
+ * index.get.ts's row mapping.
+ */
+export function withDerivedStatus<T extends TripStatusFields>(
+  trip: T,
+  now: Date = new Date(),
+): T {
+  return { ...trip, status: deriveTripStatus(trip, now) };
+}
+
+/**
  * The instant at/after which a trip's `endDate` counts as lapsed for "now" —
  * i.e. the UTC start of today. A read path that filters at the SQL level
  * (comparing the `end_date` column directly with `lt`, rather than loading
