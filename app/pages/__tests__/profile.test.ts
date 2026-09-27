@@ -253,9 +253,11 @@ describe("profile page", () => {
     // anonymous) fetch — see useClerkGatedFetch.test.ts for the retry logic
     // itself.
     expect(lastAsyncDataCall?.options.watch?.length).toBe(2);
-    // Client-only: an authenticated request carries the Clerk token, so SSR
-    // would hang (Clerk's getToken never resolves on the server).
-    expect(lastAsyncDataCall?.options.server).toBe(false);
+    // Runs on the server too (#289), so a non-JS crawler's SSR pass sees the
+    // real traveler's name/bio. Safe because useClerkGatedFetch's
+    // import.meta.server fast-path fires the (always-anonymous, since Clerk
+    // never resolves server-side) fetch immediately rather than waiting.
+    expect(lastAsyncDataCall?.options.server).toBe(true);
   });
 
   it("still fetches a public profile for a signed-out (anonymous) viewer, without redirecting (#279)", () => {

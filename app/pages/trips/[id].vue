@@ -489,10 +489,18 @@ function fetchTripDetail(): Promise<void> {
   return gateOnClerkLoad(() => tripsStore.fetchTripById(tripId.value));
 }
 
-// `server: false` keeps the fetch client-only, mirroring guides/[id].vue and
-// u/[id].vue: the request carries the Clerk session token, which only exists on
-// the client (Clerk runs with skipServerMiddleware). Running it during SSR would
-// hang, since Clerk's getToken never resolves on the server.
+// `server: true` (was `server: false`): this now also runs during SSR, so a
+// non-JS crawler following a shared link sees the trip's real name/facts in
+// the initial HTML — including useOgMeta's og:title/og:description/og:image
+// below — instead of the generic fallback (#289). Safe server-side because
+// gateOnClerkLoad fires immediately (never waits) when import.meta.server is
+// true (see useClerkGatedFetch): Clerk's server middleware is disabled
+// fleet-wide (skipServerMiddleware), so getToken can never resolve there
+// anyway, meaning the SSR fetch is always anonymous — exactly what an
+// anonymous visitor's client fetch would have produced, just without the
+// wait. Nuxt reuses that SSR-fetched Pinia state on hydration rather than
+// re-requesting it, so an anonymous visitor's browser never duplicates the
+// request the server already made.
 //
 // Watch retryGeneration as well as the id: a signed-in owner's session
 // resolving after the fetch above already fired (e.g. signing in without a
@@ -502,7 +510,7 @@ function fetchTripDetail(): Promise<void> {
 const { status: fetchStatus, refresh: refreshTripDetail } = useAsyncData(
   () => `trip-detail-${tripId.value}`,
   fetchTripDetail,
-  { server: false, watch: [tripId, retryGeneration] },
+  { server: true, watch: [tripId, retryGeneration] },
 );
 
 // A 404 means the trip is missing or private — rendered as "Trip not found"

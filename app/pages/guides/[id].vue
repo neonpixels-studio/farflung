@@ -119,20 +119,29 @@ function fetchGuideDetail(): Promise<void> {
   return gateOnClerkLoad(() => guidesStore.fetchGuideById(guideId.value));
 }
 
-// `server: false` keeps the fetch client-only, mirroring u/[id].vue: the request
-// carries the Clerk session token, which only exists on the client (Clerk runs
-// with skipServerMiddleware). Running it during SSR would hang, since Clerk's
-// getToken never resolves on the server. A failed load rejects (no .catch); the
-// store records guideNotFound/guideError and nulls currentGuide, so the
-// template renders its not-found or retryable-error state accordingly — an
-// anonymous visitor on a private or missing guide sees "Guide not found"
-// rather than being redirected to /login. This does mean a shared link is not
-// server-rendered (no unfurl preview); that is an accepted trade for staying
-// on the codebase's client-only-auth pattern.
+// `server: true` (was `server: false`): this now also runs during SSR, so a
+// non-JS crawler following a shared link sees the guide's real title/body in
+// the initial HTML — including useOgMeta's og:title/og:description below —
+// instead of the generic fallback (#289). This is safe to run server-side
+// because gateOnClerkLoad fires immediately (never waits) when
+// import.meta.server is true (see useClerkGatedFetch): Clerk's server
+// middleware is disabled fleet-wide (skipServerMiddleware), so getToken can
+// never resolve there anyway, meaning the SSR fetch is always anonymous —
+// exactly what an anonymous visitor's client fetch would have produced,
+// just without the wait. A signed-in owner still gets their real
+// (possibly-private) view once Clerk resolves client-side and retries (see
+// useClerkGatedFetch's retryGeneration), and Nuxt reuses the SSR-fetched
+// Pinia state on hydration rather than re-requesting it, so an anonymous
+// visitor's browser never duplicates the anonymous request the server
+// already made. A failed load rejects (no .catch); the store records
+// guideNotFound/guideError and nulls currentGuide, so the template renders
+// its not-found or retryable-error state accordingly — an anonymous visitor
+// on a private or missing guide sees "Guide not found" rather than being
+// redirected to /login.
 const { status: fetchStatus, refresh: refreshGuide } = useAsyncData(
   () => `guide-detail-${guideId.value}`,
   fetchGuideDetail,
-  { server: false, watch: [guideId, retryGeneration] },
+  { server: true, watch: [guideId, retryGeneration] },
 );
 
 async function onRetryLoad(): Promise<void> {

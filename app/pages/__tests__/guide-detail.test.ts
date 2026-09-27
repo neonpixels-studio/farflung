@@ -199,9 +199,12 @@ describe("Guide Detail page (/guides/[id])", () => {
     expect(guidesStore.fetchGuideById).toHaveBeenCalledWith("guide-1");
   });
 
-  it("fetches client-only (server:false) so the token-bearing request never runs during SSR", () => {
+  it("runs the fetch on the server too, so a non-JS crawler's SSR pass sees real guide data (#289)", () => {
+    // Safe because useClerkGatedFetch's import.meta.server fast-path fires the
+    // (always-anonymous, since Clerk never resolves server-side) fetch
+    // immediately rather than waiting — see useClerkGatedFetch.test.ts.
     mount(GuideDetailPage, buildGlobalConfig(pinia));
-    expect(lastAsyncDataOptions?.server).toBe(false);
+    expect(lastAsyncDataOptions?.server).toBe(true);
   });
 
   it("watches the guide id so it refetches on in-page navigation", async () => {

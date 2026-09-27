@@ -777,9 +777,12 @@ describe("Trip Detail page (/trips/[id])", () => {
     expect(tripsStore.fetchTripById).toHaveBeenCalledWith("trip-1");
   });
 
-  it("fetches client-only (server:false) so the token-bearing request never runs during SSR", () => {
+  it("runs the fetch on the server too, so a non-JS crawler's SSR pass sees real trip data (#289)", () => {
+    // Safe because useClerkGatedFetch's import.meta.server fast-path fires the
+    // (always-anonymous, since Clerk never resolves server-side) fetch
+    // immediately rather than waiting — see useClerkGatedFetch.test.ts.
     mount(TripDetailPage, buildGlobalConfig(pinia));
-    expect(lastAsyncDataOptions?.server).toBe(false);
+    expect(lastAsyncDataOptions?.server).toBe(true);
   });
 
   it("watches the trip id so it refetches on in-page navigation", async () => {

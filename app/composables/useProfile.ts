@@ -70,14 +70,27 @@ interface ListFetchState<Item> {
   errorMessage: Ref<string | null>;
 }
 
-function createListFetchState<Item>(): ListFetchState<Item> {
+// `useState` (not a plain `ref`) so this survives the server/client hydration
+// swap: u/[id].vue's own fetch now also runs during SSR (see fetchProfile
+// below and useClerkGatedFetch's import.meta.server fast-path, #289) so a
+// non-JS crawler's initial HTML has the real profile/lists instead of a
+// loading skeleton. A plain ref would silently reset to its initial value
+// once the client re-runs this composable's setup code, discarding the
+// server-fetched state; useState is the primitive Nuxt provides specifically
+// to survive that boundary (the same role Pinia's own state serialization
+// plays for the guides/trips stores). Keyed per resource so the four lists
+// don't collide with each other or with the profile's own keys below.
+function createListFetchState<Item>(resourceKey: string): ListFetchState<Item> {
   return {
-    items: ref<Item[]>([]) as Ref<Item[]>,
+    items: useState<Item[]>(`profile-${resourceKey}-items`, () => []),
     // Starts true so the first (pre-fetch) render shows the loading state
     // rather than an empty body; the fetcher flips it false once it settles.
-    loading: ref(true),
-    hasMore: ref(false),
-    errorMessage: ref<string | null>(null),
+    loading: useState<boolean>(`profile-${resourceKey}-loading`, () => true),
+    hasMore: useState<boolean>(`profile-${resourceKey}-has-more`, () => false),
+    errorMessage: useState<string | null>(
+      `profile-${resourceKey}-error`,
+      () => null,
+    ),
   };
 }
 
@@ -155,17 +168,22 @@ function createListFetcher<Item, Response>(
 export function useProfile() {
   const { apiFetch } = useApiClient();
 
-  const profile = ref<ProfileUser | null>(null);
+  // useState (not a plain ref) so a non-JS crawler's SSR pass (see
+  // fetchProfile below and useClerkGatedFetch's import.meta.server
+  // fast-path, #289) survives into the client instead of resetting on
+  // hydration — see createListFetchState's comment above for the full
+  // rationale.
+  const profile = useState<ProfileUser | null>("profile-detail", () => null);
   // Starts true so the first (pre-fetch) render shows the loading state rather
   // than an empty body; fetchProfile flips it false when the request settles.
-  const isLoading = ref(true);
-  const notFound = ref(false);
-  const error = ref<string | null>(null);
+  const isLoading = useState<boolean>("profile-detail-loading", () => true);
+  const notFound = useState<boolean>("profile-detail-not-found", () => false);
+  const error = useState<string | null>("profile-detail-error", () => null);
 
-  const followersState = createListFetchState<ProfileFollower>();
-  const followingState = createListFetchState<ProfileFollowee>();
-  const tripsState = createListFetchState<ProfileTrip>();
-  const guidesState = createListFetchState<ProfileGuide>();
+  const followersState = createListFetchState<ProfileFollower>("followers");
+  const followingState = createListFetchState<ProfileFollowee>("following");
+  const tripsState = createListFetchState<ProfileTrip>("trips");
+  const guidesState = createListFetchState<ProfileGuide>("guides");
 
   let profileRequestId = 0;
 

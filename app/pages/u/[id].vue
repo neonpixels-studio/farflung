@@ -303,17 +303,28 @@ async function onToggleFollow(): Promise<void> {
   await fetchFollowers(targetUserId);
 }
 
-// `server: false` keeps the fetch client-only: an authenticated request
-// carries the Clerk session token, which only exists client-side (Clerk runs
-// with skipServerMiddleware) — running it during SSR would hang, since
-// Clerk's getToken never resolves on the server. Gated on Clerk's bootstrap
-// (#255) so the owner's first request already carries a token instead of
-// reading their own private profile anonymously (and 404ing) first — an
-// anonymous visitor is unaffected, since the gate falls back to an anonymous
-// fetch after CLERK_BOOTSTRAP_TIMEOUT_MS regardless. Watches retryGeneration
-// too so a session resolving (or clearing) after the first fetch re-issues it
-// with the new auth state, not just on route-param (profile-to-profile)
-// navigation.
+// `server: true` (was `server: false`): this now also runs during SSR, so a
+// non-JS crawler following a shared link sees the traveler's real name/bio in
+// the initial HTML — including useOgMeta's og:title/og:description below —
+// instead of the generic fallback (#289). Safe server-side because
+// gateOnClerkLoad fires immediately (never waits) when import.meta.server is
+// true (see useClerkGatedFetch): Clerk's server middleware is disabled
+// fleet-wide (skipServerMiddleware), so getToken can never resolve there
+// anyway, meaning the SSR fetch is always anonymous — exactly what an
+// anonymous visitor's client fetch would have produced, just without the
+// wait. `profile` and the four list states are `useState` (see useProfile.ts)
+// rather than plain refs specifically so this SSR-fetched data survives into
+// the client instead of resetting on hydration, and so Nuxt can reuse it
+// there instead of an anonymous visitor's browser duplicating the request the
+// server already made. The owner still gets their real (possibly-private)
+// view once Clerk resolves client-side and retries (see retryGeneration
+// below). Gated on Clerk's bootstrap (#255) client-side so the owner's first
+// request already carries a token instead of reading their own private
+// profile anonymously (and 404ing) first — an anonymous visitor is
+// unaffected, since the gate falls back to an anonymous fetch after
+// CLERK_BOOTSTRAP_TIMEOUT_MS regardless. Watches retryGeneration too so a
+// session resolving (or clearing) after the first fetch re-issues it with the
+// new auth state, not just on route-param (profile-to-profile) navigation.
 function fetchProfileDetail(): Promise<unknown> {
   return gateOnClerkLoad(() =>
     Promise.all([
@@ -327,7 +338,7 @@ function fetchProfileDetail(): Promise<unknown> {
 }
 
 useAsyncData(() => `profile-${userId.value}`, fetchProfileDetail, {
-  server: false,
+  server: true,
   watch: [userId, retryGeneration],
 });
 

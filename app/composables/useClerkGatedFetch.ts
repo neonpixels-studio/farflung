@@ -68,6 +68,20 @@ export function useClerkGatedFetch(
   ): Promise<FetchResult> {
     pendingCleanups.forEach((cleanup) => cleanup());
 
+    // Clerk's server middleware is disabled fleet-wide (skipServerMiddleware,
+    // see nuxt.config.ts), so isClerkLoaded can only ever be false during SSR
+    // — nothing there will ever flip it true, and without this the branch
+    // below would block every server-rendered page for the full
+    // CLERK_BOOTSTRAP_TIMEOUT_MS on every request. The token can never attach
+    // server-side either way (apiFetch's getToken resolves to null there, see
+    // useApiClient), so firing immediately is exactly what that timeout
+    // branch would eventually produce anyway, just without the wait — this
+    // is what lets a non-JS crawler's SSR pass see real per-page data instead
+    // of the generic fallback (#289).
+    if (import.meta.server) {
+      return fetchFn();
+    }
+
     if (isClerkLoaded.value) {
       startWatchingForRetries();
       return fetchFn();
