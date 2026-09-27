@@ -30,6 +30,7 @@ import {
   publiclyVisibleAuthorCondition,
   subscriptionEntitlesPublicProfile,
 } from "./publicVisibility";
+import { deriveTripStatus } from "./tripStatus";
 
 export type Database = ReturnType<typeof getDb>;
 
@@ -364,7 +365,13 @@ export async function fetchPublicTrips(
     .limit(PROFILE_TRIPS_PAGE_SIZE + 1);
 
   return {
-    trips: rows.slice(0, PROFILE_TRIPS_PAGE_SIZE),
+    // A public trip on a profile must reflect its derived status, not the
+    // raw stored column — otherwise it keeps showing as ongoing/upcoming on
+    // a viewer's profile page long after the trip has actually lapsed
+    // (issue #291).
+    trips: rows
+      .slice(0, PROFILE_TRIPS_PAGE_SIZE)
+      .map((row) => ({ ...row, status: deriveTripStatus(row) })),
     hasMore: rows.length > PROFILE_TRIPS_PAGE_SIZE,
   };
 }

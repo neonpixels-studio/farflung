@@ -2,7 +2,7 @@
  * Tests for GET /api/trips — list, user-scoping, status filter, sort order,
  * and pagination.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -65,10 +65,21 @@ vi.mock("../../../server/db/index", () => ({
 
 vi.mock("drizzle-orm", async (importOriginal) => {
   const actual = await importOriginal<typeof import("drizzle-orm")>();
-  return { ...actual, eq: mockEq, asc: mockAsc, desc: mockDesc };
+  return {
+    ...actual,
+    eq: mockEq,
+    asc: mockAsc,
+    desc: mockDesc,
+    or: vi.fn(actual.or),
+    lt: vi.fn(actual.lt),
+    isNotNull: vi.fn(actual.isNotNull),
+    not: vi.fn(actual.not),
+  };
 });
 
+import { or, lt, isNotNull, not } from "drizzle-orm";
 import { trips } from "../../../server/db/schema";
+import { lapsedEndDateCutoff } from "../../../server/utils/tripStatus";
 
 Object.assign(globalThis, {
   defineEventHandler: (handler: (event: object) => unknown) => handler,
@@ -384,5 +395,83 @@ describe("GET /api/trips", () => {
     const eqCalls = mockEq.mock.calls;
     const hasStatusFilter = eqCalls.some((args) => args.includes("past"));
     expect(hasStatusFilter).toBe(true);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Derived status (issue #291): a lapsed endDate must win over the raw
+  // stored column both in what's returned and in what a status filter matches.
+  // ---------------------------------------------------------------------------
+
+  describe("derived status", () => {
+    const NOW = new Date("2026-06-15T00:00:00.000Z");
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("relabels a row's status to 'past' once its endDate has lapsed, even with no status filter applied", async () => {
+      setRows([
+        {
+          id: "t-stale",
+          userId: "user-1",
+          name: "Stale Trip",
+          status: "ongoing",
+          endDate: new Date("2020-01-01T00:00:00.000Z"),
+        },
+      ]);
+
+      const result = (await (handler as (event: object) => unknown)(
+        buildEvent(),
+      )) as { trips: { status: string }[] };
+
+      expect(result.trips[0]?.status).toBe("past");
+    });
+
+    it("keeps a row's stored status when its endDate has not lapsed", async () => {
+      setRows([
+        {
+          id: "t-live",
+          userId: "user-1",
+          name: "Live Trip",
+          status: "upcoming",
+          endDate: new Date("2999-01-01T00:00:00.000Z"),
+        },
+      ]);
+
+      const result = (await (handler as (event: object) => unknown)(
+        buildEvent(),
+      )) as { trips: { status: string }[] };
+
+      expect(result.trips[0]?.status).toBe("upcoming");
+    });
+
+    it("filters status=past to match both an explicit 'past' row and a lapsed 'ongoing'/'upcoming' row", async () => {
+      mockGetQuery.mockReturnValue({ status: "past" });
+
+      await (handler as (event: object) => unknown)(buildEvent());
+
+      // The "past" branch matches eq(status, 'past') OR the lapsed condition.
+      expect(mockEq).toHaveBeenCalledWith(trips.status, "past");
+      expect(or).toHaveBeenCalled();
+      expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
+      expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
+      expect(not).not.toHaveBeenCalled();
+    });
+
+    it("filters status=ongoing to match the stored status AND excludes a lapsed endDate", async () => {
+      mockGetQuery.mockReturnValue({ status: "ongoing" });
+
+      await (handler as (event: object) => unknown)(buildEvent());
+
+      expect(mockEq).toHaveBeenCalledWith(trips.status, "ongoing");
+      expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
+      expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
+      expect(not).toHaveBeenCalled();
+    });
   });
 });

@@ -100,6 +100,32 @@ describe("loadReadableTrip", () => {
     ).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("derives 'past' for a trip whose endDate has lapsed even though its stored status is still 'ongoing'", async () => {
+    const longLapsedEndDate = new Date("2020-01-01T00:00:00.000Z");
+    const trip = makeTrip({
+      status: "ongoing",
+      endDate: longLapsedEndDate,
+      visibility: "private",
+    });
+
+    const result = await loadReadableTrip(makeDb(trip), "trip-1", OWNER_ID);
+
+    expect(result.status).toBe("past");
+  });
+
+  it("keeps the stored status for a trip that is still within its endDate", async () => {
+    const farFutureEndDate = new Date("2999-01-01T00:00:00.000Z");
+    const trip = makeTrip({
+      status: "upcoming",
+      endDate: farFutureEndDate,
+      visibility: "private",
+    });
+
+    const result = await loadReadableTrip(makeDb(trip), "trip-1", OWNER_ID);
+
+    expect(result.status).toBe("upcoming");
+  });
+
   it("uses the same not-found message for a missing and a hidden trip", async () => {
     await loadReadableTrip(makeDb(undefined), "missing", OTHER_ID).catch(
       () => undefined,

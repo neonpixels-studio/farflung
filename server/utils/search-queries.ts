@@ -9,6 +9,7 @@ import {
   userPreferences,
 } from "../db/schema";
 import { publiclyVisibleAuthorCondition } from "./publicVisibility";
+import { deriveTripStatus } from "./tripStatus";
 
 const SEARCH_RESULT_LIMIT = 5;
 
@@ -85,15 +86,26 @@ export async function searchTrips(
   userId: string,
   pattern: string,
 ): Promise<TripResult[]> {
-  return database
+  const rows = await database
     .select({
       id: trips.id,
       name: trips.name,
       status: trips.status,
+      // Selected only to derive the effective status below (see
+      // deriveTripStatus) — never part of the returned TripResult shape, so a
+      // search result never shows a stale "ongoing"/"upcoming" status for a
+      // trip whose endDate has already lapsed (issue #291).
+      endDate: trips.endDate,
     })
     .from(trips)
     .where(and(eq(trips.userId, userId), ilike(trips.name, pattern)))
     .limit(SEARCH_RESULT_LIMIT);
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    status: deriveTripStatus(row),
+  }));
 }
 
 export async function searchEntries(

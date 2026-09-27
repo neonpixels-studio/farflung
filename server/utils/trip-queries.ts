@@ -8,6 +8,7 @@
 import { eq } from "drizzle-orm";
 import { trips, VISIBILITY } from "../db/schema";
 import type { Database } from "./discover-queries";
+import { deriveTripStatus } from "./tripStatus";
 
 type Trip = typeof trips.$inferSelect;
 
@@ -58,13 +59,13 @@ export async function loadReadableTrip(
     throw createError({ statusCode: 404, statusMessage: TRIP_NOT_FOUND });
   }
 
-  if (trip.userId === userId) {
-    return trip;
-  }
-
-  if (trip.visibility !== VISIBILITY.PUBLIC) {
+  if (trip.userId !== userId && trip.visibility !== VISIBILITY.PUBLIC) {
     throw createError({ statusCode: 404, statusMessage: TRIP_NOT_FOUND });
   }
 
-  return trip;
+  // The single-trip read must reflect the derived status, not the raw stored
+  // column — otherwise a trip whose endDate has lapsed keeps rendering as
+  // ongoing/upcoming on its own detail page until the next write touches it
+  // (issue #291).
+  return { ...trip, status: deriveTripStatus(trip) };
 }

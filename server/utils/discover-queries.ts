@@ -18,6 +18,7 @@ import {
   VISIBILITY,
 } from "../db/schema";
 import { publiclyVisibleAuthorCondition } from "./publicVisibility";
+import { deriveTripStatus } from "./tripStatus";
 
 export type Database = ReturnType<typeof getDb>;
 
@@ -99,6 +100,11 @@ export async function fetchFeaturedTrips(
       id: trips.id,
       name: trips.name,
       status: trips.status,
+      // Selected only to derive the effective status below (see
+      // deriveTripStatus) — never part of the returned FeaturedTrip shape, so
+      // a stale "ongoing"/"upcoming" trip doesn't surface on explore once its
+      // endDate has lapsed (issue #291).
+      endDate: trips.endDate,
       ownerHandle: userPreferences.handle,
       ownerDisplayName: userPreferences.displayName,
       stopCount: sql<number>`(
@@ -118,7 +124,11 @@ export async function fetchFeaturedTrips(
     .limit(FEATURED_TRIP_LIMIT);
 
   return rows.map((row) => ({
-    ...row,
+    id: row.id,
+    name: row.name,
+    status: deriveTripStatus(row),
+    ownerHandle: row.ownerHandle,
+    ownerDisplayName: row.ownerDisplayName,
     stopCount: Number(row.stopCount),
   }));
 }

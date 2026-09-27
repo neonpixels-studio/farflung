@@ -109,6 +109,30 @@ describe("fetchFeaturedTrips", () => {
     expect(result[0]?.stopCount).toBe(3);
     expect(typeof result[0]?.stopCount).toBe("number");
   });
+
+  it("derives 'past' for a featured trip whose endDate has lapsed, even though it's stored as 'ongoing'", async () => {
+    const rawRows = [
+      {
+        id: "trip-3",
+        name: "Stale Trip",
+        status: "ongoing",
+        endDate: new Date("2020-01-01T00:00:00.000Z"),
+        ownerHandle: "elsa_far",
+        ownerDisplayName: "Elsa",
+        stopCount: "2",
+      },
+    ];
+
+    const chain = buildSelectChain(rawRows);
+    const database = chain as unknown as Database;
+
+    const result = await fetchFeaturedTrips(database);
+
+    expect(result[0]?.status).toBe("past");
+    // endDate is only fetched to derive status — it must never leak into the
+    // returned FeaturedTrip shape.
+    expect(result[0]).not.toHaveProperty("endDate");
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -52,3 +52,49 @@ export function isTripCountedAsActive(
   );
   return startOfDayAfterEndDate > now.getTime();
 }
+
+/**
+ * The effective status a read path should show for a trip: the stored value,
+ * unless the trip has fallen out of `isTripCountedAsActive` (an elapsed
+ * `endDate`, or an explicit "past"), in which case the derived status is
+ * always "past" regardless of what's stored.
+ *
+ * This is the same normalization index.post.ts and [id].patch.ts already
+ * apply at write time (see their `effectiveStatus`/`normalizeStaleStatus`
+ * logic) — factored out here so every *read* path (list/filter queries,
+ * single-trip lookups, search, explore, profile) can apply it too, instead of
+ * only getting a correct status until the next write touches the row (issue
+ * #291). Like `isTripCountedAsActive`, this only ever coerces a trip *toward*
+ * "past" — it never promotes "upcoming" to "ongoing" from `startDate`; this
+ * codebase has no such transition today.
+ */
+export function deriveTripStatus(
+  trip: TripStatusFields,
+  now: Date = new Date(),
+): TripStatusFields["status"] {
+  return isTripCountedAsActive(trip, now) ? trip.status : TRIP_STATUS.PAST;
+}
+
+/**
+ * The instant at/after which a trip's `endDate` counts as lapsed for "now" —
+ * i.e. the UTC start of today. A read path that filters at the SQL level
+ * (comparing the `end_date` column directly with `lt`, rather than loading
+ * rows into JS to call `isTripCountedAsActive`/`deriveTripStatus`) uses this
+ * to build a condition equivalent to "endDate's UTC calendar day is in the
+ * past" without re-deriving the calendar-day math independently.
+ *
+ * Equivalence with `isTripCountedAsActive`'s per-row check: that function
+ * treats a trip as lapsed once `Date.UTC(endYear, endMonth, endDate + 1) <=
+ * now`, i.e. once now's UTC calendar day is after endDate's. That is exactly
+ * "endDate < UTC start of now's calendar day" — a single cutoff instant every
+ * row's `endDate` can be compared against with a plain `<`, rather than a
+ * per-row cutoff derived from that row's own `endDate`. See
+ * server/api/trips/index.get.ts's status filter for the call site, and
+ * tests/server/utils/tripStatus.test.ts for the boundary cases this must
+ * agree with.
+ */
+export function lapsedEndDateCutoff(now: Date = new Date()): Date {
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+}

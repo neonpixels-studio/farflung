@@ -140,6 +140,27 @@ describe("searchTrips", () => {
 
     expect(result).toEqual([]);
   });
+
+  it("derives 'past' for a search result whose endDate has lapsed, even though it's stored as 'upcoming'", async () => {
+    const rawRows = [
+      {
+        id: "t-2",
+        name: "Stale Trip",
+        status: "upcoming",
+        endDate: new Date("2020-01-01T00:00:00.000Z"),
+      },
+    ];
+    const chain = makeQueryChain(rawRows);
+    mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
+
+    const result = await searchTrips(
+      mockGetDb() as unknown as ReturnType<typeof getDb>,
+      "user-1",
+      "%stale%",
+    );
+
+    expect(result).toEqual([{ id: "t-2", name: "Stale Trip", status: "past" }]);
+  });
 });
 
 describe("searchEntries", () => {
