@@ -8,6 +8,24 @@ import { DELETION_GRACE_PERIOD_DAYS } from "~/utils/accountDeletion";
 import { useTripsStore } from "~/stores/trips";
 import type { Trip } from "~/stores/trips";
 
+// Drives the account section's password-status copy. Defaults to null (Clerk
+// user not yet loaded); individual tests set `passwordEnabled` to cover the
+// "has a password" / "OAuth-only, no password" cases. Reset in beforeEach so
+// one test's value never bleeds into the next. Shaped like the subset of the
+// real Clerk user resource the page reads, so populateEmailFromClerk (which
+// also watches `user`) doesn't blow up on a partial mock.
+type MockClerkUser = {
+  passwordEnabled: boolean;
+  emailAddresses: { id: string; emailAddress: string }[];
+  primaryEmailAddressId: string | null;
+  imageUrl: string | null;
+};
+const clerkUserRef = ref<MockClerkUser | null>(null);
+vi.stubGlobal(
+  "useClerkUser",
+  vi.fn(() => ({ user: clerkUserRef })),
+);
+
 const DEFAULT_STATS_DATA = {
   placesCount: 34,
   countriesCount: 9,
@@ -283,6 +301,8 @@ describe("Settings page (/settings)", () => {
     const tripsStore = useTripsStore();
     tripsStore.tripList = [...DEFAULT_TRIPS];
     vi.spyOn(tripsStore, "fetchTrips").mockResolvedValue();
+
+    clerkUserRef.value = null;
   });
 
   it("renders without crashing and matches snapshot", async () => {
@@ -665,6 +685,55 @@ describe("Settings page (/settings)", () => {
     await wrapper.vm.$nextTick();
 
     expect(savePreferencesMock).not.toHaveBeenCalled();
+  });
+
+  it("shows no password-status line while the Clerk user hasn't loaded (no fabricated date)", () => {
+    const wrapper = mount(SettingsPage, globalConfig);
+
+    const passwordLabel = wrapper
+      .findAll(".opt-row .lbl")
+      .find((lbl) => lbl.find("b").text() === "Password");
+
+    expect(passwordLabel?.find("p").exists()).toBe(false);
+  });
+
+  it("shows an honest no-password message for an OAuth-only account, not a fabricated date", async () => {
+    clerkUserRef.value = {
+      passwordEnabled: false,
+      emailAddresses: [],
+      primaryEmailAddressId: null,
+      imageUrl: null,
+    };
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    const passwordLabel = wrapper
+      .findAll(".opt-row .lbl")
+      .find((lbl) => lbl.find("b").text() === "Password");
+
+    expect(passwordLabel?.find("p").text()).toBe(
+      "No password set — you sign in with a connected account.",
+    );
+  });
+
+  it("does not show a fabricated last-changed date when the account has a password", async () => {
+    clerkUserRef.value = {
+      passwordEnabled: true,
+      emailAddresses: [],
+      primaryEmailAddressId: null,
+      imageUrl: null,
+    };
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    const passwordLabel = wrapper
+      .findAll(".opt-row .lbl")
+      .find((lbl) => lbl.find("b").text() === "Password");
+
+    expect(passwordLabel?.find("p").text()).not.toMatch(/ago/i);
+    expect(passwordLabel?.find("p").text()).toBe(
+      "Change your password any time below.",
+    );
   });
 
   it("shows password error when passwords do not match", async () => {

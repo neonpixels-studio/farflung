@@ -137,7 +137,7 @@
             <div class="opt-row">
               <div class="lbl">
                 <b>Password</b>
-                <p>Last changed 3 months ago.</p>
+                <p v-if="passwordStatusMessage">{{ passwordStatusMessage }}</p>
               </div>
               <button
                 class="btn btn--outline btn--sm"
@@ -744,6 +744,14 @@ function populateFromPreferences(): void {
   mapStyle.value = preferences.value.defaultMapStyle ?? "outdoors";
 }
 
+// Declared here (ahead of the immediate watch below) rather than alongside
+// the rest of the avatar state further down — populateEmailFromClerk runs
+// synchronously as soon as the watch is registered when `user` is already
+// populated (e.g. Clerk's session was already loaded from an earlier page in
+// the same SPA session), which is before any `const` declared later in this
+// script has been initialized.
+const avatarUrl = ref<string | null>(null);
+
 function populateEmailFromClerk(): void {
   if (!user.value) {
     return;
@@ -762,6 +770,21 @@ watch(
   },
   { immediate: true },
 );
+
+// Clerk exposes whether a password exists (`passwordEnabled`) but not a
+// password-specific "last changed" timestamp — `user.updatedAt` bumps on
+// *any* profile change (name, avatar, etc.), so it can't stand in for one
+// without falsely implying a recent password change. Rather than fabricate
+// a date, surface only what's actually known: whether a password is set.
+const passwordStatusMessage = computed<string>(() => {
+  if (!user.value) {
+    return "";
+  }
+  if (!user.value.passwordEnabled) {
+    return "No password set — you sign in with a connected account.";
+  }
+  return "Change your password any time below.";
+});
 
 // Populate from defaults immediately (before the API call) so the form is not
 // blank on first render. After fetch resolves, repopulate with server data.
@@ -847,8 +870,7 @@ const passwordConfirm = ref("");
 const passwordMatchError = ref<string | null>(null);
 const passwordChangedSuccess = ref(false);
 
-// Avatar state
-const avatarUrl = ref<string | null>(null);
+// Avatar state (avatarUrl itself is declared earlier, see comment there)
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 
 // Account actions composable — split error refs so each section only shows
