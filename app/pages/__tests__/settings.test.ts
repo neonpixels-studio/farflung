@@ -36,10 +36,18 @@ function buildClerkUser(overrides: Partial<MockClerkUser> = {}): MockClerkUser {
   };
 }
 
-function findPasswordLabel(wrapper: ReturnType<typeof mount>) {
+// Scoped to the password row specifically (not just "the first .opt-row
+// .btn--outline in the document") so a future row that happens to render an
+// outline-style button earlier in the page (e.g. the billing section's
+// manage-subscription button on a paid plan) can never be mistaken for it.
+function findPasswordRow(wrapper: ReturnType<typeof mount>) {
   return wrapper
-    .findAll(".opt-row .lbl")
-    .find((label) => label.find("b").text() === "Password");
+    .findAll(".opt-row")
+    .find((row) => row.find(".lbl b").text() === "Password");
+}
+
+function findPasswordLabel(wrapper: ReturnType<typeof mount>) {
+  return findPasswordRow(wrapper)?.find(".lbl");
 }
 
 const DEFAULT_STATS_DATA = {
@@ -730,16 +738,22 @@ describe("Settings page (/settings)", () => {
   });
 
   it("keeps the password status reactive when the Clerk user resolves after mount", async () => {
-    clerkUserRef.value = null;
+    // clerkUserRef starts null via beforeEach — the Clerk user hasn't loaded yet.
     const wrapper = mount(SettingsPage, globalConfig);
 
     expect(findPasswordLabel(wrapper)?.find("p").exists()).toBe(false);
+    expect(findPasswordRow(wrapper)?.find(".btn--outline").text()).toBe(
+      "change password",
+    );
 
     clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
     await wrapper.vm.$nextTick();
 
     expect(findPasswordLabel(wrapper)?.find("p").text()).toBe(
       "Change your password any time below.",
+    );
+    expect(findPasswordRow(wrapper)?.find(".btn--outline").text()).toBe(
+      "change password",
     );
   });
 
@@ -748,9 +762,8 @@ describe("Settings page (/settings)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
     await wrapper.vm.$nextTick();
 
-    const changePasswordBtn = wrapper.find(".opt-row .btn--outline");
-    expect(changePasswordBtn.text()).toContain("set password");
-    expect(changePasswordBtn.text()).not.toContain("change password");
+    const changePasswordBtn = findPasswordRow(wrapper)?.find(".btn--outline");
+    expect(changePasswordBtn?.text()).toBe("set password");
   });
 
   it("shows password error when passwords do not match", async () => {
