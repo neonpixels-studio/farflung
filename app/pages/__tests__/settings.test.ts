@@ -26,6 +26,22 @@ vi.stubGlobal(
   vi.fn(() => ({ user: clerkUserRef })),
 );
 
+function buildClerkUser(overrides: Partial<MockClerkUser> = {}): MockClerkUser {
+  return {
+    passwordEnabled: true,
+    emailAddresses: [],
+    primaryEmailAddressId: null,
+    imageUrl: null,
+    ...overrides,
+  };
+}
+
+function findPasswordLabel(wrapper: ReturnType<typeof mount>) {
+  return wrapper
+    .findAll(".opt-row .lbl")
+    .find((label) => label.find("b").text() === "Password");
+}
+
 const DEFAULT_STATS_DATA = {
   placesCount: 34,
   countriesCount: 9,
@@ -690,50 +706,51 @@ describe("Settings page (/settings)", () => {
   it("shows no password-status line while the Clerk user hasn't loaded (no fabricated date)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
 
-    const passwordLabel = wrapper
-      .findAll(".opt-row .lbl")
-      .find((lbl) => lbl.find("b").text() === "Password");
-
-    expect(passwordLabel?.find("p").exists()).toBe(false);
+    expect(findPasswordLabel(wrapper)?.find("p").exists()).toBe(false);
   });
 
   it("shows an honest no-password message for an OAuth-only account, not a fabricated date", async () => {
-    clerkUserRef.value = {
-      passwordEnabled: false,
-      emailAddresses: [],
-      primaryEmailAddressId: null,
-      imageUrl: null,
-    };
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: false });
     const wrapper = mount(SettingsPage, globalConfig);
     await wrapper.vm.$nextTick();
 
-    const passwordLabel = wrapper
-      .findAll(".opt-row .lbl")
-      .find((lbl) => lbl.find("b").text() === "Password");
-
-    expect(passwordLabel?.find("p").text()).toBe(
+    expect(findPasswordLabel(wrapper)?.find("p").text()).toBe(
       "No password set — you sign in with a connected account.",
     );
   });
 
   it("does not show a fabricated last-changed date when the account has a password", async () => {
-    clerkUserRef.value = {
-      passwordEnabled: true,
-      emailAddresses: [],
-      primaryEmailAddressId: null,
-      imageUrl: null,
-    };
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
     const wrapper = mount(SettingsPage, globalConfig);
     await wrapper.vm.$nextTick();
 
-    const passwordLabel = wrapper
-      .findAll(".opt-row .lbl")
-      .find((lbl) => lbl.find("b").text() === "Password");
+    const statusText = findPasswordLabel(wrapper)?.find("p").text();
+    expect(statusText).not.toMatch(/ago/i);
+    expect(statusText).toBe("Change your password any time below.");
+  });
 
-    expect(passwordLabel?.find("p").text()).not.toMatch(/ago/i);
-    expect(passwordLabel?.find("p").text()).toBe(
+  it("keeps the password status reactive when the Clerk user resolves after mount", async () => {
+    clerkUserRef.value = null;
+    const wrapper = mount(SettingsPage, globalConfig);
+
+    expect(findPasswordLabel(wrapper)?.find("p").exists()).toBe(false);
+
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordLabel(wrapper)?.find("p").text()).toBe(
       "Change your password any time below.",
     );
+  });
+
+  it("offers to set (not change) a password for an OAuth-only account", async () => {
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: false });
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    const changePasswordBtn = wrapper.find(".opt-row .btn--outline");
+    expect(changePasswordBtn.text()).toContain("set password");
+    expect(changePasswordBtn.text()).not.toContain("change password");
   });
 
   it("shows password error when passwords do not match", async () => {

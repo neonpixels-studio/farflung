@@ -144,7 +144,7 @@
                 @click="togglePasswordFields"
               >
                 <AppIcon name="lock" :size="14" />
-                change password
+                {{ passwordActionLabel }}
               </button>
             </div>
             <div v-if="passwordChangedSuccess" class="account-field-success">
@@ -785,6 +785,15 @@ const passwordStatusMessage = computed<string>(() => {
   }
   return "Change your password any time below.";
 });
+
+// Mirrors passwordStatusMessage's passwordEnabled check so the button copy
+// never contradicts it (e.g. offering to "change" a password that, per the
+// message above, doesn't exist).
+const passwordActionLabel = computed<string>(() =>
+  user.value && !user.value.passwordEnabled
+    ? "set password"
+    : "change password",
+);
 
 // Populate from defaults immediately (before the API call) so the form is not
 // blank on first render. After fetch resolves, repopulate with server data.
