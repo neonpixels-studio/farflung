@@ -333,6 +333,53 @@ describe("Guide Detail page (/guides/[id])", () => {
     expect(wrapper.text()).not.toContain("try again");
   });
 
+  // #289: with `server: true`, the SSR pass always fetches anonymously, so a
+  // private guide's 404 could just mean this viewer isn't yet known to be its
+  // owner — regression coverage for #255, which this SSR change would
+  // otherwise undo for exactly this case.
+  it("keeps showing loading (not 'Guide not found') for an anonymous-looking 404 until the viewer's own auth resolves", async () => {
+    clerkLoadedRef.value = false;
+    clerkSignedInRef.value = false;
+    const guidesStore = useGuidesStore();
+    guidesStore.currentGuide = null;
+    guidesStore.guideNotFound = true;
+    guidesStore.guideError = null;
+
+    const wrapper = mount(GuideDetailPage, buildGlobalConfig(pinia));
+    expect(wrapper.text()).toContain("Loading guide…");
+    expect(wrapper.text()).not.toContain("Guide not found");
+
+    // Clerk resolves signed-out: the owner's authenticated retry (see the
+    // "does not fetch until Clerk resolves..." tests above) would have
+    // already replaced a genuinely-owned guide by now, so a still-404
+    // outcome at this point really does mean not found.
+    clerkLoadedRef.value = true;
+    await nextTick();
+
+    expect(wrapper.text()).toContain("Guide not found.");
+  });
+
+  it("still shows 'Guide not found' once the bootstrap grace period lapses, even if Clerk's script never resolves", async () => {
+    vi.useFakeTimers();
+    try {
+      clerkLoadedRef.value = false;
+      clerkSignedInRef.value = false;
+      const guidesStore = useGuidesStore();
+      guidesStore.currentGuide = null;
+      guidesStore.guideNotFound = true;
+      guidesStore.guideError = null;
+
+      const wrapper = mount(GuideDetailPage, buildGlobalConfig(pinia));
+      expect(wrapper.text()).toContain("Loading guide…");
+
+      await vi.advanceTimersByTimeAsync(CLERK_BOOTSTRAP_TIMEOUT_MS);
+
+      expect(wrapper.text()).toContain("Guide not found.");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("shows a placeholder when the guide has no body", () => {
     const guidesStore = useGuidesStore();
     guidesStore.currentGuide = { ...SAMPLE_GUIDE, body: null };

@@ -142,13 +142,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { DEFAULT_TRAVELER_NAME, formatHandle } from "~/utils/travelerLabels";
 import { SITE_NAME, useOgMeta } from "~/composables/useOgMeta";
-import {
-  CLERK_BOOTSTRAP_TIMEOUT_MS,
-  useClerkGatedFetch,
-} from "~/composables/useClerkGatedFetch";
+import { useClerkGatedFetch } from "~/composables/useClerkGatedFetch";
+import { useViewerAuthResolved } from "~/composables/useViewerAuthResolved";
 
 const openCommandPalette = inject<(() => void) | undefined>(
   "openCommandPalette",
@@ -166,12 +164,6 @@ const openCommandPalette = inject<(() => void) | undefined>(
 // owner viewing their own page and simply reflect `profile.isSelf` from the
 // API response.
 //
-// Note: the profile fetch below is client-only (server: false), so a crawler
-// that doesn't execute JS still only sees the SSR fallback title/description,
-// not the traveler's real name/bio — the same limitation trips/[id].vue and
-// guides/[id].vue already have; SSR-populating it is a separate, cross-page
-// gap, not something this fix (which only removes the anonymous-access
-// redirect) takes on.
 definePageMeta({ layout: "app" });
 
 const route = useRoute();
@@ -187,12 +179,12 @@ const {
   hasMoreTrips,
   guides,
   hasMoreGuides,
-  isLoading,
+  isLoading: rawIsLoading,
   followersLoading,
   followingLoading,
   tripsLoading,
   guidesLoading,
-  notFound,
+  notFound: rawNotFound,
   error,
   followersError,
   followingError,
@@ -233,16 +225,7 @@ const { gate: gateOnClerkLoad, retryGeneration } = useClerkGatedFetch(
 // button / sign-in prompts on raw isClerkLoaded alone would leave that viewer
 // at a permanent dead end on an otherwise-working page — mirror the fetch's
 // own bounded wait here so the prompts resolve on the same timeout instead.
-const clerkBootstrapTimedOut = ref(false);
-onMounted(() => {
-  const timeoutId = setTimeout(() => {
-    clerkBootstrapTimedOut.value = true;
-  }, CLERK_BOOTSTRAP_TIMEOUT_MS);
-  onUnmounted(() => clearTimeout(timeoutId));
-});
-const viewerAuthResolved = computed(
-  () => isClerkLoaded.value || clerkBootstrapTimedOut.value,
-);
+const { viewerAuthResolved } = useViewerAuthResolved(isClerkLoaded);
 
 // Guards against the render window during in-page navigation (u/A -> u/B):
 // the route id updates reactively before the fetch replaces `rawProfile`
@@ -254,6 +237,40 @@ const viewerAuthResolved = computed(
 const profile = computed(() =>
   rawProfile.value?.userId === userId.value ? rawProfile.value : null,
 );
+
+// notFound (from useProfile) is a plain alias, not a guarded computed: it's
+// already reset synchronously at the top of every fetchProfile() call (see
+// useProfile.ts), before any await, so it can't carry A's stale value into a
+// fetch already in flight for B the way `rawProfile` can.
+const notFound = rawNotFound;
+
+// isLoading intentionally overrides useProfile's own `rawIsLoading` with two
+// more reasons to keep showing the loading state rather than committing to a
+// (possibly wrong) rendered outcome:
+//
+// - A profile switch (u/A -> u/B): the route id updates reactively before
+//   fetchProfile(B) actually clears rawIsLoading/rawNotFound for it (that
+//   refetch fires from a watch, not synchronously with the id change) — so
+//   without this, that one-tick gap could render nothing (profile guarded to
+//   null above, but isLoading/notFound/error still A's stale settled values)
+//   instead of a loading state.
+// - The SSR-then-not-found case (#289, see the useAsyncData call below):
+//   withhold "Profile unavailable" until the viewer's own auth has resolved,
+//   so an owner's private profile doesn't flash not-found before their
+//   authenticated retry lands (would otherwise regress #255).
+function computeIsLoading(): boolean {
+  if (rawIsLoading.value) {
+    return true;
+  }
+  if (rawProfile.value && rawProfile.value.userId !== userId.value) {
+    return true;
+  }
+  if (rawNotFound.value && !viewerAuthResolved.value) {
+    return true;
+  }
+  return false;
+}
+const isLoading = computed(computeIsLoading);
 
 const displayName = computed(
   () =>
@@ -322,23 +339,21 @@ async function onToggleFollow(): Promise<void> {
 // the four list states are `useState` (see useProfile.ts), not plain refs,
 // specifically so this SSR-fetched data survives hydration instead of
 // resetting, and so an anonymous visitor's browser never duplicates the
-// request the server already made. Gated on Clerk's bootstrap (#255)
-// client-side so the owner's first request already carries a token instead
-// of reading their own private profile anonymously (and 404ing) first — an
-// anonymous visitor is unaffected, since the gate falls back to an anonymous
-// fetch after CLERK_BOOTSTRAP_TIMEOUT_MS regardless. Watches retryGeneration
-// too so a session resolving (or clearing) after the first fetch re-issues it
-// with the new auth state, not just on route-param (profile-to-profile)
-// navigation.
-// Resolves to `true` (never `undefined`): with `server: true` below, Nuxt's
-// hydration reuses the SSR-fetched payload only when useAsyncData's `data` is
-// not `undefined` — an `undefined`-resolving handler looks identical to "not
-// fetched yet" and gets silently re-run on the client, duplicating the
-// request every anonymous visitor's browser just made the server also make.
-// `Promise.all` already resolves to a (truthy, defined) array, so this isn't
-// currently reachable in practice, but making it explicit means it stays
-// correct even if one of these fetchers' return values ever changes.
-function fetchProfileDetail(): Promise<boolean> {
+// request the server already made.
+//
+// Client-side, still gated on Clerk's bootstrap (#255) so a signed-in
+// viewer's first *client* request already carries a token rather than
+// re-reading anonymously first — but the SSR pass above always fetches
+// anonymously regardless (Clerk's server middleware is disabled fleet-wide,
+// see useClerkGatedFetch), so a private profile's own owner can still see an
+// anonymous "not found" baked into the initial HTML until the authenticated
+// client retry lands. `isLoading` below deliberately keeps showing the
+// loading state (never a premature "Profile unavailable") through that
+// window rather than trusting the SSR pass's not-found outcome outright.
+// Watches retryGeneration too so a session resolving (or clearing) after the
+// first fetch re-issues it with the new auth state, not just on route-param
+// (profile-to-profile) navigation.
+function fetchProfileDetail(): Promise<true> {
   return gateOnClerkLoad(() =>
     Promise.all([
       fetchProfile(userId.value),
@@ -346,7 +361,7 @@ function fetchProfileDetail(): Promise<boolean> {
       fetchFollowingList(userId.value),
       fetchTrips(userId.value),
       fetchGuides(userId.value),
-    ]).then(() => true),
+    ]),
   );
 }
 

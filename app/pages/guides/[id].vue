@@ -66,6 +66,7 @@ import { useGuidesStore } from "~/stores/guides";
 import type { GuideVisibility } from "~/stores/guides";
 import { formatAuthorByline } from "~/utils/travelerLabels";
 import { useClerkGatedFetch } from "~/composables/useClerkGatedFetch";
+import { useViewerAuthResolved } from "~/composables/useViewerAuthResolved";
 import { SITE_NAME, useOgMeta } from "~/composables/useOgMeta";
 
 // No auth middleware: a public guide must open for anonymous visitors following
@@ -106,6 +107,7 @@ const { isLoaded: isClerkLoaded, isSignedIn } = useClerkAuth();
 const canRetryAuthenticated = computed(
   () => isClerkLoaded.value && !!isSignedIn.value,
 );
+const { viewerAuthResolved } = useViewerAuthResolved(isClerkLoaded);
 
 // Gated on Clerk's bootstrap (#255) so an owner's first request already
 // carries a token instead of 404ing anonymously first — see
@@ -115,16 +117,8 @@ const { gate: gateOnClerkLoad, retryGeneration } = useClerkGatedFetch(
   canRetryAuthenticated,
 );
 
-// Resolves to `true` (never `undefined`) rather than passing fetchGuideById's
-// own `Promise<void>` straight through: with `server: true` below, Nuxt's
-// hydration reuses the SSR-fetched payload only when useAsyncData's `data` is
-// not `undefined` — an `undefined`-resolving handler looks identical to "not
-// fetched yet" and gets silently re-run on the client, duplicating the
-// request every anonymous visitor's browser just made the server also make.
-function fetchGuideDetail(): Promise<boolean> {
-  return gateOnClerkLoad(() =>
-    guidesStore.fetchGuideById(guideId.value).then(() => true),
-  );
+function fetchGuideDetail(): Promise<true> {
+  return gateOnClerkLoad(() => guidesStore.fetchGuideById(guideId.value));
 }
 
 // `server: true`: also runs during SSR, so a non-JS crawler following a
@@ -154,9 +148,23 @@ async function onRetryLoad(): Promise<void> {
 const hasResolvedFetch = computed(
   () => fetchStatus.value === "success" || fetchStatus.value === "error",
 );
-const isLoading = computed(
-  () => guidesStore.isLoadingGuide || !hasResolvedFetch.value,
-);
+// A second reason to keep loading, beyond the fetch simply not having
+// resolved yet: with `server: true` above, the SSR pass (#289) always
+// fetches anonymously, so a private guide's "not found" from that pass could
+// just mean this viewer isn't yet known to be its owner — withhold "Guide
+// not found" until the viewer's own auth has resolved, so an owner's private
+// guide doesn't flash not-found before their authenticated retry lands
+// (would otherwise regress #255).
+function computeIsLoading(): boolean {
+  if (guidesStore.isLoadingGuide || !hasResolvedFetch.value) {
+    return true;
+  }
+  if (!guide.value && !viewerAuthResolved.value) {
+    return true;
+  }
+  return false;
+}
+const isLoading = computed(computeIsLoading);
 
 const visibilityTagClass = computed(() =>
   guide.value ? VISIBILITY_TAG_CLASS[guide.value.visibility] : "",

@@ -373,6 +373,60 @@ describe("profile page", () => {
     expect(wrapper.find(".phead").exists()).toBe(false);
   });
 
+  // #289: with `server: true`, the SSR pass always fetches anonymously, so a
+  // private profile's "not found" could just mean this viewer isn't yet known
+  // to be its owner — regression coverage for #255, which this SSR change
+  // would otherwise undo for exactly this case.
+  it("keeps showing loading (not 'Profile unavailable') for an anonymous-looking not-found until the viewer's own auth resolves", async () => {
+    clerkLoadedRef.value = false;
+    clerkSignedInRef.value = false;
+    notFound.value = true;
+
+    const wrapper = mount(ProfilePage, globalConfig);
+    expect(wrapper.text()).toContain("Loading profile…");
+    expect(wrapper.text()).not.toContain("Profile unavailable");
+
+    clerkLoadedRef.value = true;
+    await nextTick();
+
+    expect(wrapper.text()).toContain("Profile unavailable");
+  });
+
+  it("still shows 'Profile unavailable' once the bootstrap grace period lapses, even if Clerk's script never resolves", async () => {
+    vi.useFakeTimers();
+    try {
+      clerkLoadedRef.value = false;
+      clerkSignedInRef.value = false;
+      notFound.value = true;
+
+      const wrapper = mount(ProfilePage, globalConfig);
+      expect(wrapper.text()).toContain("Loading profile…");
+
+      await vi.advanceTimersByTimeAsync(CLERK_BOOTSTRAP_TIMEOUT_MS);
+
+      expect(wrapper.text()).toContain("Profile unavailable");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // `profile` (now a `useState`-backed single shared slot, see useProfile.ts,
+  // #289) can otherwise briefly hold the previous traveler's data under the
+  // new URL: the route id updates reactively before fetchProfile(newId)
+  // actually clears it (that refetch fires from a watch, not synchronously
+  // with the id change).
+  it("keeps loading (never flashes the previous traveler's data) right after navigating to a different profile", async () => {
+    profile.value = { ...SAMPLE_PROFILE };
+    const wrapper = mount(ProfilePage, globalConfig);
+    expect(wrapper.text()).toContain("Elsa");
+
+    routeParams.id = "user-2";
+    await nextTick();
+
+    expect(wrapper.text()).toContain("Loading profile…");
+    expect(wrapper.text()).not.toContain("Elsa");
+  });
+
   it("offers a sign-in link in the unavailable state for a signed-out viewer (#279)", () => {
     // Covers the profile owner landing on their own private profile while
     // signed out (an expired session, a fresh browser) — now reachable since

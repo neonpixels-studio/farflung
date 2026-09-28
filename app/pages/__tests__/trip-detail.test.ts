@@ -332,6 +332,51 @@ describe("Trip Detail page (/trips/[id])", () => {
     expect(wrapper.find(".alert-stub").exists()).toBe(false);
   });
 
+  // #289: with `server: true`, the SSR pass always fetches anonymously, so a
+  // private trip's 404 could just mean this viewer isn't yet known to be its
+  // owner — regression coverage for #255, which this SSR change would
+  // otherwise undo for exactly this case.
+  it("keeps showing loading (not 'Trip not found') for an anonymous-looking 404 until the viewer's own auth resolves", async () => {
+    clerkLoadedRef.value = false;
+    clerkSignedInRef.value = false;
+    clerkUserRef.value = null;
+    const tripsStore = useTripsStore();
+    tripsStore.currentTripDetail = null;
+    tripsStore.detailNotFound = true;
+    tripsStore.detailError = null;
+
+    const wrapper = mount(TripDetailPage, buildGlobalConfig(pinia));
+    expect(wrapper.find(".loading-state").exists()).toBe(true);
+    expect(wrapper.text()).not.toContain("Trip not found");
+
+    clerkLoadedRef.value = true;
+    await nextTick();
+
+    expect(wrapper.text()).toContain("Trip not found");
+  });
+
+  it("still shows 'Trip not found' once the bootstrap grace period lapses, even if Clerk's script never resolves", async () => {
+    vi.useFakeTimers();
+    try {
+      clerkLoadedRef.value = false;
+      clerkSignedInRef.value = false;
+      clerkUserRef.value = null;
+      const tripsStore = useTripsStore();
+      tripsStore.currentTripDetail = null;
+      tripsStore.detailNotFound = true;
+      tripsStore.detailError = null;
+
+      const wrapper = mount(TripDetailPage, buildGlobalConfig(pinia));
+      expect(wrapper.find(".loading-state").exists()).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(CLERK_BOOTSTRAP_TIMEOUT_MS);
+
+      expect(wrapper.text()).toContain("Trip not found");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("shows a retryable error state (not 'Trip not found') on a 5xx/network failure", () => {
     const tripsStore = useTripsStore();
     tripsStore.currentTripDetail = null;

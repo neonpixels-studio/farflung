@@ -23,7 +23,10 @@ describe("useClerkGatedFetch", () => {
     // (see guides/[id].vue and trips/[id].vue) must not be broken by an
     // unnecessary await here.
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    return expect(resultPromise).resolves.toBe("result");
+    // gate()'s own promise always resolves `true`, never fetchFn's own
+    // resolved value — see the "always resolves to a defined, non-undefined
+    // value" test below for why.
+    return expect(resultPromise).resolves.toBe(true);
   });
 
   it("does not call fetchFn while Clerk has not resolved yet", () => {
@@ -48,7 +51,7 @@ describe("useClerkGatedFetch", () => {
     await nextTick();
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    await expect(resultPromise).resolves.toBe("result");
+    await expect(resultPromise).resolves.toBe(true);
   });
 
   it("fires fetchFn anonymously after the bootstrap grace period if isClerkLoaded never resolves", async () => {
@@ -64,7 +67,7 @@ describe("useClerkGatedFetch", () => {
     await vi.advanceTimersByTimeAsync(CLERK_BOOTSTRAP_TIMEOUT_MS);
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    await expect(resultPromise).resolves.toBe("result");
+    await expect(resultPromise).resolves.toBe(true);
   });
 
   it("does not fire the grace-period fallback once isClerkLoaded resolves first", async () => {
@@ -305,5 +308,69 @@ describe("useClerkGatedFetch", () => {
     await vi.advanceTimersByTimeAsync(CLERK_BOOTSTRAP_TIMEOUT_MS);
 
     await expect(resultPromise).rejects.toThrow("network error");
+  });
+
+  // #289: with `server: true`, Nuxt only reuses an SSR-fetched payload on
+  // hydration (instead of silently re-running the handler client-side and
+  // duplicating the request every visitor's browser just watched the server
+  // make) when useAsyncData's own `data` is not `undefined`. Centralizing
+  // this in gate() itself, rather than trusting every caller to remember
+  // `.then(() => true)`, is what this test protects.
+  it("always resolves to true, regardless of what fetchFn itself resolves to", async () => {
+    const isClerkLoaded = ref(true);
+    const canRetryAuthenticated = ref(true);
+    const { gate } = useClerkGatedFetch(isClerkLoaded, canRetryAuthenticated);
+
+    await expect(gate(() => Promise.resolve(undefined))).resolves.toBe(true);
+    await expect(gate(() => Promise.resolve(null))).resolves.toBe(true);
+    await expect(gate(() => Promise.resolve("some data"))).resolves.toBe(true);
+  });
+
+  // #289: `import.meta.server` is fixed per-module at build time by Nuxt's
+  // own macro replacement, so it can't be toggled from this test file — the
+  // injectable `isServer` param exists specifically so this branch (the
+  // mechanism that lets a non-JS crawler's SSR pass see real page data
+  // instead of hanging for CLERK_BOOTSTRAP_TIMEOUT_MS) has real coverage.
+  it("fires fetchFn immediately when isServer is true, without waiting for isClerkLoaded or scheduling a timer", () => {
+    const isClerkLoaded = ref(false);
+    const canRetryAuthenticated = ref(false);
+    const { gate } = useClerkGatedFetch(
+      isClerkLoaded,
+      canRetryAuthenticated,
+      true,
+    );
+    const fetchFn = vi.fn().mockResolvedValue("result");
+
+    vi.useFakeTimers();
+    const resultPromise = gate(fetchFn);
+
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    return expect(resultPromise).resolves.toBe(true);
+  });
+
+  // Regression guard for the retry-watch fallback: a plain (non-immediate)
+  // `watch()` only fires on a *change*, so if the viewer's auth has already
+  // resolved by the time the fallback's nextTick runs (e.g. a warm Clerk
+  // session), there is no further transition left for it to catch — without
+  // the immediate check, nothing would ever bump retryGeneration and the
+  // owner would be stuck on whatever the (anonymous) SSR pass rendered.
+  it("immediately triggers a retry if canRetryAuthenticated is already true when the fallback runs", async () => {
+    const isClerkLoaded = ref(true);
+    const isSignedIn = ref(true);
+    const canRetryAuthenticated = computed(
+      () => isClerkLoaded.value && isSignedIn.value,
+    );
+    const { retryGeneration } = useClerkGatedFetch(
+      isClerkLoaded,
+      canRetryAuthenticated,
+    );
+
+    // gate() is deliberately never called — simulating the SSR-payload-reuse
+    // case the fallback targets, but where Clerk had *already* resolved
+    // (signed in) by the time the client mounted.
+    await nextTick();
+
+    expect(retryGeneration.value).toBe(1);
   });
 });

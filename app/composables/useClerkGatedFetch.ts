@@ -25,31 +25,38 @@
  * that produced the gate's own (already-correct) request never also
  * increments `retryGeneration` and triggers a redundant duplicate.
  *
- * With `server: true` (#289), `gate()` also runs during SSR, where it always
- * resolves immediately and anonymously (see the import.meta.server branch
- * below). Nuxt then reuses that SSR-fetched payload on hydration and never
- * re-invokes the handler — so `gate()` itself never runs client-side for that
- * initial load, and nothing would ever start watching `canRetryAuthenticated`
- * for a signed-in owner's retry. The one-time `nextTick` fallback below
- * covers exactly that gap: if nothing called `gate()` by the end of the
- * current synchronous setup, it starts the retry watch itself.
+ * `gate()`'s own promise always resolves to `true` (never passes through
+ * whatever `fetchFn` itself resolved to, including `undefined`): with
+ * `server: true` (#289), Nuxt only reuses an SSR-fetched payload on
+ * hydration — instead of silently re-running the handler client-side and
+ * duplicating the request every visitor's browser just watched the server
+ * make — when useAsyncData's own `data` is not `undefined`. Centralizing
+ * this here means every caller gets it for free, rather than each of the
+ * three pages using this composable needing its own `.then(() => true)`.
  *
- * That hydration-reuse only happens when useAsyncData's own `data` resolves
- * to something other than `undefined` (Nuxt falls back to re-running the
- * handler client-side otherwise) — every caller's fetch function here must
- * resolve to a defined value (e.g. `.then(() => true)`), never bare
- * `Promise<void>`, or the "reuse" half of this whole scheme silently doesn't
- * happen and every visitor's browser repeats the request the server already
- * made. Because of that same guarantee, `gate()` is deterministically never
- * called client-side during that reused-payload load (not merely usually, in
- * a timing-dependent way) — the `nextTick` fallback's `hasGateRun` check is
- * therefore race-free, not a best-effort heuristic.
+ * With `server: true`, `gate()` also runs during SSR, where it always
+ * resolves immediately and anonymously (see the `isServer` branch below).
+ * Because of the guarantee above, that SSR-fetched payload is always reused
+ * on hydration, so `gate()` is deterministically never called client-side
+ * during that initial load — meaning nothing would ever start watching
+ * `canRetryAuthenticated` for a signed-in owner's retry. The one-time
+ * `nextTick` fallback below covers exactly that gap: if nothing called
+ * `gate()` by the end of the current synchronous setup, it starts the retry
+ * watch itself — and if the viewer's auth has *already* resolved by then
+ * (e.g. a warm Clerk session), it fires the retry immediately rather than
+ * waiting on a `canRetryAuthenticated` change event that will never come
+ * (there's nothing left to transition from).
  */
 export const CLERK_BOOTSTRAP_TIMEOUT_MS = 2000;
 
 export function useClerkGatedFetch(
   isClerkLoaded: Ref<boolean>,
   canRetryAuthenticated: Ref<boolean> | ComputedRef<boolean>,
+  // Defaults to the real compile-time flag. Overridable so a test can
+  // exercise the server fast-path directly: import.meta.server is fixed
+  // per-module at build time by Nuxt's own macro replacement and can't be
+  // toggled from a test file importing this module.
+  isServer: boolean = import.meta.server,
 ) {
   // Every withheld gate() call registers its timer/watch pair here so a
   // component teardown — or a newer gate() call superseding an older one
@@ -101,11 +108,18 @@ export function useClerkGatedFetch(
       return;
     }
     startWatchingForRetries();
+    // The watch above only fires on a *change* — if the viewer's auth has
+    // already resolved by this point (a warm/fast Clerk session), there is
+    // no further transition left to catch, so nothing would ever trigger the
+    // authenticated retry the owner needs. Fire it once, directly, instead.
+    if (canRetryAuthenticated.value) {
+      retryGeneration.value += 1;
+    }
   });
 
   function gate<FetchResult>(
     fetchFn: () => Promise<FetchResult>,
-  ): Promise<FetchResult> {
+  ): Promise<true> {
     hasGateRun = true;
     pendingCleanups.forEach((cleanup) => cleanup());
 
@@ -119,16 +133,16 @@ export function useClerkGatedFetch(
     // branch would eventually produce anyway, just without the wait — this
     // is what lets a non-JS crawler's SSR pass see real per-page data instead
     // of the generic fallback (#289).
-    if (import.meta.server) {
-      return fetchFn();
+    if (isServer) {
+      return fetchFn().then(() => true);
     }
 
     if (isClerkLoaded.value) {
       startWatchingForRetries();
-      return fetchFn();
+      return fetchFn().then(() => true);
     }
 
-    return new Promise<FetchResult>((resolve, reject) => {
+    return new Promise<true>((resolve, reject) => {
       const cleanup = (): void => {
         clearTimeout(timeoutId);
         stopWatchingClerkLoaded();
@@ -138,7 +152,7 @@ export function useClerkGatedFetch(
       const settle = (): void => {
         cleanup();
         startWatchingForRetries();
-        fetchFn().then(resolve, reject);
+        fetchFn().then(() => resolve(true), reject);
       };
 
       const timeoutId = setTimeout(settle, CLERK_BOOTSTRAP_TIMEOUT_MS);
