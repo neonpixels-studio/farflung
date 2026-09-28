@@ -10,6 +10,7 @@ const EMPTY_RESULTS: SearchResults = {
   entries: [],
   guides: [],
   people: [],
+  tags: [],
 };
 
 function isValidQuery(value: unknown): value is string {

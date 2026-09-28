@@ -17,6 +17,7 @@ const mockResults = ref({
   entries: [],
   guides: [],
   people: [],
+  tags: [],
 });
 const mockIsLoading = ref(false);
 const mockError = ref<string | null>(null);
@@ -53,6 +54,7 @@ describe("AppCommandPalette", () => {
       entries: [],
       guides: [],
       people: [],
+      tags: [],
     };
     mockIsLoading.value = false;
     mockError.value = null;
@@ -160,6 +162,7 @@ describe("AppCommandPalette", () => {
         entries: [],
         guides: [],
         people: [],
+        tags: [],
       };
     });
 
@@ -186,6 +189,7 @@ describe("AppCommandPalette", () => {
         entries: [],
         guides: [],
         people: [],
+        tags: [],
       };
     });
 
@@ -222,6 +226,7 @@ describe("AppCommandPalette", () => {
         entries: [],
         guides: [],
         people: [],
+        tags: [],
       };
     });
 
@@ -253,6 +258,7 @@ describe("AppCommandPalette", () => {
         entries: [],
         guides: [],
         people: [],
+        tags: [],
       };
     });
 
@@ -283,6 +289,7 @@ describe("AppCommandPalette", () => {
         entries: [],
         guides: [],
         people: [],
+        tags: [],
       };
     });
 
@@ -307,6 +314,7 @@ describe("AppCommandPalette", () => {
         entries: [],
         guides: [],
         people: [],
+        tags: [],
       };
     });
 
@@ -342,6 +350,7 @@ describe("AppCommandPalette", () => {
         entries: [],
         guides: [],
         people: [],
+        tags: [],
       };
     });
 
@@ -374,6 +383,7 @@ describe("AppCommandPalette", () => {
           },
         ],
         people: [],
+        tags: [],
       };
     });
 
@@ -386,6 +396,41 @@ describe("AppCommandPalette", () => {
       .find((group) => group.find(".cmdk__glabel").text() === "Guides");
     expect(guidesGroup).toBeDefined();
     expect(guidesGroup?.find(".cmdk__t").text()).toContain("48 hours in Kyoto");
+  });
+
+  it("renders the Tags group when API returns tag results", async () => {
+    const wrapper = mount(AppCommandPalette, {
+      props: { open: true },
+      ...globalConfig,
+    });
+
+    mockSearch.mockImplementation(() => {
+      mockResults.value = {
+        places: [],
+        trips: [],
+        entries: [],
+        guides: [],
+        people: [],
+        tags: [
+          {
+            id: "tag-1",
+            title: "#hiking",
+            icon: "tag",
+            href: "/journal?tag=tag-1&tagName=hiking",
+          },
+        ],
+      };
+    });
+
+    await wrapper.find(".cmdk__input").setValue("hiking");
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    const tagsGroup = wrapper
+      .findAll(".cmdk__group")
+      .find((group) => group.find(".cmdk__glabel").text() === "Tags");
+    expect(tagsGroup).toBeDefined();
+    expect(tagsGroup?.find(".cmdk__t").text()).toContain("#hiking");
   });
 
   it("shows empty state when query is set but API returns no results", async () => {

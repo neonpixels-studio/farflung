@@ -7,6 +7,8 @@ import {
   guides,
   users,
   userPreferences,
+  tags,
+  entryTags,
 } from "../db/schema";
 import { publiclyVisibleAuthorCondition } from "./publicVisibility";
 
@@ -42,12 +44,18 @@ export interface PersonResult {
   handle: string | null;
 }
 
+export interface TagResult {
+  id: string;
+  name: string;
+}
+
 export interface SearchResults {
   places: PlaceResult[];
   trips: TripResult[];
   entries: EntryResult[];
   guides: GuideResult[];
   people: PersonResult[];
+  tags: TagResult[];
 }
 
 function buildSearchPattern(query: string): string {
@@ -169,6 +177,25 @@ export async function searchPeople(
     .limit(SEARCH_RESULT_LIMIT);
 }
 
+// Tags are a global table (not user-owned), so results are scoped to the
+// caller by joining through entry_tags -> entries and filtering on
+// entries.userId — mirroring how searchPlaces/searchTrips/searchEntries scope
+// their own user-owned tables. selectDistinct collapses the join back down to
+// one row per tag even when a tag is attached to many of the user's entries.
+export async function searchTags(
+  database: ReturnType<typeof getDb>,
+  userId: string,
+  pattern: string,
+): Promise<TagResult[]> {
+  return database
+    .selectDistinct({ id: tags.id, name: tags.name })
+    .from(tags)
+    .innerJoin(entryTags, eq(entryTags.tagId, tags.id))
+    .innerJoin(entries, eq(entryTags.entryId, entries.id))
+    .where(and(eq(entries.userId, userId), ilike(tags.name, pattern)))
+    .limit(SEARCH_RESULT_LIMIT);
+}
+
 export async function runSearch(
   userId: string,
   rawQuery: string,
@@ -176,13 +203,14 @@ export async function runSearch(
   const database = getDb();
   const pattern = buildSearchPattern(rawQuery);
 
-  const [placesRows, tripsRows, entriesRows, guidesRows, peopleRows] =
+  const [placesRows, tripsRows, entriesRows, guidesRows, peopleRows, tagsRows] =
     await Promise.all([
       searchPlaces(database, userId, pattern),
       searchTrips(database, userId, pattern),
       searchEntries(database, userId, pattern),
       searchGuides(database, userId, pattern),
       searchPeople(database, pattern),
+      searchTags(database, userId, pattern),
     ]);
 
   return {
@@ -191,5 +219,6 @@ export async function runSearch(
     entries: entriesRows,
     guides: guidesRows,
     people: peopleRows,
+    tags: tagsRows,
   };
 }

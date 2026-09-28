@@ -59,6 +59,7 @@ export type EditEntryHandler = (entry: Entry) => void;
 export interface FetchEntriesFilters {
   tripId?: string;
   placeId?: string;
+  tagId?: string;
   tab?: "timeline" | "by-trip" | "photos";
 }
 
@@ -83,6 +84,7 @@ function buildEntriesQuery(
   const paramPairs: FilterParam[] = [
     ["tripId", filters?.tripId],
     ["placeId", filters?.placeId],
+    ["tagId", filters?.tagId],
     ["tab", filters?.tab],
     ["page", String(page)],
   ];
@@ -177,6 +179,20 @@ export const useEntriesStore = defineStore("entries", () => {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Walks /api/entries?tagId=... via the same page-walking helper as
+  // fetchEntries, but returns the list instead of replacing the store's main
+  // `entries` (which powers the Timeline/By-trip/Photos tabs over the user's
+  // full history). Lets a tag-filtered view live alongside those tabs without
+  // requiring a full refetch when the filter is cleared.
+  //
+  // Deliberately does not touch the shared `error` ref: it's a side query
+  // for one filtered view, not the main entries load, so a failure here must
+  // not bleed into (or silently clear) the main feed's error state once the
+  // filter is cleared. The caller owns presenting this failure.
+  async function fetchEntriesByTag(tagId: string): Promise<Entry[]> {
+    return fetchAllEntriesPages({ tagId });
   }
 
   async function fetchEntry(id: string): Promise<Entry> {
@@ -279,6 +295,7 @@ export const useEntriesStore = defineStore("entries", () => {
     isLoading,
     error,
     fetchEntries,
+    fetchEntriesByTag,
     fetchEntry,
     createEntry,
     updateEntry,

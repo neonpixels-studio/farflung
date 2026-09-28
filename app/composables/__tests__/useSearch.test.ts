@@ -15,6 +15,7 @@ const EMPTY_GROUPS = {
   entries: [],
   guides: [],
   people: [],
+  tags: [],
 };
 const DEBOUNCE_MS = 250;
 
@@ -38,6 +39,7 @@ const SAMPLE_API_RESPONSE = {
       handle: "elsa_far",
     },
   ],
+  tags: [{ id: "tag-1", name: "hiking" }],
 };
 
 async function searchAndFlush(
@@ -218,6 +220,19 @@ describe("useSearch", () => {
     expect(guide.title).toBe("48 hours in Kyoto");
     expect(guide.icon).toBe("layers");
     expect(guide.href).toBe("/guides");
+  });
+
+  it("maps tags to SearchItems with tag icon, #name title, and a journal href carrying the tag filter", async () => {
+    mockApiFetch.mockResolvedValue(SAMPLE_API_RESPONSE);
+    const { search, results } = useSearch();
+
+    await searchAndFlush(search, "hiking");
+
+    const tag = results.value.tags[0];
+    expect(tag.id).toBe("tag-1");
+    expect(tag.title).toBe("#hiking");
+    expect(tag.icon).toBe("tag");
+    expect(tag.href).toBe("/journal?tag=tag-1&tagName=hiking");
   });
 
   it("maps people to SearchItems with user icon, @handle title, and profile href", async () => {

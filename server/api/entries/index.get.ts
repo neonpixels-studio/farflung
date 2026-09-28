@@ -18,7 +18,11 @@ function resolveTab(value: unknown): Tab {
   return "timeline";
 }
 
-function buildFilters(userId: string, query: Record<string, unknown>): SQL[] {
+function buildFilters(
+  database: ReturnType<typeof getDb>,
+  userId: string,
+  query: Record<string, unknown>,
+): SQL[] {
   const filters: SQL[] = [eq(entries.userId, userId)];
 
   const tripId = query.tripId;
@@ -29,6 +33,24 @@ function buildFilters(userId: string, query: Record<string, unknown>): SQL[] {
   const placeId = query.placeId;
   if (typeof placeId === "string" && placeId.trim() !== "") {
     filters.push(eq(entries.placeId, placeId.trim()));
+  }
+
+  const tagId = query.tagId;
+  if (typeof tagId === "string" && tagId.trim() !== "") {
+    // Filters via a subquery rather than materializing matching ids into an
+    // array first — a popular tag could otherwise produce an `IN (...)` list
+    // large enough to hit Postgres's bind-parameter limit. This is the "all
+    // entries for tag X" query the entry_tags_tag_id_idx index was added to
+    // support (see server/db/schema.ts), which nothing previously called.
+    filters.push(
+      inArray(
+        entries.id,
+        database
+          .select({ id: entryTags.entryId })
+          .from(entryTags)
+          .where(eq(entryTags.tagId, tagId.trim())),
+      ),
+    );
   }
 
   return filters;
@@ -111,7 +133,7 @@ export default defineEventHandler(async (event) => {
 
   const tab = resolveTab(query.tab);
   const page = parsePageParam(query.page);
-  const filters = buildFilters(userId, query);
+  const filters = buildFilters(database, userId, query);
 
   if (tab === "photos") {
     const entryIdsWithPhotos = await fetchEntryIdsWithPhotos(database, userId);

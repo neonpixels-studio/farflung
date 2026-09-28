@@ -370,6 +370,7 @@ const heroSearchResultGroups = computed(() => ({
   entries: { label: "Journal", items: heroSearchResults.value.entries },
   guides: { label: "Guides", items: heroSearchResults.value.guides },
   people: { label: "People", items: heroSearchResults.value.people },
+  tags: { label: "Tags", items: heroSearchResults.value.tags },
 }));
 
 const hasHeroSearchResults = computed(() =>
