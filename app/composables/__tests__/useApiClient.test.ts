@@ -73,6 +73,24 @@ describe("useApiClient", () => {
     expect(calledHeaders.get("Authorization")).toBeNull();
   });
 
+  // #289: getToken.value is a real function reference during SSR (Clerk's
+  // server middleware is disabled fleet-wide, but that doesn't make the ref
+  // itself falsy) — *calling* it there never resolves, since Clerk has no
+  // server context to resolve a token against. This hung every SSR request
+  // to a guide/trip/profile detail page end-to-end before this guard was
+  // added. Asserting getToken itself was never called (not just that the
+  // header ends up empty) is what actually proves the hang is avoided.
+  it("never calls getToken server-side, even when it's a real function", async () => {
+    mockGetToken.mockResolvedValue("test-token");
+    const { apiFetch } = useApiClient(true);
+
+    await apiFetch("/api/health");
+
+    expect(mockGetToken).not.toHaveBeenCalled();
+    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    expect(calledHeaders.get("Authorization")).toBeNull();
+  });
+
   it("preserves caller-supplied headers alongside the injected token", async () => {
     mockGetToken.mockResolvedValue("test-token");
     const { apiFetch } = useApiClient();
