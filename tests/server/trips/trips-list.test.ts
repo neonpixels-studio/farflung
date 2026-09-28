@@ -481,6 +481,13 @@ describe("GET /api/trips", () => {
       // reference, not a condition built from another spy).
       expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
       expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
+      // The isNotNull guard must specifically be ANDed together with the lt
+      // check (not dropped) — a bare `lt(endDate, cutoff)` would evaluate to
+      // SQL NULL (not false) for a row with no endDate, silently excluding it.
+      expect(and).toHaveBeenCalledWith(
+        realDrizzle.isNotNull(trips.endDate),
+        realDrizzle.lt(trips.endDate, lapsedEndDateCutoff(NOW)),
+      );
       expect(or).toHaveBeenCalledWith(
         expectedPastCondition,
         expectedLapsedCondition,
@@ -488,28 +495,41 @@ describe("GET /api/trips", () => {
       expect(not).not.toHaveBeenCalled();
     });
 
-    it("filters status=ongoing to match the stored status AND excludes a lapsed endDate", async () => {
-      mockGetQuery.mockReturnValue({ status: "ongoing" });
+    it.each(["ongoing", "upcoming"] as const)(
+      "filters status=%s to match the stored status AND excludes a lapsed endDate",
+      async (statusFilter) => {
+        mockGetQuery.mockReturnValue({ status: statusFilter });
 
-      await (handler as (event: object) => unknown)(buildEvent());
+        await (handler as (event: object) => unknown)(buildEvent());
 
-      // The "ongoing" branch must AND the stored-status match with the
-      // negation of the lapsed condition specifically. Built with the real
-      // (unspied) drizzle functions for the same reason as above.
-      const expectedStatusCondition = mockEq(trips.status, "ongoing");
-      const expectedLapsedCondition = realDrizzle.and(
-        realDrizzle.isNotNull(trips.endDate),
-        realDrizzle.lt(trips.endDate, lapsedEndDateCutoff(NOW)),
-      );
-      const expectedNotLapsed = realDrizzle.not(expectedLapsedCondition as SQL);
+        // This branch must AND the stored-status match with the negation of
+        // the lapsed condition specifically. Built with the real (unspied)
+        // drizzle functions for the same reason as the "past" test above.
+        const expectedStatusCondition = mockEq(trips.status, statusFilter);
+        const expectedLapsedCondition = realDrizzle.and(
+          realDrizzle.isNotNull(trips.endDate),
+          realDrizzle.lt(trips.endDate, lapsedEndDateCutoff(NOW)),
+        );
+        const expectedNotLapsed = realDrizzle.not(
+          expectedLapsedCondition as SQL,
+        );
 
-      expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
-      expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
-      expect(not).toHaveBeenCalledWith(expectedLapsedCondition);
-      expect(and).toHaveBeenCalledWith(
-        expectedStatusCondition,
-        expectedNotLapsed,
-      );
-    });
+        expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
+        expect(lt).toHaveBeenCalledWith(
+          trips.endDate,
+          lapsedEndDateCutoff(NOW),
+        );
+        // Same isNotNull-guard-must-survive check as the "past" test above.
+        expect(and).toHaveBeenCalledWith(
+          realDrizzle.isNotNull(trips.endDate),
+          realDrizzle.lt(trips.endDate, lapsedEndDateCutoff(NOW)),
+        );
+        expect(not).toHaveBeenCalledWith(expectedLapsedCondition);
+        expect(and).toHaveBeenCalledWith(
+          expectedStatusCondition,
+          expectedNotLapsed,
+        );
+      },
+    );
   });
 });

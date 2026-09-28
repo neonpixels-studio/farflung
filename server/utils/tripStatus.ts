@@ -80,9 +80,12 @@ export function deriveTripStatus(
  * preserving every other field verbatim. Shared by every read path that
  * already has the full row shape in hand (a single-trip lookup, or a list
  * whose rows get relabeled after the fact) so "spread the row, replace
- * status" isn't repeated at each call site — see trip-queries.ts's
- * loadReadableTrip, profile-queries.ts's fetchPublicTrips, and
- * index.get.ts's row mapping.
+ * status" isn't repeated at each call site — see [id].get.ts's single-trip
+ * read, profile-queries.ts's fetchPublicTrips, and index.get.ts's row
+ * mapping. Not used by trip-queries.ts's loadReadableTrip on purpose — that
+ * helper enforces read *visibility* only and returns the raw stored row, so
+ * a hypothetical future write path reusing it for an ownership check can
+ * never silently persist a derived "past" over a status the user didn't set.
  */
 export function withDerivedStatus<T extends TripStatusFields>(
   trip: T,
