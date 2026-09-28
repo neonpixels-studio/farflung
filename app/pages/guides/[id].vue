@@ -115,8 +115,16 @@ const { gate: gateOnClerkLoad, retryGeneration } = useClerkGatedFetch(
   canRetryAuthenticated,
 );
 
-function fetchGuideDetail(): Promise<void> {
-  return gateOnClerkLoad(() => guidesStore.fetchGuideById(guideId.value));
+// Resolves to `true` (never `undefined`) rather than passing fetchGuideById's
+// own `Promise<void>` straight through: with `server: true` below, Nuxt's
+// hydration reuses the SSR-fetched payload only when useAsyncData's `data` is
+// not `undefined` — an `undefined`-resolving handler looks identical to "not
+// fetched yet" and gets silently re-run on the client, duplicating the
+// request every anonymous visitor's browser just made the server also make.
+function fetchGuideDetail(): Promise<boolean> {
+  return gateOnClerkLoad(() =>
+    guidesStore.fetchGuideById(guideId.value).then(() => true),
+  );
 }
 
 // `server: true`: also runs during SSR, so a non-JS crawler following a

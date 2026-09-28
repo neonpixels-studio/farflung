@@ -33,6 +33,17 @@
  * for a signed-in owner's retry. The one-time `nextTick` fallback below
  * covers exactly that gap: if nothing called `gate()` by the end of the
  * current synchronous setup, it starts the retry watch itself.
+ *
+ * That hydration-reuse only happens when useAsyncData's own `data` resolves
+ * to something other than `undefined` (Nuxt falls back to re-running the
+ * handler client-side otherwise) — every caller's fetch function here must
+ * resolve to a defined value (e.g. `.then(() => true)`), never bare
+ * `Promise<void>`, or the "reuse" half of this whole scheme silently doesn't
+ * happen and every visitor's browser repeats the request the server already
+ * made. Because of that same guarantee, `gate()` is deterministically never
+ * called client-side during that reused-payload load (not merely usually, in
+ * a timing-dependent way) — the `nextTick` fallback's `hasGateRun` check is
+ * therefore race-free, not a best-effort heuristic.
  */
 export const CLERK_BOOTSTRAP_TIMEOUT_MS = 2000;
 

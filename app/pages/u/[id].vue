@@ -330,7 +330,15 @@ async function onToggleFollow(): Promise<void> {
 // too so a session resolving (or clearing) after the first fetch re-issues it
 // with the new auth state, not just on route-param (profile-to-profile)
 // navigation.
-function fetchProfileDetail(): Promise<unknown> {
+// Resolves to `true` (never `undefined`): with `server: true` below, Nuxt's
+// hydration reuses the SSR-fetched payload only when useAsyncData's `data` is
+// not `undefined` — an `undefined`-resolving handler looks identical to "not
+// fetched yet" and gets silently re-run on the client, duplicating the
+// request every anonymous visitor's browser just made the server also make.
+// `Promise.all` already resolves to a (truthy, defined) array, so this isn't
+// currently reachable in practice, but making it explicit means it stays
+// correct even if one of these fetchers' return values ever changes.
+function fetchProfileDetail(): Promise<boolean> {
   return gateOnClerkLoad(() =>
     Promise.all([
       fetchProfile(userId.value),
@@ -338,7 +346,7 @@ function fetchProfileDetail(): Promise<unknown> {
       fetchFollowingList(userId.value),
       fetchTrips(userId.value),
       fetchGuides(userId.value),
-    ]),
+    ]).then(() => true),
   );
 }
 

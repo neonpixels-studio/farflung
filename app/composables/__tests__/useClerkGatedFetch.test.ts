@@ -180,11 +180,18 @@ describe("useClerkGatedFetch", () => {
     expect(retryGeneration.value).toBe(1);
   });
 
-  it("does not start the retry-watch fallback once gate() has already run (no double registration)", async () => {
-    // Regression guard for the fallback above: a normal gate() call must
-    // remain the only thing driving retryGeneration, not gate() plus a
-    // redundant second watcher from the fallback.
-    const isClerkLoaded = ref(true);
+  it("does not start the retry-watch fallback once gate() has already run, even while still pending (no double registration)", async () => {
+    // Regression guard for the fallback above, using the case it must NOT
+    // act on: gate() called while Clerk hasn't resolved yet (the deferred
+    // branch), left pending across a tick (so the fallback's own nextTick
+    // check definitely runs first), and only then resolved. If the fallback
+    // wrongly started its own watch here, Clerk resolving would be caught by
+    // BOTH that watch and gate()'s own settle() — incrementing
+    // retryGeneration to 1 in addition to firing fetchFn, exactly the
+    // redundant duplicate this design exists to prevent (see "does not count
+    // the auth resolution that produced the gate's own fetch as a retry"
+    // above, which covers the same guarantee without the intervening tick).
+    const isClerkLoaded = ref(false);
     const isSignedIn = ref(false);
     const canRetryAuthenticated = computed(
       () => isClerkLoaded.value && isSignedIn.value,
@@ -193,16 +200,75 @@ describe("useClerkGatedFetch", () => {
       isClerkLoaded,
       canRetryAuthenticated,
     );
-    gate(vi.fn().mockResolvedValue("result"));
+    const fetchFn = vi.fn().mockResolvedValue("result");
+    gate(fetchFn);
 
-    // Let the fallback's own nextTick check run; it must see gate() already
-    // ran and no-op.
+    // Let the fallback's own nextTick check run first; it must see gate()
+    // already ran (hasGateRun) and no-op, leaving gate()'s own deferred
+    // settle() as the only thing that will ever start the retry watch.
+    await nextTick();
+    expect(fetchFn).not.toHaveBeenCalled();
+
+    isSignedIn.value = true;
+    isClerkLoaded.value = true;
     await nextTick();
 
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(retryGeneration.value).toBe(0);
+  });
+
+  it("never starts the retry-watch fallback if the scope is disposed before it runs", async () => {
+    // Regression guard: a page that unmounts in the same tick it mounted
+    // (e.g. an instant route change) must not leave the fallback's watch
+    // running for a canRetryAuthenticated ref the torn-down page no longer
+    // cares about.
+    const isClerkLoaded = ref(false);
+    const isSignedIn = ref(false);
+    const canRetryAuthenticated = computed(
+      () => isClerkLoaded.value && isSignedIn.value,
+    );
+    const scope = effectScope();
+    const retryGeneration = scope.run(() => {
+      // gate() deliberately never called, mirroring the SSR-reuse case the
+      // fallback targets.
+      return useClerkGatedFetch(isClerkLoaded, canRetryAuthenticated)
+        .retryGeneration;
+    })!;
+    scope.stop();
+
+    await nextTick();
+    isClerkLoaded.value = true;
     isSignedIn.value = true;
     await nextTick();
 
-    expect(retryGeneration.value).toBe(1);
+    expect(retryGeneration.value).toBe(0);
+  });
+
+  it("stops the retry-watch fallback's own watcher on scope disposal after it has started", async () => {
+    // Regression guard for the other teardown ordering: the scope disposes
+    // *after* the fallback's nextTick has already started watching (the more
+    // common real-world case — a page mounted for a while, then navigated
+    // away from, before Clerk ever resolved).
+    const isClerkLoaded = ref(false);
+    const isSignedIn = ref(false);
+    const canRetryAuthenticated = computed(
+      () => isClerkLoaded.value && isSignedIn.value,
+    );
+    const scope = effectScope();
+    const retryGeneration = scope.run(() => {
+      return useClerkGatedFetch(isClerkLoaded, canRetryAuthenticated)
+        .retryGeneration;
+    })!;
+
+    // Let the fallback's nextTick fire and start its watch before disposing.
+    await nextTick();
+    scope.stop();
+
+    isClerkLoaded.value = true;
+    isSignedIn.value = true;
+    await nextTick();
+
+    expect(retryGeneration.value).toBe(0);
   });
 
   it("clears a pending timer/watch on scope disposal so a torn-down page's fetch never fires later", async () => {
