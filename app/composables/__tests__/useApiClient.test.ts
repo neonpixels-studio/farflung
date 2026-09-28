@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as vue from "vue";
 
-// useClerkAuth and $fetch are Nuxt auto-imported globals. Stub them before
-// importing the composable so the module resolves cleanly.
+// useClerkAuth and useRequestFetch are Nuxt auto-imported globals. Stub them
+// before importing the composable so the module resolves cleanly.
 const mockGetToken = vi.fn();
 
 function installClerkAuthStub(
@@ -18,8 +18,12 @@ function installClerkAuthStub(
 // Install the default stub (token resolvable) before importing
 installClerkAuthStub(mockGetToken);
 
+// useApiClient calls useRequestFetch() (not the plain global $fetch) so a
+// relative /api/* path is dispatched in-process during SSR rather than as a
+// real network round trip back to the server still handling the current
+// request — see useApiClient.ts's own comment.
 const mockFetch = vi.fn();
-vi.stubGlobal("$fetch", mockFetch);
+vi.stubGlobal("useRequestFetch", () => mockFetch);
 
 // Import after globals are stubbed. The module is cached after first import;
 // we re-stub useClerkAuth at call time (when useApiClient() is called), so

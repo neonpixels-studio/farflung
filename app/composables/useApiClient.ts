@@ -16,6 +16,17 @@
 export function useApiClient() {
   const { getToken } = useClerkAuth();
 
+  // useRequestFetch() (not the plain global $fetch): during SSR (#289's
+  // guide/trip/profile detail pages, the first callers to actually exercise
+  // apiFetch server-side — every earlier call site was client-only), a
+  // relative same-origin path like /api/guides/:id must be dispatched
+  // in-process against the current request's event rather than as a real
+  // network round trip back to the very server that's still in the middle of
+  // handling this request — which can hang. Client-side this resolves to the
+  // same plain global $fetch used before (see useRequestFetch's own
+  // implementation), so this is a no-op there.
+  const requestFetch = useRequestFetch();
+
   function isApiPath(url: string): boolean {
     // Only inject the token for /api/* paths. Protocol-relative URLs like
     // //evil.com/... start with "/" but are external — restricting to /api/
@@ -52,7 +63,7 @@ export function useApiClient() {
       options.headers as HeadersInit | undefined,
       token,
     );
-    return $fetch<T>(url, { ...options, headers });
+    return requestFetch<T>(url, { ...options, headers });
   }
 
   return { apiFetch };
