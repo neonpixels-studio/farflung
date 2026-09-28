@@ -139,11 +139,10 @@ export default defineEventHandler(async (event) => {
 
   const rows = await fetchTripsPage(database, filters, sortOrder, page);
 
-  // Even when no status filter narrowed the query (or the row matched an
-  // ongoing/upcoming filter before its endDate lapsed mid-page-load), the
-  // status returned to the client must be the derived one — a lapsed trip
-  // must never render as ongoing/upcoming while it's already excluded from
-  // the active-trip count elsewhere (see server/utils/tripStatus.ts).
+  // Even when no status filter narrowed the query, the status returned to
+  // the client must be the derived one — a lapsed trip must never render as
+  // ongoing/upcoming while it's already excluded from the active-trip count
+  // elsewhere (see server/utils/tripStatus.ts).
   const derivedRows = rows.map((row) => withDerivedStatus(row, now));
 
   return {

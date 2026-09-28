@@ -79,8 +79,17 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 });
 
 import { and, or, lt, isNotNull, not } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import { trips } from "../../../server/db/schema";
 import { lapsedEndDateCutoff } from "../../../server/utils/tripStatus";
+
+// Unspied real implementations, used only to *build* the expected condition
+// objects the assertions below compare against. Building an "expected" value
+// with the spied `and`/`or`/`not` imported above would itself register a call
+// on those spies, making an `expect(and).toHaveBeenCalledWith(...)` pass
+// regardless of whether the handler under test ever called them.
+const realDrizzle =
+  await vi.importActual<typeof import("drizzle-orm")>("drizzle-orm");
 
 Object.assign(globalThis, {
   defineEventHandler: (handler: (event: object) => unknown) => handler,
@@ -458,13 +467,20 @@ describe("GET /api/trips", () => {
 
       // The "past" branch must match eq(status, 'past') OR the lapsed
       // condition specifically — not just that `or`/`isNotNull`/`lt` were
-      // called somewhere, but that `or` combines exactly these two.
+      // called somewhere, but that `or` combines exactly these two. Built
+      // with the *real* (unspied) drizzle functions so constructing the
+      // expected value doesn't itself satisfy the spy assertion below.
       const expectedPastCondition = mockEq(trips.status, "past");
-      const expectedLapsedCondition = and(
-        isNotNull(trips.endDate),
-        lt(trips.endDate, lapsedEndDateCutoff(NOW)),
+      const expectedLapsedCondition = realDrizzle.and(
+        realDrizzle.isNotNull(trips.endDate),
+        realDrizzle.lt(trips.endDate, lapsedEndDateCutoff(NOW)),
       );
 
+      // Leaf-level checks are safe to assert directly against the spied
+      // functions (no circularity: the argument is a literal column
+      // reference, not a condition built from another spy).
+      expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
+      expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
       expect(or).toHaveBeenCalledWith(
         expectedPastCondition,
         expectedLapsedCondition,
@@ -478,14 +494,17 @@ describe("GET /api/trips", () => {
       await (handler as (event: object) => unknown)(buildEvent());
 
       // The "ongoing" branch must AND the stored-status match with the
-      // negation of the lapsed condition specifically.
+      // negation of the lapsed condition specifically. Built with the real
+      // (unspied) drizzle functions for the same reason as above.
       const expectedStatusCondition = mockEq(trips.status, "ongoing");
-      const expectedLapsedCondition = and(
-        isNotNull(trips.endDate),
-        lt(trips.endDate, lapsedEndDateCutoff(NOW)),
+      const expectedLapsedCondition = realDrizzle.and(
+        realDrizzle.isNotNull(trips.endDate),
+        realDrizzle.lt(trips.endDate, lapsedEndDateCutoff(NOW)),
       );
-      const expectedNotLapsed = not(expectedLapsedCondition);
+      const expectedNotLapsed = realDrizzle.not(expectedLapsedCondition as SQL);
 
+      expect(isNotNull).toHaveBeenCalledWith(trips.endDate);
+      expect(lt).toHaveBeenCalledWith(trips.endDate, lapsedEndDateCutoff(NOW));
       expect(not).toHaveBeenCalledWith(expectedLapsedCondition);
       expect(and).toHaveBeenCalledWith(
         expectedStatusCondition,

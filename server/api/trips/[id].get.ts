@@ -10,6 +10,7 @@ import {
 import { requireTripId } from "../../utils/trip-helpers";
 import { loadReadableTrip } from "../../utils/trip-queries";
 import { optionalUser } from "../../utils/auth";
+import { withDerivedStatus } from "../../utils/tripStatus";
 
 type Database = ReturnType<typeof getDb>;
 type Trip = typeof trips.$inferSelect;
@@ -113,7 +114,16 @@ export default defineEventHandler(
     setResponseHeader(event, "Cache-Control", "private, no-store");
     setResponseHeader(event, "Vary", "Authorization");
 
-    const trip = await loadReadableTrip(database, tripId, userId);
+    // The single-trip read must reflect the derived status, not the raw
+    // stored column — otherwise a trip whose endDate has lapsed keeps
+    // rendering as ongoing/upcoming on its own detail page until the next
+    // write touches it (issue #291). Applied here rather than inside
+    // loadReadableTrip so that helper stays a pure read-visibility check
+    // returning the raw row — safe for any future caller that needs the
+    // stored value as-is (e.g. a write path checking ownership).
+    const trip = withDerivedStatus(
+      await loadReadableTrip(database, tripId, userId),
+    );
 
     const isOwner = trip.userId === userId;
 
