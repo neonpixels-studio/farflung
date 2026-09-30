@@ -8,6 +8,57 @@ import { DELETION_GRACE_PERIOD_DAYS } from "~/utils/accountDeletion";
 import { useTripsStore } from "~/stores/trips";
 import type { Trip } from "~/stores/trips";
 
+// Drives the account section's password-status copy. Defaults to null (Clerk
+// user not yet loaded); individual tests set `passwordEnabled` to cover the
+// "has a password" / "OAuth-only, no password" cases. Reset in beforeEach so
+// one test's value never bleeds into the next. Shaped like the subset of the
+// real Clerk user resource the page reads, so populateEmailFromClerk (which
+// also watches `user`) doesn't blow up on a partial mock.
+type MockClerkUser = {
+  passwordEnabled: boolean;
+  emailAddresses: { id: string; emailAddress: string }[];
+  primaryEmailAddressId: string | null;
+  imageUrl: string | null;
+};
+const clerkUserRef = ref<MockClerkUser | null>(null);
+vi.stubGlobal(
+  "useClerkUser",
+  vi.fn(() => ({ user: clerkUserRef })),
+);
+
+function buildClerkUser(overrides: Partial<MockClerkUser> = {}): MockClerkUser {
+  return {
+    passwordEnabled: true,
+    emailAddresses: [],
+    primaryEmailAddressId: null,
+    imageUrl: null,
+    ...overrides,
+  };
+}
+
+// Scoped to the password row specifically (not just "the first .opt-row
+// .btn--outline in the document") so a future row that happens to render an
+// outline-style button earlier in the page (e.g. the billing section's
+// manage-subscription button on a paid plan) can never be mistaken for it.
+// Guards with `.exists()` before `.text()` — a `.opt-row` without a `.lbl b`
+// (billing, prefs, privacy, danger all have different markup) would otherwise
+// throw from inside `.find()`'s callback and fail every password test with a
+// confusing error.
+function findPasswordRow(wrapper: ReturnType<typeof mount>) {
+  return wrapper.findAll(".opt-row").find((row) => {
+    const label = row.find(".lbl b");
+    return label.exists() && label.text() === "Password";
+  });
+}
+
+function findPasswordStatus(wrapper: ReturnType<typeof mount>) {
+  return findPasswordRow(wrapper)?.find(".lbl p");
+}
+
+function findPasswordButton(wrapper: ReturnType<typeof mount>) {
+  return findPasswordRow(wrapper)?.find(".btn--outline");
+}
+
 const DEFAULT_STATS_DATA = {
   placesCount: 34,
   countriesCount: 9,
@@ -283,6 +334,8 @@ describe("Settings page (/settings)", () => {
     const tripsStore = useTripsStore();
     tripsStore.tripList = [...DEFAULT_TRIPS];
     vi.spyOn(tripsStore, "fetchTrips").mockResolvedValue();
+
+    clerkUserRef.value = null;
   });
 
   it("renders without crashing and matches snapshot", async () => {
@@ -665,6 +718,75 @@ describe("Settings page (/settings)", () => {
     await wrapper.vm.$nextTick();
 
     expect(savePreferencesMock).not.toHaveBeenCalled();
+  });
+
+  it("shows no password-status line while the Clerk user hasn't loaded (no fabricated date)", () => {
+    const wrapper = mount(SettingsPage, globalConfig);
+
+    expect(findPasswordStatus(wrapper)?.exists()).toBe(false);
+  });
+
+  it("shows an honest no-password message for an OAuth-only account, not a fabricated date", async () => {
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: false });
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
+      "No password set — you sign in with a connected account.",
+    );
+  });
+
+  it("does not show a fabricated last-changed date when the account has a password", async () => {
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    const statusText = findPasswordStatus(wrapper)?.text();
+    expect(statusText).not.toMatch(/ago/i);
+    expect(statusText).toBe("Change your password any time below.");
+  });
+
+  it("keeps the password status reactive when the Clerk user resolves after mount", async () => {
+    // clerkUserRef starts null via beforeEach — the Clerk user hasn't loaded yet.
+    const wrapper = mount(SettingsPage, globalConfig);
+
+    expect(findPasswordStatus(wrapper)?.exists()).toBe(false);
+    expect(findPasswordButton(wrapper)?.text()).toBe("change password");
+
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
+      "Change your password any time below.",
+    );
+    expect(findPasswordButton(wrapper)?.text()).toBe("change password");
+  });
+
+  it("offers to set (not change) a password for an OAuth-only account", async () => {
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: false });
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordButton(wrapper)?.text()).toBe("set password");
+  });
+
+  it("switches from 'set password' back to 'change password' once an OAuth-only user adds one", async () => {
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: false });
+    const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordButton(wrapper)?.text()).toBe("set password");
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
+      "No password set — you sign in with a connected account.",
+    );
+
+    clerkUserRef.value = buildClerkUser({ passwordEnabled: true });
+    await wrapper.vm.$nextTick();
+
+    expect(findPasswordButton(wrapper)?.text()).toBe("change password");
+    expect(findPasswordStatus(wrapper)?.text()).toBe(
+      "Change your password any time below.",
+    );
   });
 
   it("shows password error when passwords do not match", async () => {

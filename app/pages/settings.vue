@@ -137,14 +137,14 @@
             <div class="opt-row">
               <div class="lbl">
                 <b>Password</b>
-                <p>Last changed 3 months ago.</p>
+                <p v-if="passwordStatusMessage">{{ passwordStatusMessage }}</p>
               </div>
               <button
                 class="btn btn--outline btn--sm"
                 @click="togglePasswordFields"
               >
                 <AppIcon name="lock" :size="14" />
-                change password
+                {{ passwordActionLabel }}
               </button>
             </div>
             <div v-if="passwordChangedSuccess" class="account-field-success">
@@ -744,6 +744,14 @@ function populateFromPreferences(): void {
   mapStyle.value = preferences.value.defaultMapStyle ?? "outdoors";
 }
 
+// Declared here (ahead of the immediate watch below) rather than alongside
+// the rest of the avatar state further down — populateEmailFromClerk runs
+// synchronously as soon as the watch is registered when `user` is already
+// populated (e.g. Clerk's session was already loaded from an earlier page in
+// the same SPA session), which is before any `const` declared later in this
+// script has been initialized.
+const avatarUrl = ref<string | null>(null);
+
 function populateEmailFromClerk(): void {
   if (!user.value) {
     return;
@@ -761,6 +769,41 @@ watch(
     populateEmailFromClerk();
   },
   { immediate: true },
+);
+
+// Clerk exposes whether a password exists (`passwordEnabled`) but not a
+// password-specific "last changed" timestamp — `user.updatedAt` bumps on
+// *any* profile change (name, avatar, etc.), so it can't stand in for one
+// without falsely implying a recent password change. Rather than fabricate
+// a date, surface only what's actually known: whether a password is set.
+// Confirmed against the installed @clerk/nuxt 3.1.3 (@clerk/shared 4.33.0)
+// user resource types — re-check here if that package is ever bumped to a
+// new major version.
+//
+// Single source of truth for that tri-state, so the status copy and the
+// button label below can never contradict each other (e.g. offering to
+// "change" a password the status line just said doesn't exist).
+type PasswordState = "unknown" | "none" | "set";
+
+const passwordState = computed<PasswordState>(() => {
+  if (!user.value) {
+    return "unknown";
+  }
+  return user.value.passwordEnabled ? "set" : "none";
+});
+
+const passwordStatusMessage = computed<string>(() => {
+  if (passwordState.value === "unknown") {
+    return "";
+  }
+  if (passwordState.value === "none") {
+    return "No password set — you sign in with a connected account.";
+  }
+  return "Change your password any time below.";
+});
+
+const passwordActionLabel = computed<string>(() =>
+  passwordState.value === "none" ? "set password" : "change password",
 );
 
 // Populate from defaults immediately (before the API call) so the form is not
@@ -847,8 +890,7 @@ const passwordConfirm = ref("");
 const passwordMatchError = ref<string | null>(null);
 const passwordChangedSuccess = ref(false);
 
-// Avatar state
-const avatarUrl = ref<string | null>(null);
+// Avatar state (avatarUrl itself is declared earlier, see comment there)
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 
 // Account actions composable — split error refs so each section only shows

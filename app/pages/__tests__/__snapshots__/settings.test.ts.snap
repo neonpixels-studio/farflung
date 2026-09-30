@@ -37,8 +37,8 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
           </div><input data-v-a376170b="">
           <div data-v-a376170b="" class="opt-row">
             <div data-v-a376170b="" class="lbl"><b data-v-a376170b="">Password</b>
-              <p data-v-a376170b="">Last changed 3 months ago.</p>
-            </div><button data-v-a376170b="" class="btn btn--outline btn--sm"><svg data-v-a376170b="" data-icon="" name="lock" size="14"></svg> change password </button>
+              <!--v-if-->
+            </div><button data-v-a376170b="" class="btn btn--outline btn--sm"><svg data-v-a376170b="" data-icon="" name="lock" size="14"></svg> change password</button>
           </div>
           <!--v-if-->
           <!--v-if-->
