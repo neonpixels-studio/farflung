@@ -66,6 +66,7 @@ import { useGuidesStore } from "~/stores/guides";
 import type { GuideVisibility } from "~/stores/guides";
 import { formatAuthorByline } from "~/utils/travelerLabels";
 import { useClerkGatedFetch } from "~/composables/useClerkGatedFetch";
+import { useViewerAuthResolved } from "~/composables/useViewerAuthResolved";
 import { SITE_NAME, useOgMeta } from "~/composables/useOgMeta";
 
 // No auth middleware: a public guide must open for anonymous visitors following
@@ -106,6 +107,7 @@ const { isLoaded: isClerkLoaded, isSignedIn } = useClerkAuth();
 const canRetryAuthenticated = computed(
   () => isClerkLoaded.value && !!isSignedIn.value,
 );
+const { viewerAuthResolved } = useViewerAuthResolved(isClerkLoaded);
 
 // Gated on Clerk's bootstrap (#255) so an owner's first request already
 // carries a token instead of 404ing anonymously first — see
@@ -115,24 +117,25 @@ const { gate: gateOnClerkLoad, retryGeneration } = useClerkGatedFetch(
   canRetryAuthenticated,
 );
 
-function fetchGuideDetail(): Promise<void> {
+function fetchGuideDetail(): Promise<true> {
   return gateOnClerkLoad(() => guidesStore.fetchGuideById(guideId.value));
 }
 
-// `server: false` keeps the fetch client-only, mirroring u/[id].vue: the request
-// carries the Clerk session token, which only exists on the client (Clerk runs
-// with skipServerMiddleware). Running it during SSR would hang, since Clerk's
-// getToken never resolves on the server. A failed load rejects (no .catch); the
-// store records guideNotFound/guideError and nulls currentGuide, so the
-// template renders its not-found or retryable-error state accordingly — an
-// anonymous visitor on a private or missing guide sees "Guide not found"
-// rather than being redirected to /login. This does mean a shared link is not
-// server-rendered (no unfurl preview); that is an accepted trade for staying
-// on the codebase's client-only-auth pattern.
+// `server: true`: also runs during SSR, so a non-JS crawler following a
+// shared link sees the guide's real title/body — including useOgMeta's
+// og:title/og:description below — instead of the generic fallback (#289).
+// Safe server-side: see useClerkGatedFetch's import.meta.server fast-path for
+// why this is always an anonymous, non-blocking fetch there, and why Nuxt
+// reusing that data on hydration means an anonymous visitor's browser never
+// duplicates the request. A failed load rejects (no .catch); the store
+// records guideNotFound/guideError and nulls currentGuide, so the template
+// renders its not-found or retryable-error state accordingly — an anonymous
+// visitor on a private or missing guide sees "Guide not found" rather than
+// being redirected to /login.
 const { status: fetchStatus, refresh: refreshGuide } = useAsyncData(
   () => `guide-detail-${guideId.value}`,
   fetchGuideDetail,
-  { server: false, watch: [guideId, retryGeneration] },
+  { server: true, watch: [guideId, retryGeneration] },
 );
 
 async function onRetryLoad(): Promise<void> {
@@ -145,9 +148,23 @@ async function onRetryLoad(): Promise<void> {
 const hasResolvedFetch = computed(
   () => fetchStatus.value === "success" || fetchStatus.value === "error",
 );
-const isLoading = computed(
-  () => guidesStore.isLoadingGuide || !hasResolvedFetch.value,
-);
+// A second reason to keep loading, beyond the fetch simply not having
+// resolved yet: with `server: true` above, the SSR pass (#289) always
+// fetches anonymously, so a private guide's "not found" from that pass could
+// just mean this viewer isn't yet known to be its owner — withhold "Guide
+// not found" until the viewer's own auth has resolved, so an owner's private
+// guide doesn't flash not-found before their authenticated retry lands
+// (would otherwise regress #255).
+function computeIsLoading(): boolean {
+  if (guidesStore.isLoadingGuide || !hasResolvedFetch.value) {
+    return true;
+  }
+  if (!guide.value && !viewerAuthResolved.value) {
+    return true;
+  }
+  return false;
+}
+const isLoading = computed(computeIsLoading);
 
 const visibilityTagClass = computed(() =>
   guide.value ? VISIBILITY_TAG_CLASS[guide.value.visibility] : "",

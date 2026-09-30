@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as vue from "vue";
 
-// useClerkAuth and $fetch are Nuxt auto-imported globals. Stub them before
-// importing the composable so the module resolves cleanly.
+// useClerkAuth and useRequestFetch are Nuxt auto-imported globals. Stub them
+// before importing the composable so the module resolves cleanly.
 const mockGetToken = vi.fn();
 
 function installClerkAuthStub(
@@ -18,8 +18,12 @@ function installClerkAuthStub(
 // Install the default stub (token resolvable) before importing
 installClerkAuthStub(mockGetToken);
 
+// useApiClient calls useRequestFetch() (not the plain global $fetch) so a
+// relative /api/* path is dispatched in-process during SSR rather than as a
+// real network round trip back to the server still handling the current
+// request — see useApiClient.ts's own comment.
 const mockFetch = vi.fn();
-vi.stubGlobal("$fetch", mockFetch);
+vi.stubGlobal("useRequestFetch", () => mockFetch);
 
 // Import after globals are stubbed. The module is cached after first import;
 // we re-stub useClerkAuth at call time (when useApiClient() is called), so
@@ -65,6 +69,24 @@ describe("useApiClient", () => {
 
     await apiFetch("/api/health");
 
+    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    expect(calledHeaders.get("Authorization")).toBeNull();
+  });
+
+  // #289: getToken.value is a real function reference during SSR (Clerk's
+  // server middleware is disabled fleet-wide, but that doesn't make the ref
+  // itself falsy) — *calling* it there never resolves, since Clerk has no
+  // server context to resolve a token against. This hung every SSR request
+  // to a guide/trip/profile detail page end-to-end before this guard was
+  // added. Asserting getToken itself was never called (not just that the
+  // header ends up empty) is what actually proves the hang is avoided.
+  it("never calls getToken server-side, even when it's a real function", async () => {
+    mockGetToken.mockResolvedValue("test-token");
+    const { apiFetch } = useApiClient(true);
+
+    await apiFetch("/api/health");
+
+    expect(mockGetToken).not.toHaveBeenCalled();
     const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
   });

@@ -13,8 +13,25 @@
  * The token is resolved fresh per call so it auto-refreshes when the session
  * rotates. `getToken` is a ref containing the Clerk getToken function.
  */
-export function useApiClient() {
+export function useApiClient(
+  // Defaults to the real compile-time flag. Overridable so a test can
+  // exercise the server short-circuit directly: import.meta.server is fixed
+  // per-module at build time by Nuxt's own macro replacement and can't be
+  // toggled from a test file importing this module.
+  isServer: boolean = import.meta.server,
+) {
   const { getToken } = useClerkAuth();
+
+  // useRequestFetch() (not the plain global $fetch): during SSR (#289's
+  // guide/trip/profile detail pages, the first callers to actually exercise
+  // apiFetch server-side — every earlier call site was client-only), a
+  // relative same-origin path like /api/guides/:id must be dispatched
+  // in-process against the current request's event rather than as a real
+  // network round trip back to the very server that's still in the middle of
+  // handling this request — which can hang. Client-side this resolves to the
+  // same plain global $fetch used before (see useRequestFetch's own
+  // implementation), so this is a no-op there.
+  const requestFetch = useRequestFetch();
 
   function isApiPath(url: string): boolean {
     // Only inject the token for /api/* paths. Protocol-relative URLs like
@@ -24,6 +41,16 @@ export function useApiClient() {
   }
 
   async function resolveToken(): Promise<string | null> {
+    // Clerk's server middleware is disabled fleet-wide (skipServerMiddleware,
+    // see nuxt.config.ts), but `getToken.value` is still a real function
+    // reference server-side (not falsy) — it's *calling* it that never
+    // resolves there (confirmed: it hung every SSR request in #289's manual
+    // testing, not just returned null slowly), since Clerk has no server
+    // context to resolve a token against. Every server-side apiFetch call is
+    // anonymous by construction; short-circuit before ever invoking it.
+    if (isServer) {
+      return null;
+    }
     if (!getToken.value) {
       return null;
     }
@@ -52,7 +79,7 @@ export function useApiClient() {
       options.headers as HeadersInit | undefined,
       token,
     );
-    return $fetch<T>(url, { ...options, headers });
+    return requestFetch<T>(url, { ...options, headers });
   }
 
   return { apiFetch };

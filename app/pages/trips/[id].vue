@@ -396,6 +396,7 @@ import { moveIdUp, moveIdDown, moveIdToDropTarget } from "~/utils/stopOrder";
 import type { StopOrderMutator } from "~/utils/stopOrder";
 import { INVITE_UNAVAILABLE_TITLE } from "~/constants/trips";
 import { useClerkGatedFetch } from "~/composables/useClerkGatedFetch";
+import { useViewerAuthResolved } from "~/composables/useViewerAuthResolved";
 import { SITE_NAME, useOgMeta } from "~/composables/useOgMeta";
 import {
   extractErrorMessage,
@@ -420,6 +421,7 @@ const { user: clerkUser } = useClerkUser();
 // state so a signed-out owner arriving from a bookmark/expired session isn't
 // dead-ended.
 const { isLoaded: isClerkLoaded, isSignedIn } = useClerkAuth();
+const { viewerAuthResolved } = useViewerAuthResolved(isClerkLoaded);
 const {
   upload,
   isUploading: isUploadingCover,
@@ -485,14 +487,17 @@ const { gate: gateOnClerkLoad, retryGeneration } = useClerkGatedFetch(
   canRetryAuthenticated,
 );
 
-function fetchTripDetail(): Promise<void> {
+function fetchTripDetail(): Promise<true> {
   return gateOnClerkLoad(() => tripsStore.fetchTripById(tripId.value));
 }
 
-// `server: false` keeps the fetch client-only, mirroring guides/[id].vue and
-// u/[id].vue: the request carries the Clerk session token, which only exists on
-// the client (Clerk runs with skipServerMiddleware). Running it during SSR would
-// hang, since Clerk's getToken never resolves on the server.
+// `server: true`: also runs during SSR, so a non-JS crawler following a
+// shared link sees the trip's real name/facts — including useOgMeta's
+// og:title/og:description/og:image below — instead of the generic fallback
+// (#289). Safe server-side: see useClerkGatedFetch's import.meta.server
+// fast-path for why this is always an anonymous, non-blocking fetch there,
+// and why Nuxt reusing that data on hydration means an anonymous visitor's
+// browser never duplicates the request.
 //
 // Watch retryGeneration as well as the id: a signed-in owner's session
 // resolving after the fetch above already fired (e.g. signing in without a
@@ -502,7 +507,7 @@ function fetchTripDetail(): Promise<void> {
 const { status: fetchStatus, refresh: refreshTripDetail } = useAsyncData(
   () => `trip-detail-${tripId.value}`,
   fetchTripDetail,
-  { server: false, watch: [tripId, retryGeneration] },
+  { server: true, watch: [tripId, retryGeneration] },
 );
 
 // A 404 means the trip is missing or private — rendered as "Trip not found"
@@ -514,22 +519,31 @@ async function onRetryLoad(): Promise<void> {
   await refreshTripDetail();
 }
 
-// Until the client fetch resolves, the SSR pass and hydration frame have no trip
-// yet. Treat that window as loading so a valid trip never flashes "Trip not
-// found" before its data arrives. isLoading itself does not read isClerkLoaded
-// directly — it only cares whether the fetch above has settled — but
-// fetchTripDetail's gate (see useClerkGatedFetch) means this stays true until
-// Clerk resolves one way or the other, or CLERK_BOOTSTRAP_TIMEOUT_MS lapses if
-// it never does. That bound is what still lets an anonymous visitor following
-// a shared link see a public trip even if Clerk's script is fully blocked,
-// same as before #255 — this fix only changes when the anonymous fetch fires
-// while Clerk resolves normally, not what happens if it never does.
+// Until the fetch resolves, there is no trip yet. Treat that window as
+// loading so a valid trip never flashes "Trip not found" before its data
+// arrives.
 const hasResolvedFetch = computed(
   () => fetchStatus.value === "success" || fetchStatus.value === "error",
 );
-const isLoading = computed(
-  () => tripsStore.isLoadingDetail || !hasResolvedFetch.value,
-);
+// A second reason to keep loading, beyond the fetch simply not having
+// resolved yet: with `server: true` above, the SSR pass (#289) always
+// fetches anonymously, so a private trip's "not found" from that pass could
+// just mean this viewer isn't yet known to be its owner — withhold "Trip not
+// found" until the viewer's own auth has resolved, so an owner's private
+// trip doesn't flash not-found before their authenticated retry lands (would
+// otherwise regress #255). That bound (CLERK_BOOTSTRAP_TIMEOUT_MS via
+// viewerAuthResolved) is also what still lets an anonymous visitor following
+// a shared link see a public trip even if Clerk's script is fully blocked.
+function computeIsLoading(): boolean {
+  if (tripsStore.isLoadingDetail || !hasResolvedFetch.value) {
+    return true;
+  }
+  if (!tripDetail.value && !viewerAuthResolved.value) {
+    return true;
+  }
+  return false;
+}
+const isLoading = computed(computeIsLoading);
 
 // Falls back to a facts summary when nothing richer is available, so a
 // share-link preview never shows a blank description.

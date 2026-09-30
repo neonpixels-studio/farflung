@@ -32,6 +32,24 @@ const PUBLIC_GUIDE_ID = `e2e-public-guide-${runId}`;
 const PUBLIC_GUIDE_TITLE = `Anonymous-viewable guide ${runId}`;
 const PRIVATE_GUIDE_ID = `e2e-private-guide-${runId}`;
 
+// Reads a <meta property="..." content="..."> tag's content out of a raw HTML
+// string, tolerant of either attribute order — used to assert on SSR-rendered
+// og/twitter meta without executing any JS (see the #289 test below). The
+// `(["'])...\1` backreference requires the closing quote to match the
+// opening one, so a value containing the *other* quote character (e.g. an
+// apostrophe inside a double-quoted attribute) isn't truncated early.
+function getMetaTagContent(html: string, property: string): string | null {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    `<meta[^>]*(?:property=["']${escapedProperty}["'][^>]*content=(["'])(.*?)\\1|content=(["'])(.*?)\\3[^>]*property=["']${escapedProperty}["'])`,
+  );
+  const match = html.match(pattern);
+  if (!match) {
+    return null;
+  }
+  return match[2] ?? match[4] ?? null;
+}
+
 test.describe("anonymous public-guide view", () => {
   test.skip(
     !databaseUrl,
@@ -96,6 +114,31 @@ test.describe("anonymous public-guide view", () => {
       { timeout: 10_000 },
     );
     await expect(page).not.toHaveURL(/\/login/);
+  });
+
+  // #289: useOgMeta's data used to come from a client-only (server: false)
+  // fetch, so a crawler that never executes JS only ever saw the generic
+  // "Wanderist — Guide" fallback in og:title/og:description. `request` (unlike
+  // `page`) issues a plain HTTP GET with no JS execution, so this asserts
+  // against exactly the HTML a non-JS crawler receives. Tolerant of either
+  // attribute order (unhead's own output order is an implementation detail
+  // this test shouldn't be coupled to).
+  test("SSR-renders the real guide title/description for a non-JS crawler", async ({
+    request,
+  }) => {
+    const response = await request.get(`/guides/${PUBLIC_GUIDE_ID}`);
+    // Asserted up front so a 500/404 page fails here with the real status,
+    // rather than surfacing later as a confusing "null !== <expected>" from
+    // the meta-content assertions below.
+    expect(response.status()).toBe(200);
+    const html = await response.text();
+
+    expect(getMetaTagContent(html, "og:title")).toBe(
+      `Wanderist — ${PUBLIC_GUIDE_TITLE}`,
+    );
+    expect(getMetaTagContent(html, "og:description")).toBe(
+      "Wander slowly and eat well.",
+    );
   });
 
   test("hides a private guide from a visitor with no session", async ({
