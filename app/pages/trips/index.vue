@@ -149,7 +149,7 @@ import type { TripStatus } from "~/utils/tripDates";
 import { extractErrorMessage } from "~/utils/extractErrorMessage";
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Trips" });
+useHead({ title: "FarFlung — Trips" });
 
 const STATUS_CLASSES: Record<TripStatus, string> = {
   ongoing: "tag tag--ongoing",

@@ -51,7 +51,7 @@ describe("GET /api/billing/portal", () => {
     mockCreateBillingPortalSession.mockResolvedValue({
       url: "https://billing.stripe.com/session_123",
     });
-    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://wanderist.app";
+    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://farflung.io";
   });
 
   it("creates a portal session for the user's Stripe customer and redirects there", async () => {
@@ -59,7 +59,7 @@ describe("GET /api/billing/portal", () => {
 
     expect(mockCreateBillingPortalSession).toHaveBeenCalledWith({
       customerId: "cus_123",
-      returnUrl: "https://wanderist.app/settings#billing",
+      returnUrl: "https://farflung.io/settings#billing",
     });
     expect(mockSendRedirect).toHaveBeenCalledWith(
       expect.anything(),

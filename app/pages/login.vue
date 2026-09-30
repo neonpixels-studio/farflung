@@ -76,7 +76,7 @@ import {
   getSafeRedirectPath,
 } from "~/utils/authRedirect";
 
-useHead({ title: "Wanderist — Sign in" });
+useHead({ title: "FarFlung — Sign in" });
 definePageMeta({ layout: false });
 
 // Every "sign in to ..." link across profile/trips carries the visitor's

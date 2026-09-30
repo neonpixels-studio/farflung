@@ -557,7 +557,7 @@ describe("Explore page (/explore)", () => {
     }));
   });
 
-  it("renders 'Wanderist traveler' fallback when person has no displayName or handle", () => {
+  it("renders 'FarFlung traveler' fallback when person has no displayName or handle", () => {
     const sparsePeople = ref<SuggestedPerson[]>([
       {
         userId: "user_anon",
@@ -581,7 +581,7 @@ describe("Explore page (/explore)", () => {
 
     const wrapper = mount(ExplorePage, globalConfig);
     const nameEls = wrapper.findAll(".person__name b");
-    expect(nameEls[0].text()).toBe("Wanderist traveler");
+    expect(nameEls[0].text()).toBe("FarFlung traveler");
 
     vi.stubGlobal("useDiscover", () => ({
       featuredTrips,

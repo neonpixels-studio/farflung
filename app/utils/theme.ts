@@ -1,6 +1,6 @@
 export type Theme = "light" | "dark";
 
-export const THEME_STORAGE_KEY = "wanderist:theme";
+export const THEME_STORAGE_KEY = "farflung:theme";
 export const THEME_ATTR = "data-theme";
 
 export function isValidTheme(value: unknown): value is Theme {

@@ -498,7 +498,7 @@ export const connectedAccounts = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// guides — curated travel guides authored by Wanderist users.
+// guides — curated travel guides authored by FarFlung users.
 // A guide is a standalone editorial piece (not a trip) with a title, author,
 // and a read-time estimate. The `likeCount` is denormalised for fast ranking
 // on the explore page without a join to a likes table.

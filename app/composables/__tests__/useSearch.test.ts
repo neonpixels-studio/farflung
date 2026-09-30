@@ -260,7 +260,7 @@ describe("useSearch", () => {
     expect(results.value.people[0].title).toBe("Marco Reis");
   });
 
-  it("falls back to 'Wanderist traveler' when both handle and displayName are null", async () => {
+  it("falls back to 'FarFlung traveler' when both handle and displayName are null", async () => {
     mockApiFetch.mockResolvedValue({
       ...SAMPLE_API_RESPONSE,
       people: [{ id: "u-4", displayName: null, handle: null }],
@@ -269,7 +269,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "traveler");
 
-    expect(results.value.people[0].title).toBe("Wanderist traveler");
+    expect(results.value.people[0].title).toBe("FarFlung traveler");
   });
 
   it("people results never include an email address in the SearchItem", async () => {

@@ -14,7 +14,7 @@
  * The composable also watches the resolved session and sweeps localStorage
  * so the only draft key ever left on disk is the current user's own — see
  * the watch() call below. This is deliberately more aggressive than "purge
- * on sign-out": Wanderist has no in-app sign-out control today, so the
+ * on sign-out": FarFlung has no in-app sign-out control today, so the
  * common way a session actually ends is the tab closing or the token
  * expiring while the app isn't open, not a live transition this composable
  * could watch. Sweeping on every resolved render (including the first one
@@ -32,13 +32,13 @@
 
 import { isValidLocalDate } from "~/utils/localDate";
 
-const DRAFT_STORAGE_KEY_PREFIX = "wanderist:new-entry-draft";
+const DRAFT_STORAGE_KEY_PREFIX = "farflung:new-entry-draft";
 // Fixed literal (not derived from the prefix above): this is the exact key
 // used before drafts were scoped per user. No draft is written under it
 // anymore, but a browser that used an older build may still have one on disk.
 // Kept independent of DRAFT_STORAGE_KEY_PREFIX so a future rename of the
 // current prefix can't silently stop this cleanup from matching the old key.
-const LEGACY_DRAFT_STORAGE_KEY = "wanderist:new-entry-draft";
+const LEGACY_DRAFT_STORAGE_KEY = "farflung:new-entry-draft";
 
 export interface EntryDraft {
   title: string;

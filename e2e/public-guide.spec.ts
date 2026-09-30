@@ -1,7 +1,7 @@
 /**
  * E2E: Anonymous public-guide viewing
  *
- * A guide marked public must open for a visitor with no Wanderist account when
+ * A guide marked public must open for a visitor with no FarFlung account when
  * they follow a shared link (issue #141), while private guides stay protected.
  * This seeds guides directly into the e2e database, then loads their detail
  * pages in a session-less browser context. Seeding at the DB layer (not through
@@ -118,7 +118,7 @@ test.describe("anonymous public-guide view", () => {
 
   // #289: useOgMeta's data used to come from a client-only (server: false)
   // fetch, so a crawler that never executes JS only ever saw the generic
-  // "Wanderist — Guide" fallback in og:title/og:description. `request` (unlike
+  // "FarFlung — Guide" fallback in og:title/og:description. `request` (unlike
   // `page`) issues a plain HTTP GET with no JS execution, so this asserts
   // against exactly the HTML a non-JS crawler receives. Tolerant of either
   // attribute order (unhead's own output order is an implementation detail
@@ -134,7 +134,7 @@ test.describe("anonymous public-guide view", () => {
     const html = await response.text();
 
     expect(getMetaTagContent(html, "og:title")).toBe(
-      `Wanderist — ${PUBLIC_GUIDE_TITLE}`,
+      `FarFlung — ${PUBLIC_GUIDE_TITLE}`,
     );
     expect(getMetaTagContent(html, "og:description")).toBe(
       "Wander slowly and eat well.",

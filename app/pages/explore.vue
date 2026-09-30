@@ -29,7 +29,7 @@
         <h1>Where to next?</h1>
         <p>
           Curated destinations, guides from travelers you follow, and places
-          trending across Wanderist.
+          trending across FarFlung.
         </p>
         <label class="xsearch">
           <AppIcon name="search" :size="18" />
@@ -328,7 +328,7 @@ const openCommandPalette = inject<(() => void) | undefined>(
 );
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Explore" });
+useHead({ title: "FarFlung — Explore" });
 
 // ---------------------------------------------------------------------------
 // Constants

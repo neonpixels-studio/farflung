@@ -31,7 +31,7 @@ export const ONE_HOUR_MS = 60 * ONE_MINUTE_MS;
  * on that prefix. All three current policies are static paths, so this
  * doesn't bite today.
  *
- * Scoped to wanderist#89's three named cost-metered/abuse-prone endpoints;
+ * Scoped to farflung#89's three named cost-metered/abuse-prone endpoints;
  * see each entry for why its limit and window were chosen. The pattern
  * matching exists so a future dynamic route can be added here and metered
  * correctly.

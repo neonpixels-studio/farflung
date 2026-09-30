@@ -32,7 +32,7 @@ describe("useOgMeta", () => {
     const title = meta.title as () => string;
     const description = meta.description as () => string;
 
-    expect(title()).toBe("Wanderist — Tokyo on foot");
+    expect(title()).toBe("FarFlung — Tokyo on foot");
     expect((meta.ogTitle as () => string)()).toBe(title());
     expect((meta.twitterTitle as () => string)()).toBe(title());
     expect(description()).toBe("Start in Yanaka at sunrise.");
@@ -49,7 +49,7 @@ describe("useOgMeta", () => {
     // No real image to show, so the small "summary" card is used rather than
     // "summary_large_image", which renders broken/blank on most platforms
     // for a favicon-sized image.
-    expect(ogImage()).toBe("https://wanderist.test/favicon.ico");
+    expect(ogImage()).toBe("https://farflung.test/favicon.ico");
     expect((meta.twitterCard as () => string)()).toBe("summary");
   });
 
@@ -64,7 +64,7 @@ describe("useOgMeta", () => {
     const ogImage = meta.ogImage as () => string;
     const twitterImage = meta.twitterImage as () => string;
 
-    expect(ogImage()).toBe("https://wanderist.test/api/media/media-1");
+    expect(ogImage()).toBe("https://farflung.test/api/media/media-1");
     expect(twitterImage()).toBe(ogImage());
     expect((meta.twitterCard as () => string)()).toBe("summary_large_image");
   });
@@ -130,7 +130,7 @@ describe("useOgMeta", () => {
     useOgMeta(() => ({ pageTitle: "t", description: "d" }));
 
     const ogUrl = lastSeoMetaCall(useSeoMetaMock).ogUrl as () => string;
-    expect(ogUrl()).toBe("https://wanderist.test/guides/guide-1");
+    expect(ogUrl()).toBe("https://farflung.test/guides/guide-1");
   });
 
   it("picks up a reactive update to the underlying data (e.g. once a page's store value loads in)", () => {
@@ -138,17 +138,17 @@ describe("useOgMeta", () => {
     useOgMeta(() => ({ pageTitle: pageTitle.value, description: "d" }));
 
     const titleGetter = lastSeoMetaCall(useSeoMetaMock).title as () => string;
-    expect(titleGetter()).toBe("Wanderist — First");
+    expect(titleGetter()).toBe("FarFlung — First");
 
     pageTitle.value = "Second";
-    expect(titleGetter()).toBe("Wanderist — Second");
+    expect(titleGetter()).toBe("FarFlung — Second");
   });
 });
 
 describe("useOgMeta — origin fallback", () => {
   // Its own describe block (rather than a case inside the block above) so it
   // can stub a blank siteOrigin and a different request origin without
-  // disturbing the shared https://wanderist.test stub the other cases share.
+  // disturbing the shared https://farflung.test stub the other cases share.
   // Reuses the SAME useSeoMetaMock reference throughout (rather than
   // installing an unrelated vi.fn()) so restoring the shared stubs in
   // afterEach actually reconnects the block above's mock, instead of leaving

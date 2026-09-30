@@ -19,6 +19,6 @@ exports[`Error page (app/error.vue) > renders without crashing and matches snaps
       <div data-v-fa4da55a="" class="nf__coords">lat 0.0000 · lng 0.0000 · no signal</div>
     </div>
   </main>
-  <div data-v-fa4da55a="" class="nf-foot">wanderist · © 2026</div>
+  <div data-v-fa4da55a="" class="nf-foot">farflung · © 2026</div>
 </div>"
 `;

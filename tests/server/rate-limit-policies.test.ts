@@ -21,7 +21,7 @@ import {
 const SERVER_API_DIR = resolve(__dirname, "../../server/api");
 const API_PATH_PREFIX = "/api/";
 
-// wanderist#89's three named targets. Pinned explicitly (rather than only
+// farflung#89's three named targets. Pinned explicitly (rather than only
 // walking whatever keys happen to exist) so that deleting an entry — the
 // loudest form of drift — fails this test instead of it passing vacuously
 // over an empty or shrunk map.

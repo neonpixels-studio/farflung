@@ -52,7 +52,7 @@ import ActivityNotificationItem from "~/components/ActivityNotificationItem.vue"
 import { useDismissFocusRestore } from "~/composables/useDismissFocusRestore";
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Activity" });
+useHead({ title: "FarFlung — Activity" });
 
 // /activity walks every page (fetchAllNotifications) so notifications older
 // than the drawer's first-page preview are reachable here.

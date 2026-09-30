@@ -285,7 +285,7 @@ import {
 import { TAG_QUERY_PARAM, TAG_NAME_QUERY_PARAM } from "~/utils/tagFilterQuery";
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Journal" });
+useHead({ title: "FarFlung — Journal" });
 
 const openNewEntry = inject<(() => void) | undefined>(
   "openNewEntry",

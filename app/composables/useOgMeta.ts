@@ -21,7 +21,7 @@ export interface OgMetaInput {
 }
 
 // Site-wide title prefix.
-export const SITE_NAME = "Wanderist";
+export const SITE_NAME = "FarFlung";
 
 // No page currently ships a designed social-preview asset, so the favicon is
 // the only real image on the site to fall back to. See the "default OG image

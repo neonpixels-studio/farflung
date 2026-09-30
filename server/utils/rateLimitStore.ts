@@ -4,7 +4,7 @@
  * BEST-EFFORT ONLY — this runs on Netlify serverless functions, where each
  * concurrent instance holds its own process memory, so a client landing on
  * more than one warm instance can exceed the nominal limit. Accepted as a
- * first pass for wanderist#89; a shared store (Postgres table, Upstash
+ * first pass for farflung#89; a shared store (Postgres table, Upstash
  * Redis) is the natural next step behind this same RateLimitStore shape.
  *
  * Fixed windows also allow a boundary burst — up to 2x `limit` requests in a

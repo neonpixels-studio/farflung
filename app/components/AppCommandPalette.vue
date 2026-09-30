@@ -71,7 +71,7 @@
           navigate</span
         >
         <span class="cmdk__keys"><span class="kbd">↵</span> to open</span>
-        <span class="cmdk__brand">wanderist</span>
+        <span class="cmdk__brand">farflung</span>
       </div>
     </div>
   </div>

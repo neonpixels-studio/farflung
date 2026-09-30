@@ -20,8 +20,8 @@ const { useEntryDraft } = await import("../useEntryDraft");
 // The literal, historical key used before drafts were scoped per user.
 // Deliberately not derived from the composable's current prefix constant, so
 // this test can't drift in lockstep with a future rename and hide a mismatch.
-const LEGACY_DRAFT_STORAGE_KEY = "wanderist:new-entry-draft";
-const DRAFT_STORAGE_KEY_PREFIX = "wanderist:new-entry-draft";
+const LEGACY_DRAFT_STORAGE_KEY = "farflung:new-entry-draft";
+const DRAFT_STORAGE_KEY_PREFIX = "farflung:new-entry-draft";
 
 function draftStorageKeyFor(userId: string): string {
   return `${DRAFT_STORAGE_KEY_PREFIX}:${userId}`;
@@ -576,7 +576,7 @@ describe("useEntryDraft", () => {
     });
 
     it("does not touch unrelated localStorage keys when signing out with no draft saved", async () => {
-      localStorage.setItem("wanderist:theme", "dark");
+      localStorage.setItem("farflung:theme", "dark");
 
       const userRef = vue.ref<{ id: string } | null>({ id: "user-1" });
       const isLoadedRef = vue.ref(true);
@@ -589,7 +589,7 @@ describe("useEntryDraft", () => {
       userRef.value = null;
       await vue.nextTick();
 
-      expect(localStorage.getItem("wanderist:theme")).toBe("dark");
+      expect(localStorage.getItem("farflung:theme")).toBe("dark");
       expect(localStorage.length).toBe(1);
     });
 

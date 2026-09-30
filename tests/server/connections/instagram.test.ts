@@ -302,7 +302,7 @@ describe("GET /api/connections/instagram/start", () => {
     mockRequireUser.mockReturnValue("user-1");
     mockAssertInstagramSyncAllowed.mockResolvedValue(undefined);
     process.env.INSTAGRAM_CLIENT_ID = "test-client-id";
-    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://wanderist.app";
+    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://farflung.io";
   });
 
   it("propagates a 402 when the plan doesn't allow Instagram sync", async () => {
@@ -391,7 +391,7 @@ describe("GET /api/connections/instagram/callback", () => {
     });
     process.env.INSTAGRAM_CLIENT_ID = "test-client-id";
     process.env.INSTAGRAM_CLIENT_SECRET = "test-client-secret";
-    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://wanderist.app";
+    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://farflung.io";
     mockExchangeInstagramCode.mockResolvedValue({
       access_token: "short-token",
     });

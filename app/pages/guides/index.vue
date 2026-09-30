@@ -67,7 +67,7 @@ import GuideForm from "~/components/GuideForm.vue";
 import GuidesList from "~/components/GuidesList.vue";
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Guides" });
+useHead({ title: "FarFlung — Guides" });
 
 const guidesStore = useGuidesStore();
 

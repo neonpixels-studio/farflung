@@ -27,7 +27,7 @@ import { clerk, clerkSetup } from "@clerk/testing/playwright";
 // and no real email is sent. The matching user must exist in the dev instance
 // (create it once via /login); the domain is irrelevant since delivery is
 // bypassed.
-export const CLERK_TEST_EMAIL = "wanderist+clerk_test@example.com";
+export const CLERK_TEST_EMAIL = "farflung+clerk_test@example.com";
 
 // clerkSetup needs the dev instance's Clerk keys, passed explicitly because
 // @clerk/testing reads CLERK_SECRET_KEY / CLERK_PUBLISHABLE_KEY, not the

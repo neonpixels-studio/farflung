@@ -69,8 +69,8 @@ describe("resolveMapboxStyleLabel", () => {
     expect(resolveMapboxStyleLabel("dark")).toBe("dark-v11");
   });
 
-  it("returns wanderist-violet for the custom key", () => {
-    expect(resolveMapboxStyleLabel("custom")).toBe("wanderist-violet");
+  it("returns farflung-violet for the custom key", () => {
+    expect(resolveMapboxStyleLabel("custom")).toBe("farflung-violet");
   });
 
   it("falls back to the raw key for unknown styles", () => {

@@ -271,7 +271,7 @@ import type { Entry } from "~/stores/entries";
 import type { TripStop } from "~/stores/trips";
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Home" });
+useHead({ title: "FarFlung — Home" });
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
