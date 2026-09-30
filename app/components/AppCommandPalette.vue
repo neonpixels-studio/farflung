@@ -174,6 +174,7 @@ const visibleGroups = computed<SearchGroup[]>(() => {
     { key: "entries", label: "Journal", items: results.value.entries },
     { key: "guides", label: "Guides", items: results.value.guides },
     { key: "people", label: "People", items: results.value.people },
+    { key: "tags", label: "Tags", items: results.value.tags },
   ];
 
   return dynamicGroups.filter((group) => group.items.length > 0);

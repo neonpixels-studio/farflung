@@ -133,6 +133,26 @@ describe("JournalEntry component", () => {
     expect(wrapper.find(".tag-row").exists()).toBe(false);
   });
 
+  it("renders tags as clickable buttons", () => {
+    const wrapper = mount(JournalEntry, {
+      ...globalConfig,
+      props: { entry: SAMPLE_ENTRY },
+    });
+    const tagButton = wrapper.find(".tag-row button.tag");
+    expect(tagButton.exists()).toBe(true);
+    expect(tagButton.text()).toBe("iceland");
+  });
+
+  it("emits filter-tag with the tag when a tag is clicked", async () => {
+    const wrapper = mount(JournalEntry, {
+      ...globalConfig,
+      props: { entry: SAMPLE_ENTRY },
+    });
+    await wrapper.find(".tag-row button.tag").trigger("click");
+    expect(wrapper.emitted("filter-tag")).toHaveLength(1);
+    expect(wrapper.emitted("filter-tag")![0]).toEqual([SAMPLE_ENTRY.tags[0]]);
+  });
+
   it("renders photo media section when entry has photos", () => {
     const wrapper = mount(JournalEntry, {
       ...globalConfig,

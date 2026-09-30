@@ -26,6 +26,7 @@ import {
   guides,
   users,
   userPreferences,
+  tags,
 } from "../../../server/db/schema";
 import { publiclyVisibleAuthorCondition } from "../../../server/utils/publicVisibility";
 import {
@@ -34,6 +35,7 @@ import {
   searchEntries,
   searchGuides,
   searchPeople,
+  searchTags,
   runSearch,
 } from "../../../server/utils/search-queries";
 
@@ -47,7 +49,21 @@ function makeQueryChain(rows: Record<string, unknown>[]) {
     .fn()
     .mockReturnValue({ where: whereFn, innerJoin: innerJoinFn });
   const selectFn = vi.fn().mockReturnValue({ from: fromFn });
-  return { select: selectFn, _where: whereFn, _limit: limitFn };
+  return {
+    select: selectFn,
+    // searchTags uses selectDistinct().from(tags).innerJoin(...).innerJoin(...)
+    // .where(...).limit(...) — two joins deep, so the inner innerJoin must also
+    // resolve to a `where` step (unlike the single-join chains above).
+    selectDistinct: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        innerJoin: vi.fn().mockReturnValue({
+          innerJoin: innerJoinFn,
+        }),
+      }),
+    }),
+    _where: whereFn,
+    _limit: limitFn,
+  };
 }
 
 // Table-aware chain: each `.from(table)` resolves the rows registered for that
@@ -62,7 +78,16 @@ function makeTableQueryChain(
     const innerJoinFn = vi.fn().mockReturnValue({ where: whereFn });
     return { where: whereFn, innerJoin: innerJoinFn };
   });
-  return { select: vi.fn().mockReturnValue({ from: fromFn }) };
+  const selectDistinctFromFn = vi.fn((table: unknown) => {
+    const limitFn = vi.fn().mockResolvedValue(rowsByTable.get(table) ?? []);
+    const whereFn = vi.fn().mockReturnValue({ limit: limitFn });
+    const innerJoinFn = vi.fn().mockReturnValue({ where: whereFn });
+    return { innerJoin: vi.fn().mockReturnValue({ innerJoin: innerJoinFn }) };
+  });
+  return {
+    select: vi.fn().mockReturnValue({ from: fromFn }),
+    selectDistinct: vi.fn().mockReturnValue({ from: selectDistinctFromFn }),
+  };
 }
 
 describe("searchPlaces", () => {
@@ -224,6 +249,66 @@ describe("searchGuides", () => {
   });
 });
 
+describe("searchTags", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns tags matching the pattern for the given user's entries", async () => {
+    const expectedRows = [{ id: "tag-1", name: "hiking" }];
+    const chain = makeQueryChain(expectedRows);
+    mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
+
+    const result = await searchTags(
+      mockGetDb() as unknown as ReturnType<typeof getDb>,
+      "user-1",
+      "%hik%",
+    );
+
+    expect(result).toEqual(expectedRows);
+  });
+
+  it("scopes tags to the given user's entries (eq on userId)", async () => {
+    const chain = makeQueryChain([]);
+    mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
+
+    await searchTags(
+      mockGetDb() as unknown as ReturnType<typeof getDb>,
+      "user-1",
+      "%hik%",
+    );
+
+    // Assert the exact column so removing the userId filter fails this test.
+    expect(eq).toHaveBeenCalledWith(entries.userId, "user-1");
+  });
+
+  it("matches against the tag name column", async () => {
+    const chain = makeQueryChain([]);
+    mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
+
+    await searchTags(
+      mockGetDb() as unknown as ReturnType<typeof getDb>,
+      "user-1",
+      "%hik%",
+    );
+
+    expect(ilike).toHaveBeenCalledWith(tags.name, "%hik%");
+  });
+
+  it("returns an empty array when no tags match", async () => {
+    const chain = makeQueryChain([]);
+    mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
+
+    const result = await searchTags(
+      mockGetDb() as unknown as ReturnType<typeof getDb>,
+      "user-1",
+      "%nomatch%",
+    );
+
+    expect(result).toEqual([]);
+  });
+});
+
 describe("searchPeople", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -300,7 +385,7 @@ describe("runSearch", () => {
     vi.clearAllMocks();
   });
 
-  it("returns grouped results for all five categories", async () => {
+  it("returns grouped results for all six categories", async () => {
     const chain = makeQueryChain([]);
     mockGetDb.mockReturnValue(chain as unknown as ReturnType<typeof getDb>);
 
@@ -311,6 +396,7 @@ describe("runSearch", () => {
     expect(result).toHaveProperty("entries");
     expect(result).toHaveProperty("guides");
     expect(result).toHaveProperty("people");
+    expect(result).toHaveProperty("tags");
   });
 
   it("includes matching guides in the combined results, scoped to the owner", async () => {

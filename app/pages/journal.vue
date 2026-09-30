@@ -6,7 +6,7 @@
           v-for="tab in FEED_TABS"
           :key="tab"
           :class="{ 'is-active': activeTab === tab }"
-          @click="activeTab = tab"
+          @click="selectTab(tab)"
         >
           {{ tab }}
         </button>
@@ -56,8 +56,44 @@
           </div>
         </div>
 
+        <!-- Active tag filter: overrides the tab content below -->
+        <div v-if="activeTagFilter" class="tag-filter-bar">
+          <span class="label">// filtered by tag</span>
+          <span class="tag tag--accent">{{ activeTagFilter.name }}</span>
+          <button
+            class="icon-btn"
+            aria-label="Clear tag filter"
+            @click="clearTagFilter"
+          >
+            <AppIcon name="x" :size="14" />
+          </button>
+        </div>
+
+        <template v-if="activeTagFilter">
+          <div v-if="isTagFilterLoading" class="feed-state">
+            <span class="label">// loading…</span>
+          </div>
+          <div v-else-if="tagFilterError" class="feed-state" role="alert">
+            <span class="label">// {{ tagFilterError }}</span>
+          </div>
+          <template v-else>
+            <JournalEntry
+              v-for="entry in taggedEntries"
+              :key="entry.id"
+              :entry="entry"
+              :is-liked="likedEntryIds.has(entry.id)"
+              @toggle-like="handleToggleLike"
+              @edit="openEditEntry?.($event)"
+              @filter-tag="applyTagFilter"
+            />
+            <div v-if="taggedEntries.length === 0" class="feed-state">
+              <span class="label">// no entries with this tag</span>
+            </div>
+          </template>
+        </template>
+
         <!-- Loading state -->
-        <div v-if="entriesStore.isLoading" class="feed-state">
+        <div v-else-if="entriesStore.isLoading" class="feed-state">
           <span class="label">// loading…</span>
         </div>
 
@@ -79,6 +115,7 @@
               :is-liked="likedEntryIds.has(entry.id)"
               @toggle-like="handleToggleLike"
               @edit="openEditEntry?.($event)"
+              @filter-tag="applyTagFilter"
             />
           </template>
           <div v-if="dayGroups.length === 0" class="feed-state">
@@ -99,6 +136,7 @@
               :is-liked="likedEntryIds.has(entry.id)"
               @toggle-like="handleToggleLike"
               @edit="openEditEntry?.($event)"
+              @filter-tag="applyTagFilter"
             />
           </template>
           <div v-if="tripGroups.length === 0" class="feed-state">
@@ -238,8 +276,13 @@ import { computed, inject, onMounted, ref, toRef, watch } from "vue";
 import { useEntriesStore } from "~/stores/entries";
 import { useTripsStore } from "~/stores/trips";
 import type { Trip } from "~/stores/trips";
-import type { Entry, EditEntryHandler } from "~/stores/entries";
-import { FEED_TABS, useJournalFeed } from "~/composables/useJournalFeed";
+import type { Entry, EntryTag, EditEntryHandler } from "~/stores/entries";
+import {
+  FEED_TABS,
+  useJournalFeed,
+  type FeedTab,
+} from "~/composables/useJournalFeed";
+import { TAG_QUERY_PARAM, TAG_NAME_QUERY_PARAM } from "~/utils/tagFilterQuery";
 
 definePageMeta({ layout: "app", middleware: "auth" });
 useHead({ title: "Wanderist — Journal" });
@@ -257,10 +300,178 @@ const openEditEntry = inject<EditEntryHandler | undefined>(
 const entriesStore = useEntriesStore();
 const tripsStore = useTripsStore();
 const { apiFetch } = useApiClient();
+const route = useRoute();
+const router = useRouter();
 
 const { activeTab, dayGroups, tripGroups, photoEntries } = useJournalFeed(
   toRef(entriesStore, "entries"),
   computed(() => tripsStore.tripList),
+);
+
+// Tag filter state — set by clicking a tag on a JournalEntry card, or by
+// arriving via a "Tags" search result link (see app/composables/useSearch.ts,
+// mapTag). The route's `tag` param is the single source of truth for *which*
+// tag is active: applyTagFilter/clearTagFilter only navigate, and the watcher
+// below reacts — so the filter also (re)applies when a Tags search result is
+// opened while already on /journal (Nuxt reuses the page instance for a
+// query-only navigation, so an onMounted-only check would miss it).
+//
+// Fetches GET /api/entries?tagId=... to learn which entries carry the tag
+// (this is the "all entries for tag X" query the entry_tags_tag_id_idx index
+// was added to support). The rendered list is then always sourced from
+// entriesStore.entries — never the fetched copy directly — so it reflects a
+// like/edit made elsewhere on the page, and so a deleted entry or one whose
+// tag was since removed drops out instead of lingering. This does mean an
+// entry can take a moment to appear if the tag fetch resolves before the
+// store's own fetchEntries() has (self-heals once that resolves, since this
+// is reactive over entriesStore.entries).
+const activeTagFilter = ref<EntryTag | null>(null);
+const taggedEntriesFetched = ref<Entry[]>([]);
+const isTagFilterLoading = ref(false);
+const tagFilterError = ref<string | null>(null);
+
+// Bumped on every new tag request (and on clearing the filter) so a slower,
+// now-superseded request can't overwrite a newer result once it resolves —
+// mirrors useSearch's activeRequestId guard.
+let tagRequestSequence = 0;
+
+function hasActiveTag(entry: Entry, tagId: string): boolean {
+  return entry.tags.some((tag) => tag.id === tagId);
+}
+
+const taggedEntries = computed<Entry[]>(() => {
+  const tagId = activeTagFilter.value?.id;
+  if (!tagId) {
+    return [];
+  }
+  const storeEntriesById = new Map(
+    entriesStore.entries.map((entry) => [entry.id, entry]),
+  );
+  return taggedEntriesFetched.value
+    .map((entry) => storeEntriesById.get(entry.id))
+    .filter(
+      (entry): entry is Entry =>
+        entry !== undefined && hasActiveTag(entry, tagId),
+    );
+});
+
+function selectTab(tab: FeedTab): void {
+  clearTagFilter();
+  activeTab.value = tab;
+}
+
+function queryWithoutTagFilter(): Record<string, unknown> {
+  const next = { ...route.query };
+  delete next[TAG_QUERY_PARAM];
+  delete next[TAG_NAME_QUERY_PARAM];
+  return next;
+}
+
+// Only the id is required — a link missing (or with a blank) `tagName`
+// (hand-edited or truncated) still applies the filter, just with a blank
+// placeholder label until resolveTagName fills in the real name from the
+// fetched entries.
+function tagFilterFromRoute(): EntryTag | null {
+  const id = route.query[TAG_QUERY_PARAM];
+  if (typeof id !== "string" || id === "") {
+    return null;
+  }
+  const name = route.query[TAG_NAME_QUERY_PARAM];
+  return { id, name: typeof name === "string" ? name : "" };
+}
+
+// The URL's tagName is only a placeholder label (whatever the link's author
+// had on hand — e.g. stale after a tag rename) until the real entries load;
+// once fetched, prefer the name attached to the entries themselves.
+function resolveTagName(tag: EntryTag, fetched: Entry[]): string {
+  const matchingTag = fetched
+    .flatMap((entry) => entry.tags)
+    .find((entryTag) => entryTag.id === tag.id);
+  return matchingTag?.name ?? tag.name;
+}
+
+function applyTagFetchResult(
+  requestId: number,
+  tag: EntryTag,
+  fetched: Entry[],
+): void {
+  if (requestId !== tagRequestSequence) {
+    return;
+  }
+  activeTagFilter.value = { id: tag.id, name: resolveTagName(tag, fetched) };
+  taggedEntriesFetched.value = fetched;
+  isTagFilterLoading.value = false;
+}
+
+function applyTagFetchError(requestId: number, error: unknown): void {
+  if (requestId !== tagRequestSequence) {
+    return;
+  }
+  console.error("[journal] failed to load entries for tag", error);
+  tagFilterError.value = "Failed to load entries for this tag.";
+  taggedEntriesFetched.value = [];
+  isTagFilterLoading.value = false;
+}
+
+async function loadTaggedEntries(tag: EntryTag): Promise<void> {
+  const requestId = ++tagRequestSequence;
+  activeTagFilter.value = tag;
+  isTagFilterLoading.value = true;
+  tagFilterError.value = null;
+  try {
+    const fetched = await entriesStore.fetchEntriesByTag(tag.id);
+    applyTagFetchResult(requestId, tag, fetched);
+  } catch (error: unknown) {
+    applyTagFetchError(requestId, error);
+  }
+}
+
+function applyTagFilter(tag: EntryTag): void {
+  router.replace({
+    query: {
+      ...route.query,
+      [TAG_QUERY_PARAM]: tag.id,
+      [TAG_NAME_QUERY_PARAM]: tag.name,
+    },
+  });
+}
+
+function clearTagFilter(): void {
+  if (!activeTagFilter.value) {
+    return;
+  }
+  router.replace({ query: queryWithoutTagFilter() });
+}
+
+// Route query is the source of truth for the active tag filter (see comment
+// above). Not `immediate` — the initial load is handled by onMounted below,
+// alongside this page's other data loads (fetchEntries, fetchTrips,
+// loadOnThisDay), which are deliberately client-only; an immediate watcher
+// runs during setup, which SSR also executes, and would fire (and discard) a
+// duplicate fetch there. This watcher instead covers *subsequent* query
+// changes — e.g. opening a different "Tags" search result while already on
+// /journal, which Nuxt handles as a query-only navigation that reuses the
+// page instance rather than remounting it.
+//
+// Watches only the tag id (not the display name) so editing/re-syncing the
+// name alone — which can't happen from applyTagFilter/clearTagFilter but is
+// possible via a hand-edited URL — doesn't trigger a redundant refetch of the
+// same tag.
+watch(
+  () => route.query[TAG_QUERY_PARAM],
+  () => {
+    const tag = tagFilterFromRoute();
+    if (!tag) {
+      // Invalidate any in-flight request so its resolution can't resurrect a
+      // filter the user just cleared.
+      tagRequestSequence++;
+      activeTagFilter.value = null;
+      taggedEntriesFetched.value = [];
+      tagFilterError.value = null;
+      return;
+    }
+    loadTaggedEntries(tag);
+  },
 );
 
 // "On this day" state
@@ -429,6 +640,15 @@ onMounted(() => {
       ),
     loadOnThisDay(),
   ]);
+
+  // Pre-apply a tag filter when arriving via a "Tags" search result link
+  // (e.g. /journal?tag=<id>&tagName=<name> — see useSearch's mapTag). The
+  // watch() above only covers subsequent query changes; this covers the
+  // initial one, kept client-only like the fetches above.
+  const initialTagFilter = tagFilterFromRoute();
+  if (initialTagFilter) {
+    loadTaggedEntries(initialTagFilter);
+  }
 });
 </script>
 
@@ -451,6 +671,12 @@ onMounted(() => {
 .feed-state {
   padding: 24px 0;
   text-align: center;
+}
+
+.tag-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .compose {

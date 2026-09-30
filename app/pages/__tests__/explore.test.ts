@@ -61,6 +61,7 @@ const heroSearchResults = ref<SearchGroups>({
   entries: [],
   guides: [],
   people: [],
+  tags: [],
 });
 const mockHeroSearch = vi.fn();
 vi.stubGlobal("useSearch", () => ({
@@ -239,6 +240,7 @@ describe("Explore page (/explore)", () => {
       entries: [],
       guides: [],
       people: [],
+      tags: [],
     };
     trendingPlaces.value = DEFAULT_TRENDING_PLACES;
   });
@@ -270,6 +272,7 @@ describe("Explore page (/explore)", () => {
         },
       ],
       people: [],
+      tags: [],
     };
 
     const wrapper = mount(ExplorePage, globalConfig);

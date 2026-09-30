@@ -25,8 +25,10 @@ vi.mock("drizzle-orm", async (importOriginal) => {
   };
 });
 
+import { eq, inArray } from "drizzle-orm";
 import { requireUser } from "../../../server/utils/auth";
 import { getDb } from "../../../server/db/index";
+import { entries, entryTags } from "../../../server/db/schema";
 
 const mockRequireUser = vi.mocked(requireUser);
 const mockGetDb = vi.mocked(getDb);
@@ -320,5 +322,102 @@ describe("GET /api/entries", () => {
 
     expect(result.entries).toEqual([]);
     expect(result.tab).toBe("photos");
+  });
+
+  it("filters by tagId via a subquery on entry_tags, not a materialized id list", async () => {
+    mockRequireUser.mockReturnValue("user-1");
+    mockGetQuery.mockReturnValue({ tagId: "tag-1" });
+
+    const storedEntries = [
+      { id: "e-1", userId: "user-1", title: "Hiking day" },
+    ];
+
+    // buildFilters' subquery: select({ id }).from(entryTags).where(...). It's
+    // never awaited directly — it's embedded into inArray() and only resolved
+    // when the outer listing query runs — so the mock just needs to return an
+    // object, not a promise.
+    const subqueryFromMock = vi
+      .fn()
+      .mockReturnValue({ where: vi.fn().mockReturnValue({}) });
+
+    const listingOffsetMock = vi.fn().mockResolvedValue(storedEntries);
+    const listingLimitMock = vi
+      .fn()
+      .mockReturnValue({ offset: listingOffsetMock });
+    const listingOrderByMock = vi
+      .fn()
+      .mockReturnValue({ limit: listingLimitMock });
+    const listingWhereMock = vi
+      .fn()
+      .mockReturnValue({ orderBy: listingOrderByMock });
+    const listingFromMock = vi
+      .fn()
+      .mockReturnValue({ where: listingWhereMock });
+
+    const photosFromMock = vi.fn().mockReturnValue({
+      where: vi
+        .fn()
+        .mockReturnValue({ orderBy: vi.fn().mockResolvedValue([]) }),
+    });
+    const tagsFromMock = vi.fn().mockReturnValue({
+      innerJoin: vi
+        .fn()
+        .mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
+    });
+    const likesFromMock = vi
+      .fn()
+      .mockReturnValue({ where: vi.fn().mockResolvedValue([]) });
+
+    let selectCallCount = 0;
+    const mockDb = {
+      select: vi.fn().mockImplementation(() => {
+        selectCallCount++;
+        if (selectCallCount === 1) {
+          return { from: subqueryFromMock };
+        }
+        if (selectCallCount === 2) {
+          return { from: listingFromMock };
+        }
+        if (selectCallCount === 3) {
+          return { from: photosFromMock };
+        }
+        if (selectCallCount === 4) {
+          return { from: tagsFromMock };
+        }
+        return { from: likesFromMock };
+      }),
+    };
+    mockGetDb.mockReturnValue(mockDb as unknown as ReturnType<typeof getDb>);
+
+    const defaultHandler = "default" in handler ? handler.default : handler;
+    const result = (await (defaultHandler as (event: unknown) => unknown)(
+      {},
+    )) as { entries: { id: string }[] };
+
+    expect(subqueryFromMock).toHaveBeenCalledWith(entryTags);
+    expect(eq).toHaveBeenCalledWith(entryTags.tagId, "tag-1");
+    expect(inArray).toHaveBeenCalledWith(entries.id, expect.anything());
+    expect(result.entries).toHaveLength(1);
+    expect(result.entries[0].id).toBe("e-1");
+  });
+
+  it("ignores a blank tagId (whitespace-only)", async () => {
+    mockRequireUser.mockReturnValue("user-1");
+    mockGetQuery.mockReturnValue({ tagId: "   " });
+
+    const storedEntries = [{ id: "e-1", userId: "user-1", title: "Untagged" }];
+    const mockDb = makeDbForListing(storedEntries);
+    mockGetDb.mockReturnValue(mockDb as unknown as ReturnType<typeof getDb>);
+
+    const defaultHandler = "default" in handler ? handler.default : handler;
+    const result = (await (defaultHandler as (event: unknown) => unknown)(
+      {},
+    )) as { entries: unknown[] };
+
+    // A whitespace-only tagId is treated as absent — no extra `.select()` for
+    // the tag subquery, so the count stays at the baseline 4 (listing +
+    // photos + tags-join + likes) from makeDbForListing.
+    expect(mockDb.select).toHaveBeenCalledTimes(4);
+    expect(result.entries).toHaveLength(1);
   });
 });

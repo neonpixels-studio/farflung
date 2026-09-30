@@ -27,6 +27,7 @@ const EMPTY_RESULTS = {
   entries: [],
   guides: [],
   people: [],
+  tags: [],
 };
 
 const handler = await import("../../../server/api/search.get");
@@ -103,7 +104,7 @@ describe("GET /api/search", () => {
     expect(result).toEqual(searchResults);
   });
 
-  it("returns all five groups in the response shape", async () => {
+  it("returns all six groups in the response shape", async () => {
     const searchResults = {
       places: [
         {
@@ -124,6 +125,7 @@ describe("GET /api/search", () => {
           handle: "yuki",
         },
       ],
+      tags: [{ id: "tag-1", name: "ramen" }],
     };
     mockGetQuery.mockReturnValue({ q: "japan" });
     mockRunSearch.mockResolvedValue(searchResults);
@@ -135,6 +137,7 @@ describe("GET /api/search", () => {
     expect(result.entries).toHaveLength(1);
     expect(result.guides).toHaveLength(1);
     expect(result.people).toHaveLength(1);
+    expect(result.tags).toHaveLength(1);
   });
 
   it("scopes results to the authenticated user by passing userId to runSearch", async () => {

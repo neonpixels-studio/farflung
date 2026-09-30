@@ -1,10 +1,12 @@
 /**
  * useSearch — calls GET /api/search?q= and returns grouped, UI-ready result
- * items. All five groups (places, trips, entries, guides, people) map to the same
- * SearchItem shape that AppCommandPalette, explore, and map already use.
+ * items. All six groups (places, trips, entries, guides, people, tags) map to
+ * the same SearchItem shape that AppCommandPalette, explore, and map already
+ * use.
  */
 
 import { DEFAULT_TRAVELER_NAME, formatHandle } from "~/utils/travelerLabels";
+import { TAG_QUERY_PARAM, TAG_NAME_QUERY_PARAM } from "~/utils/tagFilterQuery";
 
 export interface SearchItem {
   id: string;
@@ -20,6 +22,7 @@ export interface SearchGroups {
   entries: SearchItem[];
   guides: SearchItem[];
   people: SearchItem[];
+  tags: SearchItem[];
 }
 
 interface PlaceResult {
@@ -52,12 +55,18 @@ interface PersonResult {
   handle: string | null;
 }
 
+interface TagResult {
+  id: string;
+  name: string;
+}
+
 interface SearchApiResponse {
   places: PlaceResult[];
   trips: TripResult[];
   entries: EntryResult[];
   guides: GuideResult[];
   people: PersonResult[];
+  tags: TagResult[];
 }
 
 const MAX_QUERY_LENGTH = 100;
@@ -65,7 +74,14 @@ const DEBOUNCE_MS = 250;
 
 // Factory to avoid sharing array references across resets and initializations.
 function emptyGroups(): SearchGroups {
-  return { places: [], trips: [], entries: [], guides: [], people: [] };
+  return {
+    places: [],
+    trips: [],
+    entries: [],
+    guides: [],
+    people: [],
+    tags: [],
+  };
 }
 
 function mapPlace(place: PlaceResult): SearchItem {
@@ -108,6 +124,19 @@ function mapGuide(guide: GuideResult): SearchItem {
   };
 }
 
+function mapTag(tag: TagResult): SearchItem {
+  const params = new URLSearchParams({
+    [TAG_QUERY_PARAM]: tag.id,
+    [TAG_NAME_QUERY_PARAM]: tag.name,
+  });
+  return {
+    id: tag.id,
+    title: `#${tag.name}`,
+    icon: "tag",
+    href: `/journal?${params.toString()}`,
+  };
+}
+
 function mapPerson(person: PersonResult): SearchItem {
   const title =
     formatHandle(person.handle) ||
@@ -130,6 +159,7 @@ function mapApiResponse(response: SearchApiResponse): SearchGroups {
     entries: response.entries.map(mapEntry),
     guides: response.guides.map(mapGuide),
     people: response.people.map(mapPerson),
+    tags: response.tags.map(mapTag),
   };
 }
 

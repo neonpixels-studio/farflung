@@ -11,15 +11,16 @@ exports[`Journal page (/journal) > renders without crashing and matches snapshot
       <!-- Compose bar — clicking anywhere opens the new-entry drawer -->
       <div data-v-59046aa4="" class="compose" role="button" tabindex="0" aria-label="Write a new entry"><span data-v-59046aa4="" class="compose__av"><svg data-v-59046aa4="" data-icon="" name="user" size="18"></svg></span><input data-v-59046aa4="" readonly="" placeholder="Write an entry, or drop today's photos…">
         <div data-v-59046aa4="" class="acts"><button data-v-59046aa4="" class="icon-btn" aria-label="Add photo"><svg data-v-59046aa4="" data-icon="" name="image" size="18"></svg></button><button data-v-59046aa4="" class="icon-btn" aria-label="Add location"><svg data-v-59046aa4="" data-icon="" name="pin" size="18"></svg></button></div>
-      </div><!-- Loading state -->
+      </div><!-- Active tag filter: overrides the tab content below -->
+      <!--v-if-->
       <!-- Timeline tab: entries grouped by day -->
       <div data-v-59046aa4="" class="day-div"><span data-v-59046aa4="" class="label">// Jun 12</span></div>
       <article data-v-59046aa4="" class="post">
-        <h3 class="post__title">Harbor at 4am</h3><button class="like"><span class="cnt">24</span></button><button class="post__edit"></button>
+        <h3 class="post__title">Harbor at 4am</h3><button class="like"><span class="cnt">24</span></button><button class="post__edit"></button><button class="stub-tag">iceland</button>
       </article>
       <div data-v-59046aa4="" class="day-div"><span data-v-59046aa4="" class="label">// Jun 8</span></div>
       <article data-v-59046aa4="" class="post">
-        <h3 class="post__title">Tram 28, again</h3><button class="like"><span class="cnt">41</span></button><button class="post__edit"></button>
+        <h3 class="post__title">Tram 28, again</h3><button class="like"><span class="cnt">41</span></button><button class="post__edit"></button><button class="stub-tag">portugal</button>
       </article>
       <!--v-if-->
     </div><!-- Right rail -->

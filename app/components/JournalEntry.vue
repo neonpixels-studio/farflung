@@ -68,13 +68,17 @@
       <h3 class="post__title">{{ entry.title }}</h3>
       <p v-if="entry.body" class="post__text">{{ entry.body }}</p>
       <div v-if="entry.tags.length > 0" class="tag-row">
-        <span
+        <button
           v-for="(tag, index) in entry.tags"
           :key="tag.id"
-          class="tag"
+          type="button"
+          class="tag tag--clickable"
           :class="{ 'tag--accent': index === 0 }"
-          >{{ tag.name }}</span
+          :aria-label="`Filter entries by tag ${tag.name}`"
+          @click="emit('filter-tag', tag)"
         >
+          {{ tag.name }}
+        </button>
       </div>
     </div>
   </article>
@@ -82,7 +86,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Entry } from "~/stores/entries";
+import type { Entry, EntryTag } from "~/stores/entries";
 
 const MAX_VISIBLE_PHOTOS = 3;
 
@@ -100,6 +104,9 @@ const emit = defineEmits<{
   // /api/entries is scoped to the caller), so the edit affordance is always for
   // an editable entry.
   edit: [entry: Entry];
+  // Clicking a tag on the card filters the journal feed to that tag (see
+  // app/pages/journal.vue).
+  "filter-tag": [tag: EntryTag];
 }>();
 
 const visiblePhotos = computed(() =>
@@ -122,3 +129,16 @@ const entryTimestamp = computed(() => {
   });
 });
 </script>
+
+<style scoped>
+/* Tags render as <button> so they're clickable (filter the feed to that tag)
+   but must keep the same look as the plain-span .tag style in main.css. */
+.tag--clickable {
+  font-family: inherit;
+  cursor: pointer;
+}
+.tag--clickable:hover {
+  border-color: var(--accent-line);
+  color: var(--accent-ink);
+}
+</style>

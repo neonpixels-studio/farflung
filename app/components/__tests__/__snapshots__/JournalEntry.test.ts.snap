@@ -1,18 +1,18 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`JournalEntry component > renders without crashing and matches snapshot 1`] = `
-"<article class="post">
-  <div class="post__head"><span class="post__av"><svg data-icon="" name="user" size="18"></svg></span>
-    <div class="post__who"><b>Me</b>
-      <div class="post__meta"><svg data-icon="" name="pin" size="11"></svg> Jun 12, 4:12 AM</div>
-    </div><button class="post__edit icon-btn" style="border: none none; margin-left: auto;" aria-label="Edit entry"><svg data-icon="" name="edit" size="15"></svg></button><button class="post__menu icon-btn" style="border: none none;" aria-label="More"><svg data-icon="" name="chevron" size="16" style="transform: rotate(90deg);"></svg></button>
+"<article data-v-86ae124d="" class="post">
+  <div data-v-86ae124d="" class="post__head"><span data-v-86ae124d="" class="post__av"><svg data-v-86ae124d="" data-icon="" name="user" size="18"></svg></span>
+    <div data-v-86ae124d="" class="post__who"><b data-v-86ae124d="">Me</b>
+      <div data-v-86ae124d="" class="post__meta"><svg data-v-86ae124d="" data-icon="" name="pin" size="11"></svg> Jun 12, 4:12 AM</div>
+    </div><button data-v-86ae124d="" class="post__edit icon-btn" style="border: none none; margin-left: auto;" aria-label="Edit entry"><svg data-v-86ae124d="" data-icon="" name="edit" size="15"></svg></button><button data-v-86ae124d="" class="post__menu icon-btn" style="border: none none;" aria-label="More"><svg data-v-86ae124d="" data-icon="" name="chevron" size="16" style="transform: rotate(90deg);"></svg></button>
   </div>
   <!--v-if-->
-  <div class="post__body">
-    <div class="post__actions"><button class="like" aria-label="Like entry"><svg data-icon="" name="heart" size="17"></svg><span class="cnt">24</span></button><button aria-label="Comments"><svg data-icon="" name="journal" size="17"></svg></button><button style="margin-left: auto;" aria-label="Bookmark"><svg data-icon="" name="star" size="17"></svg></button></div>
-    <h3 class="post__title">Harbor at 4am</h3>
-    <p class="post__text">Cold morning, the whole harbor still asleep.</p>
-    <div class="tag-row"><span class="tag tag--accent">iceland</span></div>
+  <div data-v-86ae124d="" class="post__body">
+    <div data-v-86ae124d="" class="post__actions"><button data-v-86ae124d="" class="like" aria-label="Like entry"><svg data-v-86ae124d="" data-icon="" name="heart" size="17"></svg><span data-v-86ae124d="" class="cnt">24</span></button><button data-v-86ae124d="" aria-label="Comments"><svg data-v-86ae124d="" data-icon="" name="journal" size="17"></svg></button><button data-v-86ae124d="" style="margin-left: auto;" aria-label="Bookmark"><svg data-v-86ae124d="" data-icon="" name="star" size="17"></svg></button></div>
+    <h3 data-v-86ae124d="" class="post__title">Harbor at 4am</h3>
+    <p data-v-86ae124d="" class="post__text">Cold morning, the whole harbor still asleep.</p>
+    <div data-v-86ae124d="" class="tag-row"><button data-v-86ae124d="" type="button" class="tag tag--clickable tag--accent" aria-label="Filter entries by tag iceland">iceland</button></div>
   </div>
 </article>"
 `;

@@ -307,6 +307,21 @@ describe("useEntriesStore", () => {
       );
     });
 
+    it("appends tagId query param when provided", async () => {
+      mockApiFetch.mockResolvedValue({
+        entries: [],
+        tab: "timeline",
+        page: 1,
+        hasMore: false,
+      });
+      const store = useEntriesStore();
+      await store.fetchEntries({ tagId: "tag-1" });
+
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/entries?tagId=tag-1&page=1",
+      );
+    });
+
     it("appends tab query param when provided", async () => {
       mockApiFetch.mockResolvedValue({
         entries: [],
@@ -335,6 +350,100 @@ describe("useEntriesStore", () => {
       expect(mockApiFetch).toHaveBeenCalledWith(
         "/api/entries?tripId=trip-1&tab=by-trip&page=1",
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // fetchEntriesByTag
+  // ---------------------------------------------------------------------------
+
+  describe("fetchEntriesByTag", () => {
+    it("returns the tag-filtered entries without touching the main entries list", async () => {
+      const mainEntries = [BASE_ENTRY];
+      const taggedEntries = [{ ...BASE_ENTRY, id: "e-tagged" }];
+
+      mockApiFetch
+        .mockResolvedValueOnce({
+          entries: mainEntries,
+          tab: "timeline",
+          page: 1,
+          hasMore: false,
+        })
+        .mockResolvedValueOnce({
+          entries: taggedEntries,
+          tab: "timeline",
+          page: 1,
+          hasMore: false,
+        });
+
+      const store = useEntriesStore();
+      await store.fetchEntries();
+      const result = await store.fetchEntriesByTag("tag-1");
+
+      expect(mockApiFetch).toHaveBeenNthCalledWith(
+        2,
+        "/api/entries?tagId=tag-1&page=1",
+      );
+      expect(result).toEqual(taggedEntries);
+      // The main `entries` list (powering Timeline/By-trip/Photos) is untouched.
+      expect(store.entries).toEqual(mainEntries);
+    });
+
+    it("walks every page for the tag filter", async () => {
+      const pageOne = Array.from({ length: 20 }, (_, index) => ({
+        ...BASE_ENTRY,
+        id: `p1-${index}`,
+      }));
+      const pageTwo = [{ ...BASE_ENTRY, id: "p2-0" }];
+
+      mockApiFetch
+        .mockResolvedValueOnce({
+          entries: pageOne,
+          tab: "timeline",
+          page: 1,
+          hasMore: true,
+        })
+        .mockResolvedValueOnce({
+          entries: pageTwo,
+          tab: "timeline",
+          page: 2,
+          hasMore: false,
+        });
+
+      const store = useEntriesStore();
+      const result = await store.fetchEntriesByTag("tag-1");
+
+      expect(result).toHaveLength(21);
+      expect(mockApiFetch).toHaveBeenNthCalledWith(
+        1,
+        "/api/entries?tagId=tag-1&page=1",
+      );
+      expect(mockApiFetch).toHaveBeenNthCalledWith(
+        2,
+        "/api/entries?tagId=tag-1&page=2",
+      );
+    });
+
+    it("rethrows on failure without setting the shared error or touching the main entries list", async () => {
+      mockApiFetch.mockResolvedValueOnce({
+        entries: [BASE_ENTRY],
+        tab: "timeline",
+        page: 1,
+        hasMore: false,
+      });
+      const store = useEntriesStore();
+      await store.fetchEntries();
+
+      mockApiFetch.mockRejectedValueOnce(new Error("Network error"));
+
+      await expect(store.fetchEntriesByTag("tag-1")).rejects.toThrow(
+        "Network error",
+      );
+      // This is a side query for one filtered view, not the main entries
+      // load — a failure here must not bleed into the main feed's error
+      // state (see fetchEntriesByTag's doc comment).
+      expect(store.error).toBeNull();
+      expect(store.entries).toEqual([BASE_ENTRY]);
     });
   });
 

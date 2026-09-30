@@ -79,7 +79,14 @@ Object.assign(globalThis, {
   })),
   useSearch: vi.fn(() => ({
     query: vue.ref(""),
-    results: vue.ref({ places: [], trips: [], entries: [], people: [] }),
+    results: vue.ref({
+      places: [],
+      trips: [],
+      entries: [],
+      guides: [],
+      people: [],
+      tags: [],
+    }),
     isLoading: vue.ref(false),
     error: vue.ref(null),
     search: vi.fn().mockResolvedValue(undefined),
@@ -111,6 +118,7 @@ Object.assign(globalThis, {
     fetchEntries: vi
       .fn()
       .mockResolvedValue({ entries: [], tab: "timeline", page: 1 }),
+    fetchEntriesByTag: vi.fn().mockResolvedValue([]),
     fetchEntry: vi.fn(),
     updateEntry: vi.fn(),
     deleteEntry: vi.fn(),
