@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import ProfileHeader from "../ProfileHeader.vue";
+import { buildLoginPath } from "~/utils/authRedirect";
 
 const globalConfig = {
   global: {
@@ -20,6 +21,10 @@ const BASE_PROPS = {
   pending: false,
   viewerIsSignedIn: true,
   viewerAuthLoaded: true,
+  // signInHref is required (#292); this default is unused whenever
+  // viewerIsSignedIn is true (BASE_PROPS' own default), since the follow
+  // button renders instead of the sign-in link.
+  signInHref: "/login",
 };
 
 describe("ProfileHeader", () => {
@@ -107,7 +112,23 @@ describe("ProfileHeader", () => {
     const signInLink = wrapper.find("a");
     expect(signInLink.exists()).toBe(true);
     expect(signInLink.text().toLowerCase()).toContain("sign in");
-    expect(signInLink.attributes("href")).toBe("/login");
+    expect(signInLink.attributes("href")).toBe(BASE_PROPS.signInHref);
+  });
+
+  it("carries a caller-provided sign-in redirect through the link (#292)", () => {
+    const signInHref = buildLoginPath("/u/elsa");
+    const wrapper = mount(ProfileHeader, {
+      ...globalConfig,
+      props: {
+        ...BASE_PROPS,
+        viewerIsSignedIn: false,
+        viewerAuthLoaded: true,
+        signInHref,
+      },
+    });
+
+    const signInLink = wrapper.find("a");
+    expect(signInLink.attributes("href")).toBe(signInHref);
   });
 
   it("shows neither a follow button nor a sign-in prompt while auth is still resolving", () => {

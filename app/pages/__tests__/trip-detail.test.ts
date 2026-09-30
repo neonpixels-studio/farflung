@@ -12,6 +12,12 @@ import {
 } from "~/composables/__tests__/ogMetaTestUtils";
 import { INVITE_UNAVAILABLE_TITLE } from "~/constants/trips";
 import { UNEXPECTED_ERROR_MESSAGE } from "~/utils/extractErrorMessage";
+import { AUTH_REDIRECT_QUERY_PARAM } from "~/utils/authRedirect";
+
+// The expected /login href once the trip's own URL (see the useRoute stub
+// below, default routeParams.id "trip-1") is carried through as the redirect
+// param (#292).
+const EXPECTED_SIGN_IN_HREF = `/login?${AUTH_REDIRECT_QUERY_PARAM}=%2Ftrips%2Ftrip-1%3Ftab%3Dguides`;
 
 // Override the global useRoute stub with a REACTIVE params object so a test can
 // change the trip id and assert the page's watched ref tracks it. `path` is a
@@ -23,6 +29,13 @@ vi.stubGlobal("useRoute", () => ({
   query: {},
   get path() {
     return `/trips/${routeParams.id}`;
+  },
+  // Deliberately distinct from `path` above (adds a query string): this is
+  // what the page's sign-in links must carry through /login (#292). If the
+  // page mistakenly read route.path instead of route.fullPath, the href
+  // assertions below would catch it, since they'd be missing "?tab=guides".
+  get fullPath() {
+    return `/trips/${routeParams.id}?tab=guides`;
   },
 }));
 
@@ -415,7 +428,11 @@ describe("Trip Detail page (/trips/[id])", () => {
 
     const wrapper = mount(TripDetailPage, buildGlobalConfig(pinia));
 
-    expect(wrapper.find(".empty-state__signin").exists()).toBe(true);
+    const signInLink = wrapper.find(".empty-state__signin");
+    expect(signInLink.exists()).toBe(true);
+    // Carries this trip's URL through /login so the visitor lands back here
+    // after signing in, instead of the default post-login destination (#292).
+    expect(signInLink.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
   });
 
   it("always offers a 'back to your trips' link in the retryable error state, even when signed in", () => {
@@ -1033,7 +1050,9 @@ describe("Trip Detail page (/trips/[id])", () => {
 
     const wrapper = mount(TripDetailPage, buildGlobalConfig(pinia));
 
-    expect(wrapper.find(".empty-state__signin").exists()).toBe(true);
+    const signInLink = wrapper.find(".empty-state__signin");
+    expect(signInLink.exists()).toBe(true);
+    expect(signInLink.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
   });
 
   it("omits the sign-in link when the visitor is already signed in", () => {

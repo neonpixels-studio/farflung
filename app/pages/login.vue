@@ -49,6 +49,8 @@
           <AppThemeToggle />
         </div>
         <SignIn
+          :fallback-redirect-url="safeRedirectPath"
+          :sign-up-fallback-redirect-url="safeRedirectPath"
           :appearance="{
             variables: {
               colorPrimary: '#a855f7',
@@ -67,10 +69,38 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { formatCompact } from "~/utils/formatNumber";
+import {
+  AUTH_REDIRECT_QUERY_PARAM,
+  getSafeRedirectPath,
+} from "~/utils/authRedirect";
 
 useHead({ title: "Wanderist — Sign in" });
 definePageMeta({ layout: false });
+
+// Every "sign in to ..." link across profile/trips carries the visitor's
+// origin path via return_to (see buildLoginPath in utils/authRedirect); this
+// validates it before ever handing it to Clerk so a crafted return_to can't
+// turn sign-in into an open redirect (#292). return_to (not Clerk's own
+// reserved redirect_url) is deliberate — see the constant's comment in
+// utils/authRedirect for why reusing Clerk's name would bypass this
+// validation entirely.
+//
+// Bound to both fallback-redirect-url (a visitor who already has an account)
+// and sign-up-fallback-redirect-url (a visitor who doesn't, and signs up
+// instead from the same embedded form) so either path lands back on the same
+// destination. Both "fallback" props only apply when Clerk has no other
+// redirect already in flight (e.g. an email verification link), so neither
+// ever clobbers Clerk's own multi-step auth flows. `?? undefined` (not a bare
+// null) so an unset param omits the prop entirely, rather than passing an
+// explicit null that could override an app-level default Clerk is configured
+// with elsewhere (env var / dashboard redirect settings).
+const route = useRoute();
+const safeRedirectPath = computed(
+  () =>
+    getSafeRedirectPath(route.query[AUTH_REDIRECT_QUERY_PARAM]) ?? undefined,
+);
 
 // Representative placeholder values for the marketing panel.
 // Always displayed — the login page is public and should never reflect a

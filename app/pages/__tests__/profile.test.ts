@@ -19,6 +19,7 @@ import {
   lastSeoMetaCall,
   stubOgMetaGlobals,
 } from "~/composables/__tests__/ogMetaTestUtils";
+import { AUTH_REDIRECT_QUERY_PARAM } from "~/utils/authRedirect";
 
 // The profile route is keyed by the target user's id. Reactive so a test can
 // simulate the viewer navigating to another profile mid-interaction. `path`
@@ -31,7 +32,18 @@ vi.stubGlobal("useRoute", () => ({
   get path() {
     return `/u/${routeParams.id}`;
   },
+  // Deliberately distinct from `path` above (adds a query string): this is
+  // what the page's sign-in links must carry through /login (#292). If a
+  // page mistakenly read route.path instead of route.fullPath, the href
+  // assertions below would catch it, since they'd be missing "?tab=guides".
+  get fullPath() {
+    return `/u/${routeParams.id}?tab=guides`;
+  },
 }));
+
+// The expected /login href once the profile's own URL (see the useRoute stub
+// above) is carried through as the redirect param (#292).
+const EXPECTED_SIGN_IN_HREF = `/login?${AUTH_REDIRECT_QUERY_PARAM}=%2Fu%2Fuser-1%3Ftab%3Dguides`;
 
 // #269 og/twitter meta coverage below reads this trackable useSeoMeta stub.
 const useSeoMetaMock = stubOgMetaGlobals();
@@ -438,7 +450,7 @@ describe("profile page", () => {
     const signInLink = wrapper
       .findAll("a")
       .find((link) => link.text().toLowerCase().includes("sign in"));
-    expect(signInLink?.attributes("href")).toBe("/login");
+    expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
   });
 
   it("omits the sign-in link in the unavailable state for a signed-in viewer", () => {
@@ -484,7 +496,7 @@ describe("profile page", () => {
       const signInLink = wrapper
         .findAll("a")
         .find((link) => link.text().toLowerCase().includes("sign in"));
-      expect(signInLink?.attributes("href")).toBe("/login");
+      expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
     } finally {
       vi.useRealTimers();
     }
@@ -613,7 +625,7 @@ describe("profile page", () => {
     const signInLink = wrapper
       .findAll("a")
       .find((link) => link.text().toLowerCase().includes("sign in"));
-    expect(signInLink?.attributes("href")).toBe("/login");
+    expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
   });
 
   it("shows neither a follow button nor a sign-in prompt before Clerk resolves or its bootstrap timeout lapses", () => {
@@ -659,7 +671,7 @@ describe("profile page", () => {
       const signInLink = wrapper
         .findAll("a")
         .find((link) => link.text().toLowerCase().includes("sign in"));
-      expect(signInLink?.attributes("href")).toBe("/login");
+      expect(signInLink?.attributes("href")).toBe(EXPECTED_SIGN_IN_HREF);
     } finally {
       vi.useRealTimers();
     }

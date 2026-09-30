@@ -32,7 +32,7 @@
            timeout lapses, not only once Clerk actually resolves. -->
       <NuxtLink
         v-if="viewerAuthResolved && !isSignedIn"
-        to="/login"
+        :to="signInHref"
         class="btn btn--outline btn--sm"
       >
         sign in to view this profile
@@ -51,6 +51,7 @@
         :pending="pending"
         :viewer-is-signed-in="!!isSignedIn"
         :viewer-auth-loaded="viewerAuthResolved"
+        :sign-in-href="signInHref"
         @toggle="onToggleFollow"
       />
 
@@ -144,6 +145,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from "vue";
 import { DEFAULT_TRAVELER_NAME, formatHandle } from "~/utils/travelerLabels";
+import { buildLoginPath } from "~/utils/authRedirect";
 import { SITE_NAME, useOgMeta } from "~/composables/useOgMeta";
 import { useClerkGatedFetch } from "~/composables/useClerkGatedFetch";
 import { useViewerAuthResolved } from "~/composables/useViewerAuthResolved";
@@ -168,6 +170,9 @@ definePageMeta({ layout: "app" });
 
 const route = useRoute();
 const userId = computed(() => String(route.params.id));
+// Carries this profile's URL through /login so a visitor who signs in to
+// follow (or to view a private profile) lands back here afterward (#292).
+const signInHref = computed(() => buildLoginPath(route.fullPath));
 
 const {
   profile: rawProfile,

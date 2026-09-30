@@ -26,7 +26,7 @@
     </button>
     <NuxtLink
       v-else-if="!isSelf && viewerAuthLoaded"
-      to="/login"
+      :to="signInHref"
       class="btn btn--outline btn--sm"
     >
       sign in to follow
@@ -54,6 +54,13 @@ defineProps<{
   // no way to sign in.
   viewerIsSignedIn: boolean;
   viewerAuthLoaded: boolean;
+  // Pre-built via buildLoginPath(route.fullPath) by the parent page, so an
+  // authenticating visitor returns to this profile instead of the default
+  // post-login destination (#292). Required (no default): the one production
+  // caller (u/[id].vue) always computes and passes it, and a future caller
+  // that forgets it should fail a type check rather than silently falling
+  // back to a bare, destination-less /login.
+  signInHref: string;
 }>();
 
 defineEmits<{ toggle: [] }>();
