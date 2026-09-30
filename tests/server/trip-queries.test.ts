@@ -100,6 +100,25 @@ describe("loadReadableTrip", () => {
     ).rejects.toMatchObject({ statusCode: 404 });
   });
 
+  it("returns the raw stored status verbatim — status derivation is the caller's job, not this visibility check's", async () => {
+    // loadReadableTrip enforces read *visibility* only; deriving the
+    // effective status (issue #291) is applied by the route handler
+    // ([id].get.ts via withDerivedStatus) so this helper stays safe for any
+    // future caller that needs the stored value as-is, e.g. a write path
+    // checking ownership. See tests/server/trips/trip-get.test.ts for
+    // coverage of the derived value actually returned to a client.
+    const longLapsedEndDate = new Date("2020-01-01T00:00:00.000Z");
+    const trip = makeTrip({
+      status: "ongoing",
+      endDate: longLapsedEndDate,
+      visibility: "private",
+    });
+
+    const result = await loadReadableTrip(makeDb(trip), "trip-1", OWNER_ID);
+
+    expect(result.status).toBe("ongoing");
+  });
+
   it("uses the same not-found message for a missing and a hidden trip", async () => {
     await loadReadableTrip(makeDb(undefined), "missing", OTHER_ID).catch(
       () => undefined,

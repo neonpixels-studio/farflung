@@ -631,6 +631,26 @@ describe("fetchPublicTrips", () => {
 
     expect(result).toEqual({ trips: [], hasMore: false });
   });
+
+  it("derives 'past' for a public trip whose endDate has lapsed, even though it's stored as 'ongoing'", async () => {
+    const rows = [
+      {
+        id: "trip-stale",
+        name: "Stale Trip",
+        status: "ongoing",
+        startDate: new Date("2020-01-01"),
+        endDate: new Date("2020-01-14"),
+      },
+    ];
+    const built = buildSelectChain(rows);
+
+    const result = await fetchPublicTrips(
+      built.chain as unknown as Database,
+      "user-1",
+    );
+
+    expect(result.trips).toEqual([{ ...rows[0], status: "past" }]);
+  });
 });
 
 describe("fetchPublicGuides", () => {

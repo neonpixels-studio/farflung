@@ -167,6 +167,42 @@ describe("GET /api/trips/[id]", () => {
     expect(result.facts.stopCount).toBe(1);
   });
 
+  it("derives 'past' for the owner's own trip once its endDate has lapsed, even though it's stored as 'ongoing'", async () => {
+    mockOptionalUser.mockReturnValue(OWNER_ID);
+    setupSelectChain(
+      makeTrip({
+        visibility: "private",
+        userId: OWNER_ID,
+        status: "ongoing",
+        endDate: new Date("2020-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    const result = (await (handler as (event: object) => unknown)(
+      buildEvent(OWNER_ID),
+    )) as { trip: { status: string } };
+
+    expect(result.trip.status).toBe("past");
+  });
+
+  it("derives 'past' for a lapsed public trip read by a non-owner, not just the owner's own read", async () => {
+    mockOptionalUser.mockReturnValue(OTHER_ID);
+    setupSelectChain(
+      makeTrip({
+        visibility: "public",
+        userId: OWNER_ID,
+        status: "upcoming",
+        endDate: new Date("2020-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    const result = (await (handler as (event: object) => unknown)(
+      buildEvent(OTHER_ID),
+    )) as { trip: { status: string } };
+
+    expect(result.trip.status).toBe("past");
+  });
+
   it("returns a public trip to a signed-in non-owner", async () => {
     mockOptionalUser.mockReturnValue(OTHER_ID);
     setupSelectChain(makeTrip({ visibility: "public", userId: OWNER_ID }));

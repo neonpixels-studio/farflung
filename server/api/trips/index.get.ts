@@ -1,9 +1,10 @@
-import { eq, and, asc, desc } from "drizzle-orm";
+import { eq, and, or, not, lt, isNotNull, asc, desc } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { getDb } from "../../db/index";
 import { trips, TRIP_STATUS } from "../../db/schema";
 import { requireUser } from "../../utils/auth";
 import { MAX_PAGE, parsePageParam, pageToOffset } from "../../utils/pagination";
+import { withDerivedStatus, lapsedEndDateCutoff } from "../../utils/tripStatus";
 
 const VALID_STATUSES = [
   TRIP_STATUS.ONGOING,
@@ -53,11 +54,42 @@ function parseSortOrder(value: unknown): SortOrder {
 
 const PAGE_SIZE = 20;
 
-function buildFilters(userId: string, statusFilter: TripStatus | null): SQL[] {
+// A trip's endDate having lapsed (its UTC calendar day is already behind
+// `now`) makes its *derived* status "past" regardless of what's stored (see
+// server/utils/tripStatus.ts's deriveTripStatus) — the status filter below
+// must match that same derivation, not the raw column, or a lapsed trip
+// would keep appearing under its stale "ongoing"/"upcoming" filter forever
+// (issue #291).
+function buildEndDateLapsedCondition(now: Date): SQL {
+  return and(
+    isNotNull(trips.endDate),
+    lt(trips.endDate, lapsedEndDateCutoff(now)),
+  ) as SQL;
+}
+
+// Builds the SQL condition matching rows whose *derived* status equals
+// `statusFilter`, mirroring deriveTripStatus's row-level logic at the query
+// level so pagination stays correct (filtering happens in SQL, not by
+// discarding already-paginated rows in JS).
+function buildStatusFilterCondition(statusFilter: TripStatus, now: Date): SQL {
+  const lapsed = buildEndDateLapsedCondition(now);
+
+  if (statusFilter === TRIP_STATUS.PAST) {
+    return or(eq(trips.status, TRIP_STATUS.PAST), lapsed) as SQL;
+  }
+
+  return and(eq(trips.status, statusFilter), not(lapsed)) as SQL;
+}
+
+function buildFilters(
+  userId: string,
+  statusFilter: TripStatus | null,
+  now: Date,
+): SQL[] {
   const filters: SQL[] = [eq(trips.userId, userId)];
 
   if (statusFilter) {
-    filters.push(eq(trips.status, statusFilter));
+    filters.push(buildStatusFilterCondition(statusFilter, now));
   }
 
   return filters;
@@ -96,15 +128,25 @@ export default defineEventHandler(async (event) => {
   const database = getDb();
   const query = getQuery(event);
 
+  // Captured once so the filter (SQL) and the row-level relabeling (JS) below
+  // agree on "now" even if the request straddles a UTC-midnight rollover.
+  const now = new Date();
+
   const statusFilter = parseStatusFilter(query.status);
   const sortOrder = parseSortOrder(query.sort);
   const page = parsePageParam(query.page);
-  const filters = buildFilters(userId, statusFilter);
+  const filters = buildFilters(userId, statusFilter, now);
 
   const rows = await fetchTripsPage(database, filters, sortOrder, page);
 
+  // Even when no status filter narrowed the query, the status returned to
+  // the client must be the derived one — a lapsed trip must never render as
+  // ongoing/upcoming while it's already excluded from the active-trip count
+  // elsewhere (see server/utils/tripStatus.ts).
+  const derivedRows = rows.map((row) => withDerivedStatus(row, now));
+
   return {
-    trips: rows,
+    trips: derivedRows,
     page,
     hasMore: rows.length === PAGE_SIZE && page < MAX_PAGE,
   };
