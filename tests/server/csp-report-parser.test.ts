@@ -109,4 +109,21 @@ describe("parseCspReports", () => {
     );
     expect(violation.lineNumber).toBeNull();
   });
+
+  it.each([
+    ["blob:https://farflung.app/abc-123", "blob:https://farflung.app/abc-123"],
+    ["chrome-extension://abcd/x.js?y=1", "chrome-extension://abcd/x.js"],
+    ["https://user:pass@evil.example/a?b#c", "https://evil.example/a"],
+    ["inline", "inline"],
+  ])("sanitizes blocked URI %s", (blockedUri, expected) => {
+    const [violation] = parseCspReports(
+      JSON.stringify({
+        "csp-report": {
+          "effective-directive": "img-src",
+          "blocked-uri": blockedUri,
+        },
+      }),
+    );
+    expect(violation.blockedUri).toBe(expected);
+  });
 });

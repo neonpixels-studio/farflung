@@ -5,7 +5,7 @@
 // `{ type: "csp-violation", body: {...} }` with camelCase keys).
 
 export const MAX_CSP_REPORT_BODY_BYTES = 16 * 1024;
-export const MAX_CSP_REPORTS_PER_REQUEST = 20;
+export const MAX_CSP_REPORTS_PER_REQUEST = 5;
 const MAX_FIELD_LENGTH = 512;
 const CSP_VIOLATION_REPORT_TYPE = "csp-violation";
 
@@ -28,68 +28,68 @@ function isRecord(value: unknown): value is RawFields {
 }
 
 // Reports carry the visitor's full page URL, query string included, which can
-// hold tokens or PII. Keep only origin + path for URLs; non-URL values such as
-// "inline", "eval" or "data" pass through as-is.
+// hold tokens or PII. Drop query, fragment and credentials; keep scheme, host
+// and path. Non-URL values such as "inline", "eval" or "data" pass through.
 function stripUrlDetails(value: string): string {
   try {
     const url = new URL(value);
-    return `${url.origin === "null" ? `${url.protocol}` : url.origin}${url.pathname}`;
+    url.search = "";
+    url.hash = "";
+    url.username = "";
+    url.password = "";
+    return url.href;
   } catch {
     return value;
   }
 }
 
-function readString(fields: RawFields, ...keys: string[]): string | null {
-  for (const key of keys) {
-    const value = fields[key];
-    if (typeof value === "string" && value.length > 0) {
-      return stripUrlDetails(value.slice(0, MAX_FIELD_LENGTH));
-    }
-  }
-  return null;
+function firstMatching<T>(
+  fields: RawFields,
+  keys: string[],
+  isMatch: (value: unknown) => value is T,
+): T | null {
+  const match = keys.map((key) => fields[key]).find(isMatch);
+  return match ?? null;
 }
 
-function readDirective(fields: RawFields, ...keys: string[]): string | null {
-  for (const key of keys) {
-    const value = fields[key];
-    if (typeof value === "string" && value.length > 0) {
-      return value.slice(0, MAX_FIELD_LENGTH);
-    }
-  }
-  return null;
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function isInteger(value: unknown): value is number {
+  return Number.isInteger(value);
+}
+
+function readRawString(fields: RawFields, ...keys: string[]): string | null {
+  const value = firstMatching(fields, keys, isNonEmptyString);
+  return value?.slice(0, MAX_FIELD_LENGTH) ?? null;
+}
+
+function readUrl(fields: RawFields, ...keys: string[]): string | null {
+  const value = readRawString(fields, ...keys);
+  return value === null ? null : stripUrlDetails(value);
 }
 
 function readInteger(fields: RawFields, ...keys: string[]): number | null {
-  for (const key of keys) {
-    const value = fields[key];
-    if (Number.isInteger(value)) {
-      return value as number;
-    }
-  }
-  return null;
+  return firstMatching(fields, keys, isInteger);
 }
 
 function normalizeViolation(fields: RawFields): CspViolation | null {
   const violation: CspViolation = {
-    documentUri: readString(
-      fields,
-      "document-uri",
-      "documentURL",
-      "documentURI",
-    ),
-    blockedUri: readString(fields, "blocked-uri", "blockedURL", "blockedURI"),
-    effectiveDirective: readDirective(
+    documentUri: readUrl(fields, "document-uri", "documentURL", "documentURI"),
+    blockedUri: readUrl(fields, "blocked-uri", "blockedURL", "blockedURI"),
+    effectiveDirective: readRawString(
       fields,
       "effective-directive",
       "effectiveDirective",
     ),
-    violatedDirective: readDirective(
+    violatedDirective: readRawString(
       fields,
       "violated-directive",
       "violatedDirective",
     ),
-    disposition: readDirective(fields, "disposition"),
-    sourceFile: readString(fields, "source-file", "sourceFile"),
+    disposition: readRawString(fields, "disposition"),
+    sourceFile: readUrl(fields, "source-file", "sourceFile"),
     lineNumber: readInteger(fields, "line-number", "lineNumber"),
     columnNumber: readInteger(fields, "column-number", "columnNumber"),
     statusCode: readInteger(fields, "status-code", "statusCode"),

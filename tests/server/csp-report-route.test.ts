@@ -18,6 +18,8 @@ vi.mock("../../server/utils/cspReportSink", () => ({
   reportCspViolations: mockReport,
 }));
 
+import { MAX_CSP_REPORT_BODY_BYTES } from "../../server/utils/cspReports";
+
 const { default: handler } =
   await import("../../server/routes/csp-report.post");
 const handle = handler as (event: unknown) => Promise<unknown>;
@@ -50,9 +52,23 @@ describe("POST /csp-report", () => {
   });
 
   it("answers 204 and reports nothing when the body exceeds the cap", async () => {
-    mockReadBody.mockRejectedValue(new Error("too large"));
+    mockReadBody.mockRejectedValue(
+      Object.assign(new Error("File too large"), { statusCode: 413 }),
+    );
     expect(await handle({})).toBeNull();
     expect(mockSetResponseStatus).toHaveBeenCalledWith({}, NO_CONTENT);
     expect(mockReport).not.toHaveBeenCalled();
+  });
+
+  it("surfaces unexpected body read failures instead of hiding them", async () => {
+    mockReadBody.mockRejectedValue(new Error("stream exploded"));
+    await expect(handle({})).rejects.toThrow("stream exploded");
+    expect(mockReport).not.toHaveBeenCalled();
+  });
+
+  it("caps the body at MAX_CSP_REPORT_BODY_BYTES", async () => {
+    mockReadBody.mockResolvedValue(Buffer.from(VALID_BODY));
+    await handle({});
+    expect(mockReadBody).toHaveBeenCalledWith({}, MAX_CSP_REPORT_BODY_BYTES);
   });
 });

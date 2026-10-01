@@ -49,21 +49,21 @@ function resolveHandlerRoot(
   }
   // Public, non-/api/ routes (e.g. the unauthenticated CSP collector) live
   // under server/routes, which maps to the URL root.
-  if (routePath.startsWith("/") && existsSync(SERVER_ROUTES_DIR)) {
+  if (routePath.startsWith("/")) {
     return {
       rootDirectory: SERVER_ROUTES_DIR,
       routeSegment: routePath.slice(1),
     };
   }
   throw new Error(
-    `Policy key "${method} ${routePath}" is outside ${API_PATH_PREFIX} and server/routes; extend candidateHandlerPaths to cover it.`,
+    `Policy key "${method} ${routePath}" is outside ${API_PATH_PREFIX} and server/routes; extend resolveHandlerRoot to cover it.`,
   );
 }
 
-function candidateHandlerPaths(method: string, apiPath: string): string[] {
+function candidateHandlerPaths(method: string, routePath: string): string[] {
   const { rootDirectory, routeSegment: rawSegment } = resolveHandlerRoot(
     method,
-    apiPath,
+    routePath,
   );
   // Nitro compiles a `[id]` file to a `:id` route pattern, a `[...slug]` file
   // to `**:slug`, and a bare `[...]` file to `**`, so translate the pattern
