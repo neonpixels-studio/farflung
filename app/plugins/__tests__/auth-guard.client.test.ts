@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { effectScope, ref, watchEffect } from "vue";
+import { effectScope, nextTick, ref, watchEffect } from "vue";
 import { buildLoginPath } from "~/utils/authRedirect";
 
 const isSignedIn = ref(false);
@@ -46,6 +46,38 @@ describe("auth-guard client plugin", () => {
     expect(navigateToMock).toHaveBeenCalledWith(
       buildLoginPath("/trips/abc123?tab=stops#day-2"),
     );
+    const redirectPath = navigateToMock.mock.calls[0]?.[0] as string;
+    expect(
+      new URL(redirectPath, "http://localhost").searchParams.get("return_to"),
+    ).toBe("/trips/abc123?tab=stops#day-2");
+  });
+
+  it("redirects with the requested route when the visitor signs out after load", async () => {
+    isSignedIn.value = true;
+    currentRoute.value = {
+      path: "/trips/abc123",
+      fullPath: "/trips/abc123?tab=stops",
+    };
+    await runPlugin();
+    expect(navigateToMock).not.toHaveBeenCalled();
+
+    isSignedIn.value = false;
+    await nextTick();
+
+    expect(navigateToMock).toHaveBeenCalledWith(
+      buildLoginPath("/trips/abc123?tab=stops"),
+    );
+  });
+
+  it("redirects once Clerk finishes loading for a signed-out visitor", async () => {
+    isLoaded.value = false;
+    await runPlugin();
+    expect(navigateToMock).not.toHaveBeenCalled();
+
+    isLoaded.value = true;
+    await nextTick();
+
+    expect(navigateToMock).toHaveBeenCalledWith(buildLoginPath("/trips"));
   });
 
   it("does not redirect while Clerk has not loaded", async () => {

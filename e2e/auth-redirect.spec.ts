@@ -31,6 +31,16 @@ for (const route of PROTECTED_ROUTES) {
   });
 }
 
+test("a protected route's query string survives the /login redirect (#302)", async ({
+  page,
+}) => {
+  await page.goto("/trips?tab=stops");
+  await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
+  expect(new URL(page.url()).searchParams.get("return_to")).toBe(
+    "/trips?tab=stops",
+  );
+});
+
 test("home page (/) is accessible without authentication", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL("/");

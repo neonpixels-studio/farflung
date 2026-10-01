@@ -32,7 +32,10 @@ describe("auth route middleware", () => {
     expect(navigateToMock).toHaveBeenCalledWith(
       buildLoginPath("/trips/abc123?tab=stops"),
     );
-    expect(navigateToMock.mock.calls[0]?.[0]).toContain("return_to=");
+    const redirectPath = navigateToMock.mock.calls[0]?.[0] as string;
+    expect(
+      new URL(redirectPath, "http://localhost").searchParams.get("return_to"),
+    ).toBe("/trips/abc123?tab=stops");
   });
 
   it("does nothing while Clerk has not loaded", async () => {
