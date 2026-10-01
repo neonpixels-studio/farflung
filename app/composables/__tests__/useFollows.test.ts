@@ -255,11 +255,22 @@ describe("useFollows — cross-instance shared pendingUserIds", () => {
 });
 
 describe("useFollows viewer reset", () => {
-  const userRef = vue.ref<{ id: string } | null>({ id: "viewer-1" });
+  let userRef: vue.Ref<{ id: string } | null>;
   const stateStore = new Map<string, vue.Ref<unknown>>();
+  let scope: vue.EffectScope;
+
+  function useFollowsInScope(): ReturnType<typeof useFollows> {
+    return scope.run(() => useFollows())!;
+  }
+
+  afterEach(() => {
+    scope.stop();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    scope = vue.effectScope();
+    userRef = vue.ref<{ id: string } | null>({ id: "viewer-1" });
     stateStore.clear();
     userRef.value = { id: "viewer-1" };
     vi.stubGlobal("useClerkUser", () => ({ user: userRef }));
@@ -272,7 +283,7 @@ describe("useFollows viewer reset", () => {
   });
 
   it("clears followingIds and pendingUserIds on sign-out for a mounted consumer", async () => {
-    const { followingIds, pendingUserIds } = useFollows();
+    const { followingIds, pendingUserIds } = useFollowsInScope();
     followingIds.value = new Set(["user-2"]);
     pendingUserIds.value = new Set(["user-3"]);
 
@@ -284,7 +295,7 @@ describe("useFollows viewer reset", () => {
   });
 
   it("clears state when the signed-in user changes to a different user", async () => {
-    const { followingIds, pendingUserIds } = useFollows();
+    const { followingIds, pendingUserIds } = useFollowsInScope();
     followingIds.value = new Set(["user-2"]);
     pendingUserIds.value = new Set(["user-3"]);
 
@@ -296,7 +307,7 @@ describe("useFollows viewer reset", () => {
   });
 
   it("keeps state when the same user id is re-emitted", async () => {
-    const { followingIds } = useFollows();
+    const { followingIds } = useFollowsInScope();
     followingIds.value = new Set(["user-2"]);
 
     userRef.value = { id: "viewer-1" };
@@ -307,12 +318,65 @@ describe("useFollows viewer reset", () => {
 
   it("does not clear state on the initial signed-out to signed-in transition", async () => {
     userRef.value = null;
-    const { followingIds } = useFollows();
+    const { followingIds } = useFollowsInScope();
     followingIds.value = new Set(["user-2"]);
 
     userRef.value = { id: "viewer-1" };
     await vue.nextTick();
 
     expect(followingIds.value).toEqual(new Set(["user-2"]));
+  });
+
+  it("ignores a fetchFollowing response that lands after the viewer changed", async () => {
+    let resolveFetch!: (value: { followingIds: string[] }) => void;
+    mockApiFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+    const { fetchFollowing, followingIds } = useFollowsInScope();
+
+    const inFlight = fetchFollowing();
+    userRef.value = { id: "viewer-2" };
+    resolveFetch({ followingIds: ["user-2"] });
+    await inFlight;
+
+    expect(followingIds.value.size).toBe(0);
+  });
+
+  it("ignores a follow that completes after the viewer signed out", async () => {
+    let resolveFollow!: (value: unknown) => void;
+    mockApiFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFollow = resolve;
+      }),
+    );
+    const { toggleFollow, followingIds } = useFollowsInScope();
+
+    const inFlight = toggleFollow("user-2");
+    userRef.value = null;
+    resolveFollow({ ok: true });
+    await inFlight;
+
+    expect(followingIds.value.size).toBe(0);
+  });
+
+  it("ignores an unfollow that completes after the viewer changed", async () => {
+    let resolveUnfollow!: (value: unknown) => void;
+    mockApiFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveUnfollow = resolve;
+      }),
+    );
+    const { toggleFollow, followingIds } = useFollowsInScope();
+    followingIds.value = new Set(["user-2"]);
+
+    const inFlight = toggleFollow("user-2");
+    userRef.value = { id: "viewer-2" };
+    followingIds.value = new Set(["user-2", "user-9"]);
+    resolveUnfollow({ ok: true });
+    await inFlight;
+
+    expect(followingIds.value).toEqual(new Set(["user-2", "user-9"]));
   });
 });

@@ -48,12 +48,22 @@ export function useFollows() {
     { flush: "sync" },
   );
 
+  // A request that outlives its viewer must not write that viewer's data into
+  // the state of whoever is signed in (or out) by the time it settles.
+  function isSameViewer(requestViewerId: string | undefined): boolean {
+    return user.value?.id === requestViewerId;
+  }
+
   async function fetchFollowing(): Promise<void> {
+    const requestViewerId = user.value?.id;
     error.value = null;
     try {
       const response = await apiFetch<{ followingIds: string[] }>(
         "/api/follows",
       );
+      if (!isSameViewer(requestViewerId)) {
+        return;
+      }
       // Skip the overwrite if a toggle is mid-flight. The toggle's optimistic
       // update is the source of truth; a server snapshot that raced ahead of
       // the toggle commit would otherwise clobber the just-changed local state.
@@ -68,17 +78,25 @@ export function useFollows() {
   }
 
   async function follow(userId: string): Promise<void> {
+    const requestViewerId = user.value?.id;
     await apiFetch("/api/follows", {
       method: "POST",
       body: { followeeId: userId },
     });
+    if (!isSameViewer(requestViewerId)) {
+      return;
+    }
     followingIds.value = new Set([...followingIds.value, userId]);
   }
 
   async function unfollow(userId: string): Promise<void> {
+    const requestViewerId = user.value?.id;
     await apiFetch(`/api/follows/${encodeURIComponent(userId)}`, {
       method: "DELETE",
     });
+    if (!isSameViewer(requestViewerId)) {
+      return;
+    }
     const updated = new Set(followingIds.value);
     updated.delete(userId);
     followingIds.value = updated;
