@@ -56,6 +56,11 @@ export const RATE_LIMIT_POLICIES: Record<string, RateLimitPolicy> = {
   // generous relative to realistic debounced-typeahead usage while still
   // capping scripted scraping.
   "GET /api/search": { limit: 60, windowMs: ONE_MINUTE_MS },
+
+  // Unauthenticated CSP violation collector (server/routes/csp-report.post.ts),
+  // so it is metered per client IP. One page load can legitimately fire a
+  // handful of reports; 60/minute absorbs that while capping Sentry spam.
+  "POST /csp-report": { limit: 60, windowMs: ONE_MINUTE_MS },
 };
 
 /** Splits a policy key ("POST /api/media") into its method and route pattern. */

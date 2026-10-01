@@ -7,10 +7,10 @@
  * production Clerk Frontend API host is derived at runtime from an env var
  * (not committed here), and Nuxt's inline SSR hydration script needs
  * 'unsafe-inline' until the app adopts CSP nonces. There's also no
- * report-uri/report-to collector wired up yet, so violations only surface in
- * an individual visitor's devtools console — fine for manual pre-launch
- * checks, not for production-scale monitoring. A report collector is a
- * prerequisite follow-up before promoting this to an enforcing header.
+ * violations are posted to the /csp-report collector (server/routes/
+ * csp-report.post.ts, forwarded to Sentry) via both the legacy report-uri and
+ * the Reporting API (report-to + Reporting-Endpoints). Watch that signal
+ * before promoting this to an enforcing header.
  */
 
 const CLERK_FRONTEND_API_ORIGIN = "https://*.clerk.accounts.dev";
@@ -45,6 +45,9 @@ const GOOGLE_ANALYTICS_COLLECT_ORIGINS = [
   "https://*.analytics.google.com",
 ];
 
+const CSP_REPORT_PATH = "/csp-report";
+const CSP_REPORT_ENDPOINT_NAME = "csp-endpoint";
+
 const CONTENT_SECURITY_POLICY_DIRECTIVES: readonly string[] = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -65,6 +68,8 @@ const CONTENT_SECURITY_POLICY_DIRECTIVES: readonly string[] = [
   "worker-src 'self' blob:",
   `frame-src 'self' ${CLOUDFLARE_TURNSTILE_ORIGIN}`,
   "manifest-src 'self'",
+  `report-uri ${CSP_REPORT_PATH}`,
+  `report-to ${CSP_REPORT_ENDPOINT_NAME}`,
 ];
 
 export const CONTENT_SECURITY_POLICY_REPORT_ONLY =
@@ -85,6 +90,7 @@ export const SECURITY_HEADERS: Readonly<Record<string, string>> = Object.freeze(
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     "Content-Security-Policy-Report-Only": CONTENT_SECURITY_POLICY_REPORT_ONLY,
+    "Reporting-Endpoints": `${CSP_REPORT_ENDPOINT_NAME}="${CSP_REPORT_PATH}"`,
   },
 );
 
