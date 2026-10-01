@@ -1,14 +1,36 @@
 import * as Sentry from "@sentry/nuxt";
 import type { CspViolation } from "./cspReports";
 
+const CSP_KEYWORD_SOURCES = new Set([
+  "inline",
+  "eval",
+  "wasm-eval",
+  "data",
+  "blob",
+  "trusted-types-policy",
+  "trusted-types-sink",
+]);
+const UNRECOGNIZED_SOURCE = "other";
+const NO_BLOCKED_SOURCE = "none";
+
+// Non-special schemes (chrome-extension:, moz-extension:) report an opaque
+// "null" origin, so fall back to protocol + host to keep extensions distinct.
+function originOf(url: URL): string {
+  return url.origin === "null" ? `${url.protocol}//${url.host}` : url.origin;
+}
+
+// Bounded-cardinality grouping key: unparseable values collapse to a fixed
+// allowlist or "other" so attacker-chosen strings can't mint Sentry issues.
 function blockedOrigin(violation: CspViolation): string {
   if (!violation.blockedUri) {
-    return "none";
+    return NO_BLOCKED_SOURCE;
   }
   try {
-    return new URL(violation.blockedUri).origin;
+    return originOf(new URL(violation.blockedUri));
   } catch {
-    return violation.blockedUri;
+    return CSP_KEYWORD_SOURCES.has(violation.blockedUri)
+      ? violation.blockedUri
+      : UNRECOGNIZED_SOURCE;
   }
 }
 

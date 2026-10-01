@@ -60,6 +60,18 @@ describe("POST /csp-report", () => {
     expect(mockReport).not.toHaveBeenCalled();
   });
 
+  it("answers 204 and reports nothing for an empty body", async () => {
+    mockReadBody.mockResolvedValue(Buffer.alloc(0));
+    expect(await handle({})).toBeNull();
+    expect(mockSetResponseStatus).toHaveBeenCalledWith({}, NO_CONTENT);
+    expect(mockReport).toHaveBeenCalledWith([]);
+  });
+
+  it("surfaces non-object read failures without a misleading TypeError", async () => {
+    mockReadBody.mockRejectedValue(undefined);
+    await expect(handle({})).rejects.toBeUndefined();
+  });
+
   it("surfaces unexpected body read failures instead of hiding them", async () => {
     mockReadBody.mockRejectedValue(new Error("stream exploded"));
     await expect(handle({})).rejects.toThrow("stream exploded");

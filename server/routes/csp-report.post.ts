@@ -6,11 +6,15 @@ import { reportCspViolations } from "../utils/cspReportSink";
 import { readCappedUploadBody } from "../utils/readCappedUploadBody";
 
 const PAYLOAD_TOO_LARGE = 413;
-
 // Oversized bodies are expected noise and dropped; any other read failure is
 // a real fault and must surface rather than look like "zero violations".
 function dropOversizedBody(error: unknown): null {
-  if ((error as { statusCode?: number }).statusCode === PAYLOAD_TOO_LARGE) {
+  const isTooLarge =
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    error.statusCode === PAYLOAD_TOO_LARGE;
+  if (isTooLarge) {
     return null;
   }
   throw error;

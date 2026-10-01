@@ -85,13 +85,16 @@ describe("parseCspReports", () => {
   });
 
   it("truncates oversized string fields", () => {
-    const longDirective = "a".repeat(5000);
+    const longValue = "a".repeat(5000);
     const [violation] = parseCspReports(
       JSON.stringify({
-        "csp-report": { "effective-directive": longDirective },
+        "csp-report": {
+          "effective-directive": "img-src",
+          "blocked-uri": longValue,
+        },
       }),
     );
-    expect(violation.effectiveDirective).toHaveLength(512);
+    expect(violation.blockedUri).toHaveLength(512);
   });
 
   it("caps how many reports one request can fan out", () => {
@@ -125,5 +128,22 @@ describe("parseCspReports", () => {
       }),
     );
     expect(violation.blockedUri).toBe(expected);
+  });
+
+  it.each(["script-src<script>", "SCRIPT-SRC", "a b"])(
+    "rejects the malformed directive %s",
+    (directive) => {
+      const payload = { "csp-report": { "effective-directive": directive } };
+      expect(parseCspReports(JSON.stringify(payload))).toEqual([]);
+    },
+  );
+
+  it("nulls out unknown dispositions", () => {
+    const [violation] = parseCspReports(
+      JSON.stringify({
+        "csp-report": { "effective-directive": "img-src", disposition: "x" },
+      }),
+    );
+    expect(violation.disposition).toBeNull();
   });
 });

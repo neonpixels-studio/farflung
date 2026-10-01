@@ -6,10 +6,11 @@
  * Content-Security-Policy ships Report-Only, not enforcing: this app's
  * production Clerk Frontend API host is derived at runtime from an env var
  * (not committed here), and Nuxt's inline SSR hydration script needs
- * 'unsafe-inline' until the app adopts CSP nonces. Violations are posted to the /csp-report collector (server/routes/
- * csp-report.post.ts, forwarded to Sentry) via both the legacy report-uri and
- * the Reporting API (report-to + Reporting-Endpoints). Watch that signal
- * before promoting this to an enforcing header.
+ * 'unsafe-inline' until the app adopts CSP nonces. Violations are posted to
+ * the /csp-report collector (server/routes/csp-report.post.ts, forwarded to
+ * Sentry) via both the legacy report-uri and the Reporting API (report-to +
+ * Reporting-Endpoints). Watch that signal before promoting this to an
+ * enforcing header.
  */
 
 const CLERK_FRONTEND_API_ORIGIN = "https://*.clerk.accounts.dev";

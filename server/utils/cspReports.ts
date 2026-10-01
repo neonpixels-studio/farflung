@@ -7,6 +7,8 @@
 export const MAX_CSP_REPORT_BODY_BYTES = 16 * 1024;
 export const MAX_CSP_REPORTS_PER_REQUEST = 5;
 const MAX_FIELD_LENGTH = 512;
+const CSP_DIRECTIVE_PATTERN = /^[a-z-]{1,64}$/;
+const KNOWN_DISPOSITIONS = new Set(["enforce", "report"]);
 const CSP_VIOLATION_REPORT_TYPE = "csp-violation";
 
 export interface CspViolation {
@@ -70,6 +72,16 @@ function readUrl(fields: RawFields, ...keys: string[]): string | null {
   return value === null ? null : stripUrlDetails(value);
 }
 
+function readDirective(fields: RawFields, ...keys: string[]): string | null {
+  const value = readRawString(fields, ...keys);
+  return value !== null && CSP_DIRECTIVE_PATTERN.test(value) ? value : null;
+}
+
+function readDisposition(fields: RawFields): string | null {
+  const value = readRawString(fields, "disposition");
+  return value !== null && KNOWN_DISPOSITIONS.has(value) ? value : null;
+}
+
 function readInteger(fields: RawFields, ...keys: string[]): number | null {
   return firstMatching(fields, keys, isInteger);
 }
@@ -78,17 +90,17 @@ function normalizeViolation(fields: RawFields): CspViolation | null {
   const violation: CspViolation = {
     documentUri: readUrl(fields, "document-uri", "documentURL", "documentURI"),
     blockedUri: readUrl(fields, "blocked-uri", "blockedURL", "blockedURI"),
-    effectiveDirective: readRawString(
+    effectiveDirective: readDirective(
       fields,
       "effective-directive",
       "effectiveDirective",
     ),
-    violatedDirective: readRawString(
+    violatedDirective: readDirective(
       fields,
       "violated-directive",
       "violatedDirective",
     ),
-    disposition: readRawString(fields, "disposition"),
+    disposition: readDisposition(fields),
     sourceFile: readUrl(fields, "source-file", "sourceFile"),
     lineNumber: readInteger(fields, "line-number", "lineNumber"),
     columnNumber: readInteger(fields, "column-number", "columnNumber"),
