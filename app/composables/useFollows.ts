@@ -102,11 +102,24 @@ export function useFollows() {
     followingIds.value = updated;
   }
 
+  function releasePending(
+    userId: string,
+    requestViewerId: string | undefined,
+  ): void {
+    if (!isSameViewer(requestViewerId)) {
+      return;
+    }
+    const next = new Set(pendingUserIds.value);
+    next.delete(userId);
+    pendingUserIds.value = next;
+  }
+
   async function toggleFollow(userId: string): Promise<void> {
     if (pendingUserIds.value.has(userId)) {
       return;
     }
 
+    const requestViewerId = user.value?.id;
     pendingUserIds.value = new Set([...pendingUserIds.value, userId]);
     error.value = null;
 
@@ -120,9 +133,7 @@ export function useFollows() {
       console.error("useFollows: toggleFollow failed", toggleError);
       error.value = "Could not update follow state";
     } finally {
-      const next = new Set(pendingUserIds.value);
-      next.delete(userId);
-      pendingUserIds.value = next;
+      releasePending(userId, requestViewerId);
     }
   }
 

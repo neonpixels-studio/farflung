@@ -379,4 +379,27 @@ describe("useFollows viewer reset", () => {
 
     expect(followingIds.value).toEqual(new Set(["user-2", "user-9"]));
   });
+
+  it("a stale toggle settling does not release the next viewer's pending guard", async () => {
+    let resolveFirst!: (value: unknown) => void;
+    mockApiFetch
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+      )
+      .mockReturnValueOnce(new Promise(() => {}));
+    const { toggleFollow, isPending } = useFollowsInScope();
+
+    const staleToggle = toggleFollow("user-2");
+    userRef.value = null;
+    userRef.value = { id: "viewer-2" };
+    void toggleFollow("user-2");
+    expect(isPending("user-2")).toBe(true);
+
+    resolveFirst({ ok: true });
+    await staleToggle;
+
+    expect(isPending("user-2")).toBe(true);
+  });
 });
