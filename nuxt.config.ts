@@ -9,16 +9,17 @@ export default defineNuxtConfig({
   // See security-headers.config.ts for the full rationale (issue #253).
   routeRules: buildSecurityRouteRules(process.env.NODE_ENV),
   sentry: {
+    sourcemaps: {
+      // @sentry/nuxt only deletes generated .map files after a successful
+      // upload. A failed or misconfigured upload (bad token, Sentry outage)
+      // would otherwise leave them in dist/, which Netlify serves publicly.
+      // Server-side maps live under .netlify/functions-internal, not published.
+      filesToDeleteAfterUpload: ["dist/**/*.map"],
+    },
     sourceMapsUploadOptions: {
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
       authToken: process.env.SENTRY_AUTH_TOKEN,
-      sourcemaps: {
-        // @sentry/nuxt only deletes generated .map files after a successful
-        // upload. A failed or misconfigured upload (bad token, Sentry outage)
-        // would otherwise leave them in dist/, which Netlify serves publicly.
-        filesToDeleteAfterUpload: ["dist/**/*.map"],
-      },
     },
   },
   clerk: {

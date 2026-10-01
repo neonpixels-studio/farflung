@@ -2,9 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 interface SentryConfig {
   sentry?: {
-    sourceMapsUploadOptions?: {
-      sourcemaps?: { filesToDeleteAfterUpload?: string[] };
-    };
+    sourcemaps?: { filesToDeleteAfterUpload?: string[] };
   };
 }
 
@@ -26,9 +24,8 @@ describe("nuxt.config.ts Sentry sourcemaps", () => {
   it("deletes .map files from dist after upload so a failed upload never ships them", async () => {
     const nuxtConfig = await loadNuxtConfig();
 
-    expect(
-      nuxtConfig.sentry?.sourceMapsUploadOptions?.sourcemaps
-        ?.filesToDeleteAfterUpload,
-    ).toEqual(["dist/**/*.map"]);
+    expect(nuxtConfig.sentry?.sourcemaps?.filesToDeleteAfterUpload).toEqual([
+      "dist/**/*.map",
+    ]);
   });
 });
