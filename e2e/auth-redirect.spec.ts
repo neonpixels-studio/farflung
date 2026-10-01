@@ -26,6 +26,8 @@ for (const route of PROTECTED_ROUTES) {
     await page.goto(route);
     // The auth middleware navigates to /login; allow time for the redirect.
     await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
+    // The guard carries the requested route so sign-in lands back on it (#302).
+    expect(new URL(page.url()).searchParams.get("return_to")).toBe(route);
   });
 }
 
