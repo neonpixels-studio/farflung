@@ -73,6 +73,15 @@ export function useApiClient(
     return headers;
   }
 
+  // A caller may only tighten the SSR bound; 0, negatives and non-numbers
+  // fall back to the default (ofetch reads 0 as "no timeout").
+  function resolveSsrTimeout(callerTimeout: unknown): number {
+    if (typeof callerTimeout !== "number" || callerTimeout <= 0) {
+      return SSR_FETCH_TIMEOUT_MS;
+    }
+    return Math.min(callerTimeout, SSR_FETCH_TIMEOUT_MS);
+  }
+
   async function apiFetch<T>(
     url: string,
     options: Parameters<typeof $fetch>[1] = {},
@@ -89,18 +98,14 @@ export function useApiClient(
     // response. `timeout` is ofetch's native option (covers real network
     // fetches); the race covers the in-process dispatch, which ignores it. A
     // caller may only tighten the bound, never lift it.
-    const hasCallerTimeout =
-      typeof options.timeout === "number" && options.timeout > 0;
-    const ssrTimeoutMs = hasCallerTimeout
-      ? Math.min(options.timeout as number, SSR_FETCH_TIMEOUT_MS)
-      : SSR_FETCH_TIMEOUT_MS;
+    const ssrTimeoutMs = resolveSsrTimeout(options.timeout);
     return rejectAfterTimeout(
       // retry: 0 by default — ofetch retries timed-out GETs, which would fire
       // a second request at a backend that's already too slow, after the race
       // has already given up on the first.
       requestFetch<T>(url, {
-        retry: 0,
         ...options,
+        retry: options.retry ?? 0,
         timeout: ssrTimeoutMs,
         headers,
       }),

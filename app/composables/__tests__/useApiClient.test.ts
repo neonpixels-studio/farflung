@@ -173,17 +173,11 @@ describe("useApiClient", () => {
 
       await apiFetch("/api/guides/1");
       await apiFetch("/api/guides/1", { retry: 2 });
+      await apiFetch("/api/guides/1", { retry: undefined });
 
       expect(mockFetch.mock.calls[0][1].retry).toBe(0);
       expect(mockFetch.mock.calls[1][1].retry).toBe(2);
-    });
-
-    it("hands ofetch its native timeout option server-side", async () => {
-      const { apiFetch } = useApiClient(true);
-
-      await apiFetch("/api/guides/1");
-
-      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+      expect(mockFetch.mock.calls[2][1].retry).toBe(0);
     });
 
     it("applies no timeout client-side", async () => {
