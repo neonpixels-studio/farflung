@@ -13,6 +13,12 @@ export default defineNuxtConfig({
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      sourcemaps: {
+        // @sentry/nuxt only deletes generated .map files after a successful
+        // upload. A failed or misconfigured upload (bad token, Sentry outage)
+        // would otherwise leave them in dist/, which Netlify serves publicly.
+        filesToDeleteAfterUpload: ["dist/**/*.map"],
+      },
     },
   },
   clerk: {
