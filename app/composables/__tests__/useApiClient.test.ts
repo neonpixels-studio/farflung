@@ -97,18 +97,34 @@ describe("useApiClient", () => {
       vi.useRealTimers();
     });
 
+    async function expectRejectsAtDeadline(
+      outcome: Promise<unknown>,
+      deadlineMs: number,
+    ): Promise<void> {
+      let settled = false;
+      const assertion = expect(outcome).rejects.toMatchObject({
+        name: "TimeoutError",
+      });
+      outcome
+        .catch(() => {})
+        .finally(() => {
+          settled = true;
+        });
+      await vi.advanceTimersByTimeAsync(deadlineMs - 1);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await assertion;
+    }
+
     it("rejects with a TimeoutError when the server-side fetch hangs", async () => {
       vi.useFakeTimers();
       mockFetch.mockReturnValue(new Promise(() => {}));
       const { apiFetch } = useApiClient(true);
 
-      const outcome = apiFetch("/api/guides/1");
-      const assertion = expect(outcome).rejects.toMatchObject({
-        name: "TimeoutError",
-      });
-      await vi.advanceTimersByTimeAsync(SSR_FETCH_TIMEOUT_MS);
-
-      await assertion;
+      await expectRejectsAtDeadline(
+        apiFetch("/api/guides/1"),
+        SSR_FETCH_TIMEOUT_MS,
+      );
     });
 
     it("does not let a caller-supplied timeout lift the SSR bound", async () => {
@@ -116,13 +132,11 @@ describe("useApiClient", () => {
       mockFetch.mockReturnValue(new Promise(() => {}));
       const { apiFetch } = useApiClient(true);
 
-      const outcome = apiFetch("/api/guides/1", { timeout: 60000 });
-      const assertion = expect(outcome).rejects.toMatchObject({
-        name: "TimeoutError",
-      });
-      await vi.advanceTimersByTimeAsync(SSR_FETCH_TIMEOUT_MS);
-
-      await assertion;
+      await expectRejectsAtDeadline(
+        apiFetch("/api/guides/1", { timeout: 60000 }),
+        SSR_FETCH_TIMEOUT_MS,
+      );
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
     });
 
     it("lets a caller tighten the SSR bound", async () => {
@@ -130,13 +144,11 @@ describe("useApiClient", () => {
       mockFetch.mockReturnValue(new Promise(() => {}));
       const { apiFetch } = useApiClient(true);
 
-      const outcome = apiFetch("/api/guides/1", { timeout: 100 });
-      const assertion = expect(outcome).rejects.toMatchObject({
-        name: "TimeoutError",
-      });
-      await vi.advanceTimersByTimeAsync(100);
-
-      await assertion;
+      await expectRejectsAtDeadline(
+        apiFetch("/api/guides/1", { timeout: 100 }),
+        100,
+      );
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(100);
     });
 
     it("treats timeout: 0 as unset rather than failing immediately", async () => {
@@ -146,6 +158,24 @@ describe("useApiClient", () => {
         ok: true,
       });
       expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+    });
+
+    it("treats a negative timeout as unset", async () => {
+      const { apiFetch } = useApiClient(true);
+
+      await apiFetch("/api/guides/1", { timeout: -1 });
+
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+    });
+
+    it("disables ofetch retries server-side unless the caller opts in", async () => {
+      const { apiFetch } = useApiClient(true);
+
+      await apiFetch("/api/guides/1");
+      await apiFetch("/api/guides/1", { retry: 2 });
+
+      expect(mockFetch.mock.calls[0][1].retry).toBe(0);
+      expect(mockFetch.mock.calls[1][1].retry).toBe(2);
     });
 
     it("hands ofetch its native timeout option server-side", async () => {
