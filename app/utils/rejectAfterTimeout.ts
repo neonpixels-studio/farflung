@@ -4,7 +4,8 @@
  * ofetch's own `timeout` option only aborts an AbortSignal, and Nitro's
  * in-process local fetch (what useRequestFetch resolves to during SSR) never
  * observes that signal, so a hung handler would never reject on its own. This
- * race is what actually bounds the server-side wait.
+ * race is what actually bounds the server-side wait. It can't cancel the
+ * hung handler, which keeps running in the background after the rejection.
  */
 export function rejectAfterTimeout<T>(
   pending: Promise<T>,

@@ -87,14 +87,14 @@ export function useApiClient(
     }
     // Bound every SSR call so a slow/hung backend can't hang the whole page
     // response. `timeout` is ofetch's native option (covers real network
-    // fetches); the race covers the in-process dispatch, which ignores it.
+    // fetches); the race covers the in-process dispatch, which ignores it. A
+    // caller may only tighten the bound, never lift it.
+    const ssrTimeoutMs = options.timeout
+      ? Math.min(options.timeout, SSR_FETCH_TIMEOUT_MS)
+      : SSR_FETCH_TIMEOUT_MS;
     return rejectAfterTimeout(
-      requestFetch<T>(url, {
-        timeout: SSR_FETCH_TIMEOUT_MS,
-        ...options,
-        headers,
-      }),
-      options.timeout ?? SSR_FETCH_TIMEOUT_MS,
+      requestFetch<T>(url, { ...options, timeout: ssrTimeoutMs, headers }),
+      ssrTimeoutMs,
     );
   }
 

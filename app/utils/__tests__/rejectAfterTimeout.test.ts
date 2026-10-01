@@ -33,5 +33,20 @@ describe("rejectAfterTimeout", () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     await assertion;
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("resolves and clears the timer when pending settles just before the deadline", async () => {
+    let resolvePending: (value: string) => void = () => {};
+    const pending = new Promise<string>((resolve) => {
+      resolvePending = resolve;
+    });
+    const outcome = rejectAfterTimeout(pending, 1000);
+
+    await vi.advanceTimersByTimeAsync(999);
+    resolvePending("late but ok");
+
+    await expect(outcome).resolves.toBe("late but ok");
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
