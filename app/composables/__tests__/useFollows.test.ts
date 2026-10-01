@@ -253,3 +253,66 @@ describe("useFollows — cross-instance shared pendingUserIds", () => {
     expect(instanceB.isPending("user-2")).toBe(false);
   });
 });
+
+describe("useFollows viewer reset", () => {
+  const userRef = vue.ref<{ id: string } | null>({ id: "viewer-1" });
+  const stateStore = new Map<string, vue.Ref<unknown>>();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    stateStore.clear();
+    userRef.value = { id: "viewer-1" };
+    vi.stubGlobal("useClerkUser", () => ({ user: userRef }));
+    vi.stubGlobal("useState", <T>(key: string, init?: () => T) => {
+      if (!stateStore.has(key)) {
+        stateStore.set(key, vue.ref(init?.()));
+      }
+      return stateStore.get(key);
+    });
+  });
+
+  it("clears followingIds and pendingUserIds on sign-out for a mounted consumer", async () => {
+    const { followingIds, pendingUserIds } = useFollows();
+    followingIds.value = new Set(["user-2"]);
+    pendingUserIds.value = new Set(["user-3"]);
+
+    userRef.value = null;
+    await vue.nextTick();
+
+    expect(followingIds.value.size).toBe(0);
+    expect(pendingUserIds.value.size).toBe(0);
+  });
+
+  it("clears state when the signed-in user changes to a different user", async () => {
+    const { followingIds, pendingUserIds } = useFollows();
+    followingIds.value = new Set(["user-2"]);
+    pendingUserIds.value = new Set(["user-3"]);
+
+    userRef.value = { id: "viewer-2" };
+    await vue.nextTick();
+
+    expect(followingIds.value.size).toBe(0);
+    expect(pendingUserIds.value.size).toBe(0);
+  });
+
+  it("keeps state when the same user id is re-emitted", async () => {
+    const { followingIds } = useFollows();
+    followingIds.value = new Set(["user-2"]);
+
+    userRef.value = { id: "viewer-1" };
+    await vue.nextTick();
+
+    expect(followingIds.value).toEqual(new Set(["user-2"]));
+  });
+
+  it("does not clear state on the initial signed-out to signed-in transition", async () => {
+    userRef.value = null;
+    const { followingIds } = useFollows();
+    followingIds.value = new Set(["user-2"]);
+
+    userRef.value = { id: "viewer-1" };
+    await vue.nextTick();
+
+    expect(followingIds.value).toEqual(new Set(["user-2"]));
+  });
+});

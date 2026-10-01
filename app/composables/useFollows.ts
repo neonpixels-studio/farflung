@@ -7,9 +7,15 @@
  *   local state in sync with the persisted result
  * - isFollowing: returns true if the current user follows the given user ID
  * - pendingUserIds: set of user IDs currently being toggled (per-user guard)
+ *
+ * Both sets are global and viewer-scoped, so they reset whenever the signed-in
+ * user ends their session or changes to a different user. Without this a
+ * still-mounted consumer would keep rendering the previous viewer's follows.
+ * Must be called synchronously during setup (it calls useClerkUser()).
  */
 export function useFollows() {
   const { apiFetch } = useApiClient();
+  const { user } = useClerkUser();
 
   const followingIds = useState<Set<string>>(
     "follows:followingIds",
@@ -26,6 +32,21 @@ export function useFollows() {
   // component that triggered the action. Different components should display
   // their own error state independently.
   const error = ref<string | null>(null);
+
+  // Only reset when a previously signed-in viewer is replaced (sign-out or user
+  // switch). The initial undefined -> user transition on Clerk load is skipped
+  // so it can't clobber a fetch that already landed.
+  watch(
+    () => user.value?.id,
+    (currentUserId, previousUserId) => {
+      if (!previousUserId || currentUserId === previousUserId) {
+        return;
+      }
+      followingIds.value = new Set();
+      pendingUserIds.value = new Set();
+    },
+    { flush: "sync" },
+  );
 
   async function fetchFollowing(): Promise<void> {
     error.value = null;
