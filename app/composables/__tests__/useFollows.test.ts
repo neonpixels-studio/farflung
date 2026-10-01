@@ -272,7 +272,6 @@ describe("useFollows viewer reset", () => {
     scope = vue.effectScope();
     userRef = vue.ref<{ id: string } | null>({ id: "viewer-1" });
     stateStore.clear();
-    userRef.value = { id: "viewer-1" };
     vi.stubGlobal("useClerkUser", () => ({ user: userRef }));
     vi.stubGlobal("useState", <T>(key: string, init?: () => T) => {
       if (!stateStore.has(key)) {
