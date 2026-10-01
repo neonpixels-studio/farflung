@@ -29,6 +29,7 @@ vi.stubGlobal("useRequestFetch", () => mockFetch);
 // we re-stub useClerkAuth at call time (when useApiClient() is called), so
 // the ref is always read from the active stub.
 const { useApiClient } = await import("../useApiClient");
+const { SSR_FETCH_TIMEOUT_MS } = await import("~/constants/ssr");
 
 describe("useApiClient", () => {
   beforeEach(() => {
@@ -89,6 +90,45 @@ describe("useApiClient", () => {
     expect(mockGetToken).not.toHaveBeenCalled();
     const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
+  });
+
+  describe("SSR timeout (#304)", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("rejects with a TimeoutError when the server-side fetch hangs", async () => {
+      vi.useFakeTimers();
+      mockFetch.mockReturnValue(new Promise(() => {}));
+      const { apiFetch } = useApiClient(true);
+
+      const outcome = apiFetch("/api/guides/1");
+      const assertion = expect(outcome).rejects.toMatchObject({
+        name: "TimeoutError",
+      });
+      await vi.advanceTimersByTimeAsync(SSR_FETCH_TIMEOUT_MS);
+
+      await assertion;
+    });
+
+    it("hands ofetch its native timeout option server-side", async () => {
+      const { apiFetch } = useApiClient(true);
+
+      await apiFetch("/api/guides/1");
+
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+    });
+
+    it("applies no timeout client-side", async () => {
+      vi.useFakeTimers();
+      mockFetch.mockResolvedValue({ ok: true });
+      const { apiFetch } = useApiClient(false);
+
+      await apiFetch("/api/guides/1");
+
+      expect(mockFetch.mock.calls[0][1].timeout).toBeUndefined();
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 
   it("preserves caller-supplied headers alongside the injected token", async () => {

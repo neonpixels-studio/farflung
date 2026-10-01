@@ -1,3 +1,6 @@
+import { SSR_FETCH_TIMEOUT_MS } from "~/constants/ssr";
+import { rejectAfterTimeout } from "~/utils/rejectAfterTimeout";
+
 /**
  * Returns a thin $fetch wrapper that injects the Clerk session token as an
  * Authorization: Bearer header on /api/* requests.
@@ -79,7 +82,20 @@ export function useApiClient(
       options.headers as HeadersInit | undefined,
       token,
     );
-    return requestFetch<T>(url, { ...options, headers });
+    if (!isServer) {
+      return requestFetch<T>(url, { ...options, headers });
+    }
+    // Bound every SSR call so a slow/hung backend can't hang the whole page
+    // response. `timeout` is ofetch's native option (covers real network
+    // fetches); the race covers the in-process dispatch, which ignores it.
+    return rejectAfterTimeout(
+      requestFetch<T>(url, {
+        timeout: SSR_FETCH_TIMEOUT_MS,
+        ...options,
+        headers,
+      }),
+      options.timeout ?? SSR_FETCH_TIMEOUT_MS,
+    );
   }
 
   return { apiFetch };
