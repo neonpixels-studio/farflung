@@ -7,7 +7,31 @@
 export const MAX_CSP_REPORT_BODY_BYTES = 16 * 1024;
 export const MAX_CSP_REPORTS_PER_REQUEST = 5;
 const MAX_FIELD_LENGTH = 512;
-const CSP_DIRECTIVE_PATTERN = /^[a-z-]{1,64}$/;
+const KNOWN_DIRECTIVES = new Set([
+  "default-src",
+  "script-src",
+  "script-src-elem",
+  "script-src-attr",
+  "style-src",
+  "style-src-elem",
+  "style-src-attr",
+  "img-src",
+  "font-src",
+  "connect-src",
+  "media-src",
+  "object-src",
+  "frame-src",
+  "child-src",
+  "worker-src",
+  "manifest-src",
+  "base-uri",
+  "form-action",
+  "frame-ancestors",
+  "navigate-to",
+  "require-trusted-types-for",
+  "trusted-types",
+  "sandbox",
+]);
 const KNOWN_DISPOSITIONS = new Set(["enforce", "report"]);
 const CSP_VIOLATION_REPORT_TYPE = "csp-violation";
 
@@ -41,8 +65,15 @@ function stripUrlDetails(value: string): string {
     url.password = "";
     return url.href;
   } catch {
-    return value;
+    return dropQueryAndUserInfo(value);
   }
+}
+
+// Fallback for URL-ish strings `new URL` rejects (e.g. a bad port).
+function dropQueryAndUserInfo(value: string): string {
+  const withoutQuery = value.split(/[?#]/)[0];
+  const atIndex = withoutQuery.lastIndexOf("@");
+  return atIndex === -1 ? withoutQuery : withoutQuery.slice(atIndex + 1);
 }
 
 function firstMatching<T>(
@@ -67,14 +98,18 @@ function readRawString(fields: RawFields, ...keys: string[]): string | null {
   return value?.slice(0, MAX_FIELD_LENGTH) ?? null;
 }
 
+// Strips before truncating: cutting a URL first could leave an unparseable
+// fragment that still carries credentials or a query string.
 function readUrl(fields: RawFields, ...keys: string[]): string | null {
-  const value = readRawString(fields, ...keys);
-  return value === null ? null : stripUrlDetails(value);
+  const value = firstMatching(fields, keys, isNonEmptyString);
+  return value === null
+    ? null
+    : stripUrlDetails(value).slice(0, MAX_FIELD_LENGTH);
 }
 
 function readDirective(fields: RawFields, ...keys: string[]): string | null {
   const value = readRawString(fields, ...keys);
-  return value !== null && CSP_DIRECTIVE_PATTERN.test(value) ? value : null;
+  return value !== null && KNOWN_DIRECTIVES.has(value) ? value : null;
 }
 
 function readDisposition(fields: RawFields): string | null {

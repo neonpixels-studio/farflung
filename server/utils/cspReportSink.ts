@@ -11,12 +11,26 @@ const CSP_KEYWORD_SOURCES = new Set([
   "trusted-types-sink",
 ]);
 const UNRECOGNIZED_SOURCE = "other";
+const ORIGIN_SCHEMES = new Set(["http:", "https:"]);
+const BUCKETED_SCHEMES = new Set([
+  "chrome-extension:",
+  "moz-extension:",
+  "safari-web-extension:",
+  "data:",
+  "blob:",
+]);
 const NO_BLOCKED_SOURCE = "none";
 
-// Non-special schemes (chrome-extension:, moz-extension:) report an opaque
-// "null" origin, so fall back to protocol + host to keep extensions distinct.
+// Web origins keep their host for triage. Extension and data/blob schemes
+// bucket by scheme alone, and any other scheme is "other", so attacker-chosen
+// schemes can't mint distinct Sentry issues.
 function originOf(url: URL): string {
-  return url.origin === "null" ? `${url.protocol}//${url.host}` : url.origin;
+  if (ORIGIN_SCHEMES.has(url.protocol)) {
+    return url.origin;
+  }
+  return BUCKETED_SCHEMES.has(url.protocol)
+    ? url.protocol
+    : UNRECOGNIZED_SOURCE;
 }
 
 // Bounded-cardinality grouping key: unparseable values collapse to a fixed

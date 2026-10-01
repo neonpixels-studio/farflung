@@ -68,19 +68,21 @@ describe("reportCspViolations", () => {
     ]);
   });
 
-  it("keeps browser extensions distinct and collapses unknown junk", () => {
+  it("buckets extensions by scheme and collapses unknown schemes and junk", () => {
     reportCspViolations([
       buildViolation({ blockedUri: "chrome-extension://abcd/x.js" }),
       buildViolation({ blockedUri: "random-attacker-string-1" }),
       buildViolation({ blockedUri: "inline" }),
+      buildViolation({ blockedUri: "x1://a" }),
     ]);
     const fingerprints = mockCaptureMessage.mock.calls.map(
       (call) => call[1].fingerprint[2],
     );
     expect(fingerprints).toEqual([
-      "chrome-extension://abcd",
+      "chrome-extension:",
       "other",
       "inline",
+      "other",
     ]);
   });
 

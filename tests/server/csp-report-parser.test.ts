@@ -35,6 +35,14 @@ const REPORTING_API_PAYLOAD = [
   },
 ];
 
+function parseLegacyReport(fields: Record<string, unknown>) {
+  return parseCspReports(
+    JSON.stringify({
+      "csp-report": { "effective-directive": "img-src", ...fields },
+    }),
+  );
+}
+
 describe("parseCspReports", () => {
   it("parses the legacy application/csp-report shape", () => {
     expect(parseCspReports(JSON.stringify(LEGACY_PAYLOAD))).toEqual([
@@ -86,14 +94,7 @@ describe("parseCspReports", () => {
 
   it("truncates oversized string fields", () => {
     const longValue = "a".repeat(5000);
-    const [violation] = parseCspReports(
-      JSON.stringify({
-        "csp-report": {
-          "effective-directive": "img-src",
-          "blocked-uri": longValue,
-        },
-      }),
-    );
+    const [violation] = parseLegacyReport({ "blocked-uri": longValue });
     expect(violation.blockedUri).toHaveLength(512);
   });
 
@@ -105,11 +106,7 @@ describe("parseCspReports", () => {
   });
 
   it("drops non-integer line numbers instead of passing them through", () => {
-    const [violation] = parseCspReports(
-      JSON.stringify({
-        "csp-report": { "effective-directive": "img-src", "line-number": "9" },
-      }),
-    );
+    const [violation] = parseLegacyReport({ "line-number": "9" });
     expect(violation.lineNumber).toBeNull();
   });
 
@@ -119,18 +116,11 @@ describe("parseCspReports", () => {
     ["https://user:pass@evil.example/a?b#c", "https://evil.example/a"],
     ["inline", "inline"],
   ])("sanitizes blocked URI %s", (blockedUri, expected) => {
-    const [violation] = parseCspReports(
-      JSON.stringify({
-        "csp-report": {
-          "effective-directive": "img-src",
-          "blocked-uri": blockedUri,
-        },
-      }),
-    );
+    const [violation] = parseLegacyReport({ "blocked-uri": blockedUri });
     expect(violation.blockedUri).toBe(expected);
   });
 
-  it.each(["script-src<script>", "SCRIPT-SRC", "a b"])(
+  it.each(["script-src<script>", "SCRIPT-SRC", "made-up-directive"])(
     "rejects the malformed directive %s",
     (directive) => {
       const payload = { "csp-report": { "effective-directive": directive } };
@@ -139,11 +129,24 @@ describe("parseCspReports", () => {
   );
 
   it("nulls out unknown dispositions", () => {
-    const [violation] = parseCspReports(
-      JSON.stringify({
-        "csp-report": { "effective-directive": "img-src", disposition: "x" },
-      }),
-    );
+    const [violation] = parseLegacyReport({ disposition: "x" });
     expect(violation.disposition).toBeNull();
+  });
+
+  it("never leaks credentials or query from a URL cut mid-userinfo", () => {
+    const secret = "s".repeat(600);
+    const [violation] = parseLegacyReport({
+      "blocked-uri": `https://user:${secret}@host.example/p?token=abc`,
+    });
+    expect(violation.blockedUri).toBe("https://host.example/p");
+  });
+
+  it("strips credentials and query from URLs the parser rejects", () => {
+    const [violation] = parseLegacyReport({
+      "blocked-uri": "https://user:pw@host:notaport/p?token=abc#x",
+    });
+    expect(violation.blockedUri).toBe(
+      "https://user:pw@host:notaport/p".split("@")[1],
+    );
   });
 });
