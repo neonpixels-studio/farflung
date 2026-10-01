@@ -241,7 +241,7 @@
 
 <script setup lang="ts">
 /* eslint-disable vue/one-component-per-file */
-useHead({ title: "Wanderist — Compare plans" });
+useHead({ title: "FarFlung — Compare plans" });
 useScrollReveal();
 
 const { isSignedIn } = useClerkAuth();

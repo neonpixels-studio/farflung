@@ -1114,17 +1114,17 @@ describe("Trip Detail page (/trips/[id])", () => {
       const ogImage = meta.ogImage as () => string;
       const ogUrl = meta.ogUrl as () => string;
 
-      expect(title()).toBe("Wanderist — Iceland, the ring road");
+      expect(title()).toBe("FarFlung — Iceland, the ring road");
       expect((meta.ogTitle as () => string)()).toBe(title());
       expect((meta.twitterTitle as () => string)()).toBe(title());
       expect(description()).toBe(
-        "Ongoing trip with 3 stops, 1,332 km on Wanderist.",
+        "Ongoing trip with 3 stops, 1,332 km on FarFlung.",
       );
       expect((meta.ogDescription as () => string)()).toBe(description());
       expect((meta.twitterDescription as () => string)()).toBe(description());
-      expect(ogImage()).toBe("https://wanderist.test/favicon.ico");
+      expect(ogImage()).toBe("https://farflung.test/favicon.ico");
       expect((meta.twitterImage as () => string)()).toBe(ogImage());
-      expect(ogUrl()).toBe("https://wanderist.test/trips/trip-1");
+      expect(ogUrl()).toBe("https://farflung.test/trips/trip-1");
       expect(meta.ogType).toBe("website");
       expect((meta.twitterCard as () => string)()).toBe("summary");
     });
@@ -1140,7 +1140,7 @@ describe("Trip Detail page (/trips/[id])", () => {
 
       const meta = lastSeoMetaCall(useSeoMetaMock);
       const ogImage = meta.ogImage as () => string;
-      expect(ogImage()).toBe("https://wanderist.test/api/media/media-abc123");
+      expect(ogImage()).toBe("https://farflung.test/api/media/media-abc123");
       expect((meta.twitterCard as () => string)()).toBe("summary_large_image");
     });
 
@@ -1151,8 +1151,8 @@ describe("Trip Detail page (/trips/[id])", () => {
       mount(TripDetailPage, buildGlobalConfig(pinia));
 
       const meta = lastSeoMetaCall(useSeoMetaMock);
-      expect((meta.title as () => string)()).toBe("Wanderist — Trip");
-      expect((meta.description as () => string)()).toBe("A trip on Wanderist.");
+      expect((meta.title as () => string)()).toBe("FarFlung — Trip");
+      expect((meta.description as () => string)()).toBe("A trip on FarFlung.");
     });
 
     it("singularizes the stop count and omits the distance phrase when there's exactly one stop and no distance", () => {
@@ -1166,7 +1166,7 @@ describe("Trip Detail page (/trips/[id])", () => {
 
       const description = lastSeoMetaCall(useSeoMetaMock)
         .description as () => string;
-      expect(description()).toBe("Ongoing trip with 1 stop on Wanderist.");
+      expect(description()).toBe("Ongoing trip with 1 stop on FarFlung.");
     });
 
     it("updates title once the trip loads after mount", async () => {
@@ -1175,14 +1175,14 @@ describe("Trip Detail page (/trips/[id])", () => {
 
       mount(TripDetailPage, buildGlobalConfig(pinia));
       const beforeLoad = lastSeoMetaCall(useSeoMetaMock);
-      expect((beforeLoad.title as () => string)()).toBe("Wanderist — Trip");
+      expect((beforeLoad.title as () => string)()).toBe("FarFlung — Trip");
 
       tripsStore.currentTripDetail = { ...SAMPLE_DETAIL };
       await nextTick();
 
       const afterLoad = lastSeoMetaCall(useSeoMetaMock);
       expect((afterLoad.title as () => string)()).toBe(
-        "Wanderist — Iceland, the ring road",
+        "FarFlung — Iceland, the ring road",
       );
     });
 
@@ -1192,12 +1192,12 @@ describe("Trip Detail page (/trips/[id])", () => {
 
       mount(TripDetailPage, buildGlobalConfig(pinia));
       const ogUrl = lastSeoMetaCall(useSeoMetaMock).ogUrl as () => string;
-      expect(ogUrl()).toBe("https://wanderist.test/trips/trip-1");
+      expect(ogUrl()).toBe("https://farflung.test/trips/trip-1");
 
       routeParams.id = "trip-2";
       await nextTick();
 
-      expect(ogUrl()).toBe("https://wanderist.test/trips/trip-2");
+      expect(ogUrl()).toBe("https://farflung.test/trips/trip-2");
     });
   });
 });

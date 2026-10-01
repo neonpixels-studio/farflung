@@ -4,7 +4,7 @@
  */
 
 // Fallback shown when a traveler has neither a display name nor a handle.
-export const DEFAULT_TRAVELER_NAME = "Wanderist traveler";
+export const DEFAULT_TRAVELER_NAME = "FarFlung traveler";
 
 // Fallback byline for content (a guide, ...) whose author has set neither a
 // handle nor a display name. Distinct from DEFAULT_TRAVELER_NAME — that's a

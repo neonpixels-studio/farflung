@@ -8,7 +8,7 @@ exports[`Explore page (/explore) > renders without crashing and matches snapshot
     <div data-v-fccf1d79="" class="xhero__in">
       <div data-v-fccf1d79="" class="label">// discover</div>
       <h1 data-v-fccf1d79="">Where to next?</h1>
-      <p data-v-fccf1d79=""> Curated destinations, guides from travelers you follow, and places trending across Wanderist. </p><label data-v-fccf1d79="" class="xsearch"><svg data-v-fccf1d79="" data-icon="" name="search" size="18"></svg><input data-v-fccf1d79="" placeholder="Search a city, country, or kind of place…"><span data-v-fccf1d79="" class="kbd">⌘K</span></label>
+      <p data-v-fccf1d79=""> Curated destinations, guides from travelers you follow, and places trending across FarFlung. </p><label data-v-fccf1d79="" class="xsearch"><svg data-v-fccf1d79="" data-icon="" name="search" size="18"></svg><input data-v-fccf1d79="" placeholder="Search a city, country, or kind of place…"><span data-v-fccf1d79="" class="kbd">⌘K</span></label>
       <div data-v-fccf1d79="" class="xchips"><span data-v-fccf1d79="" class="xchip">Cold-water swims</span><span data-v-fccf1d79="" class="xchip">Northern lights</span><span data-v-fccf1d79="" class="xchip">Slow coastlines</span><span data-v-fccf1d79="" class="xchip">Food cities</span><span data-v-fccf1d79="" class="xchip">Off-season Europe</span></div><!-- Hero search results -->
       <!--v-if-->
     </div>

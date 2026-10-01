@@ -481,7 +481,7 @@ describe("AppCommandPalette", () => {
       ...globalConfig,
     });
     expect(wrapper.find(".cmdk__foot").exists()).toBe(true);
-    expect(wrapper.find(".cmdk__brand").text()).toBe("wanderist");
+    expect(wrapper.find(".cmdk__brand").text()).toBe("farflung");
   });
 
   it("calls search when input value changes", async () => {

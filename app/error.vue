@@ -55,7 +55,7 @@
       </div>
     </main>
 
-    <div class="nf-foot">wanderist · © 2026</div>
+    <div class="nf-foot">farflung · © 2026</div>
   </div>
 </template>
 

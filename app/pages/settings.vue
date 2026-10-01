@@ -37,7 +37,7 @@
               <div class="label">// 01 — profile</div>
               <h3 class="display" style="margin-top: 8px">Profile</h3>
               <p>
-                How you show up across Wanderist and your public traveler
+                How you show up across FarFlung and your public traveler
                 profile.
               </p>
             </div>
@@ -412,7 +412,7 @@
               <div class="lbl">
                 <b>Public traveler profile</b>
                 <p>
-                  Let anyone view your published trips at wanderist.app/@danh.
+                  Let anyone view your published trips at farflung.io/@danh.
                 </p>
               </div>
               <label class="switch"
@@ -558,7 +558,7 @@ import { useStats } from "~/composables/useStats";
 import { useTripsStore } from "~/stores/trips";
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Settings" });
+useHead({ title: "FarFlung — Settings" });
 
 const sections = [
   { id: "profile", label: "Profile" },
@@ -729,7 +729,7 @@ const mapStyles = [
   { value: "satellite", label: "Satellite" },
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
-  { value: "custom", label: "Wanderist violet" },
+  { value: "custom", label: "FarFlung violet" },
 ];
 
 function populateFromPreferences(): void {

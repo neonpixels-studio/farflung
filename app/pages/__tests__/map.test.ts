@@ -112,7 +112,7 @@ vi.stubGlobal("resolveMapboxStyleLabel", (key: string) => {
     satellite: "satellite-streets-v12",
     light: "light-v11",
     dark: "dark-v11",
-    custom: "wanderist-violet",
+    custom: "farflung-violet",
   };
   return labels[key] ?? key;
 });

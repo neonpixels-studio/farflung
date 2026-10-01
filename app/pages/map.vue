@@ -265,7 +265,7 @@ import {
 } from "~/utils/extractErrorMessage";
 
 definePageMeta({ layout: "app", middleware: "auth" });
-useHead({ title: "Wanderist — Map" });
+useHead({ title: "FarFlung — Map" });
 
 const route = useRoute();
 const placesStore = usePlacesStore();
@@ -288,7 +288,7 @@ const mapStyles = [
   { value: "satellite", label: "Satellite" },
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
-  { value: "custom", label: "Wanderist violet" },
+  { value: "custom", label: "FarFlung violet" },
 ];
 
 const selectedPlace = ref<Place | null>(null);

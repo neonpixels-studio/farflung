@@ -1,4 +1,4 @@
-# Wanderist
+# FarFlung
 
 A travel planning and exploration app.
 
@@ -95,7 +95,7 @@ To enable the map, set a Mapbox public access token. Without it the page degrade
 1. Create a public token at [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/).
 2. Set `NUXT_PUBLIC_MAPBOX_TOKEN=<your-token>` in your `.env`.
 
-Available base styles: Outdoors, Streets, Satellite, Light, Dark, and Wanderist violet (custom).
+Available base styles: Outdoors, Streets, Satellite, Light, Dark, and FarFlung violet (custom).
 
 ## Media storage
 
@@ -141,7 +141,7 @@ To configure the webhook in the Clerk Dashboard:
 
 ## Billing
 
-Wanderist uses **[Stripe](https://stripe.com)** directly (Checkout + the Billing Portal) to sell the Wanderer and Nomad plans advertised on `/pricing` and the `/` pricing teaser, kept consistent with how billing is already set up on other projects in this account rather than going through Clerk Billing.
+FarFlung uses **[Stripe](https://stripe.com)** directly (Checkout + the Billing Portal) to sell the Wanderer and Nomad plans advertised on `/pricing` and the `/` pricing teaser, kept consistent with how billing is already set up on other projects in this account rather than going through Clerk Billing.
 
 ### Dashboard setup (required before checkout works)
 
@@ -173,7 +173,7 @@ Wanderist uses **[Stripe](https://stripe.com)** directly (Checkout + the Billing
 
 ### Instagram (photo import)
 
-Wanderist connects to Instagram via the **Instagram Graph API** (not the deprecated Basic Display API). This requires a Facebook App linked to a Business or Creator Instagram account.
+FarFlung connects to Instagram via the **Instagram Graph API** (not the deprecated Basic Display API). This requires a Facebook App linked to a Business or Creator Instagram account.
 
 **Setup:**
 

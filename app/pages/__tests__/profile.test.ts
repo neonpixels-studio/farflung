@@ -780,7 +780,7 @@ describe("profile page", () => {
       const ogImage = meta.ogImage as () => string;
       const ogUrl = meta.ogUrl as () => string;
 
-      expect(title()).toBe("Wanderist — Elsa");
+      expect(title()).toBe("FarFlung — Elsa");
       expect((meta.ogTitle as () => string)()).toBe(title());
       expect((meta.twitterTitle as () => string)()).toBe(title());
       expect(description()).toBe("Cold-water swimmer chasing coastlines.");
@@ -789,9 +789,9 @@ describe("profile page", () => {
       // No avatar exists on a profile, so the fallback favicon is used —
       // still an absolute URL built from the configured site origin — paired
       // with the small "summary" card rather than "summary_large_image".
-      expect(ogImage()).toBe("https://wanderist.test/favicon.ico");
+      expect(ogImage()).toBe("https://farflung.test/favicon.ico");
       expect((meta.twitterImage as () => string)()).toBe(ogImage());
-      expect(ogUrl()).toBe("https://wanderist.test/u/user-1");
+      expect(ogUrl()).toBe("https://farflung.test/u/user-1");
       expect(meta.ogType).toBe("website");
       expect((meta.twitterCard as () => string)()).toBe("summary");
     });
@@ -803,7 +803,7 @@ describe("profile page", () => {
 
       const description = lastSeoMetaCall(useSeoMetaMock)
         .description as () => string;
-      expect(description()).toBe("Elsa on Wanderist — 3 followers, 8 places.");
+      expect(description()).toBe("Elsa on FarFlung — 3 followers, 8 places.");
     });
 
     it("singularizes the follower/place summary at a count of exactly one", () => {
@@ -818,7 +818,7 @@ describe("profile page", () => {
 
       const description = lastSeoMetaCall(useSeoMetaMock)
         .description as () => string;
-      expect(description()).toBe("Elsa on Wanderist — 1 follower, 1 place.");
+      expect(description()).toBe("Elsa on FarFlung — 1 follower, 1 place.");
     });
 
     it("falls back to a follower/place summary when the bio is only whitespace", () => {
@@ -828,7 +828,7 @@ describe("profile page", () => {
 
       const description = lastSeoMetaCall(useSeoMetaMock)
         .description as () => string;
-      expect(description()).toBe("Elsa on Wanderist — 3 followers, 8 places.");
+      expect(description()).toBe("Elsa on FarFlung — 3 followers, 8 places.");
     });
 
     it("falls back to a placeholder title/description before a profile has loaded", () => {
@@ -837,9 +837,9 @@ describe("profile page", () => {
       mount(ProfilePage, globalConfig);
 
       const meta = lastSeoMetaCall(useSeoMetaMock);
-      expect((meta.title as () => string)()).toBe("Wanderist — Profile");
+      expect((meta.title as () => string)()).toBe("FarFlung — Profile");
       expect((meta.description as () => string)()).toBe(
-        "A traveler's profile on Wanderist.",
+        "A traveler's profile on FarFlung.",
       );
     });
 
@@ -848,13 +848,13 @@ describe("profile page", () => {
 
       mount(ProfilePage, globalConfig);
       const beforeLoad = lastSeoMetaCall(useSeoMetaMock);
-      expect((beforeLoad.title as () => string)()).toBe("Wanderist — Profile");
+      expect((beforeLoad.title as () => string)()).toBe("FarFlung — Profile");
 
       profile.value = { ...SAMPLE_PROFILE };
       await nextTick();
 
       const afterLoad = lastSeoMetaCall(useSeoMetaMock);
-      expect((afterLoad.title as () => string)()).toBe("Wanderist — Elsa");
+      expect((afterLoad.title as () => string)()).toBe("FarFlung — Elsa");
     });
 
     it("updates og:url on navigation to a different profile", async () => {
@@ -862,12 +862,12 @@ describe("profile page", () => {
 
       mount(ProfilePage, globalConfig);
       const ogUrl = lastSeoMetaCall(useSeoMetaMock).ogUrl as () => string;
-      expect(ogUrl()).toBe("https://wanderist.test/u/user-1");
+      expect(ogUrl()).toBe("https://farflung.test/u/user-1");
 
       routeParams.id = "user-2";
       await nextTick();
 
-      expect(ogUrl()).toBe("https://wanderist.test/u/user-2");
+      expect(ogUrl()).toBe("https://farflung.test/u/user-2");
     });
   });
 });

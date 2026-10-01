@@ -66,7 +66,7 @@ describe("GET /api/billing/checkout", () => {
     mockCreateCheckoutSession.mockResolvedValue({
       url: "https://checkout.stripe.com/session_123",
     });
-    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://wanderist.app";
+    process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://farflung.io";
   });
 
   it("creates a checkout session and redirects to its URL", async () => {
@@ -76,8 +76,8 @@ describe("GET /api/billing/checkout", () => {
       userId: "user-1",
       priceId: "price_wanderer_monthly",
       existingCustomerId: null,
-      successUrl: "https://wanderist.app/settings#billing",
-      cancelUrl: "https://wanderist.app/pricing",
+      successUrl: "https://farflung.io/settings#billing",
+      cancelUrl: "https://farflung.io/pricing",
     });
     expect(mockSendRedirect).toHaveBeenCalledWith(
       expect.anything(),
@@ -107,7 +107,7 @@ describe("GET /api/billing/checkout", () => {
 
     expect(mockCreateCheckoutSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        successUrl: "https://wanderist.app/somewhere",
+        successUrl: "https://farflung.io/somewhere",
       }),
     );
   });
@@ -123,7 +123,7 @@ describe("GET /api/billing/checkout", () => {
 
     expect(mockCreateCheckoutSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        successUrl: "https://wanderist.app/settings#billing",
+        successUrl: "https://farflung.io/settings#billing",
       }),
     );
   });
@@ -139,7 +139,7 @@ describe("GET /api/billing/checkout", () => {
 
     expect(mockCreateCheckoutSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        successUrl: "https://wanderist.app/settings#billing",
+        successUrl: "https://farflung.io/settings#billing",
       }),
     );
   });

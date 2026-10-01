@@ -10,7 +10,7 @@ const MAPBOX_STYLE_URLS: Record<string, string> = {
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
   light: "mapbox://styles/mapbox/light-v11",
   dark: "mapbox://styles/mapbox/dark-v11",
-  // "custom" uses the Outdoors base until a published Wanderist custom style exists.
+  // "custom" uses the Outdoors base until a published FarFlung custom style exists.
   // Replace this URL with the real style ID once it is published to Mapbox Studio.
   custom: "mapbox://styles/mapbox/outdoors-v12",
 };
@@ -21,7 +21,7 @@ const MAPBOX_STYLE_LABELS: Record<string, string> = {
   satellite: "satellite-streets-v12",
   light: "light-v11",
   dark: "dark-v11",
-  custom: "wanderist-violet",
+  custom: "farflung-violet",
 };
 
 export function resolveMapboxStyleUrl(styleKey: string): string {

@@ -16,7 +16,7 @@
  */
 import { expect, vi } from "vitest";
 
-export const OG_META_TEST_SITE_ORIGIN = "https://wanderist.test";
+export const OG_META_TEST_SITE_ORIGIN = "https://farflung.test";
 
 export function stubOgMetaGlobals(
   useSeoMetaMock: ReturnType<typeof vi.fn> = vi.fn(),

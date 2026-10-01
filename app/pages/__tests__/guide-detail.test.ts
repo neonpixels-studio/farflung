@@ -543,7 +543,7 @@ describe("Guide Detail page (/guides/[id])", () => {
       const ogImage = meta.ogImage as () => string;
       const ogUrl = meta.ogUrl as () => string;
 
-      expect(title()).toBe("Wanderist — Tokyo on foot");
+      expect(title()).toBe("FarFlung — Tokyo on foot");
       expect((meta.ogTitle as () => string)()).toBe(title());
       expect((meta.twitterTitle as () => string)()).toBe(title());
       // The body's own "\n\n" paragraph break is collapsed to a single space
@@ -556,9 +556,9 @@ describe("Guide Detail page (/guides/[id])", () => {
       // No cover image exists on a guide, so the fallback favicon is used —
       // still an absolute URL built from the configured site origin — paired
       // with the small "summary" card rather than "summary_large_image".
-      expect(ogImage()).toBe("https://wanderist.test/favicon.ico");
+      expect(ogImage()).toBe("https://farflung.test/favicon.ico");
       expect((meta.twitterImage as () => string)()).toBe(ogImage());
-      expect(ogUrl()).toBe("https://wanderist.test/guides/guide-1");
+      expect(ogUrl()).toBe("https://farflung.test/guides/guide-1");
       expect(meta.ogType).toBe("website");
       expect((meta.twitterCard as () => string)()).toBe("summary");
     });
@@ -576,7 +576,7 @@ describe("Guide Detail page (/guides/[id])", () => {
 
       const description = lastSeoMetaCall(useSeoMetaMock)
         .description as () => string;
-      expect(description()).toBe("8 min read, by @elsa_far on Wanderist.");
+      expect(description()).toBe("8 min read, by @elsa_far on FarFlung.");
     });
 
     it("falls back to the byline/read-time description when the body is only whitespace", () => {
@@ -592,7 +592,7 @@ describe("Guide Detail page (/guides/[id])", () => {
 
       const description = lastSeoMetaCall(useSeoMetaMock)
         .description as () => string;
-      expect(description()).toBe("8 min read, by @elsa_far on Wanderist.");
+      expect(description()).toBe("8 min read, by @elsa_far on FarFlung.");
     });
 
     it("falls back to placeholder title/description before a guide has loaded", () => {
@@ -602,9 +602,9 @@ describe("Guide Detail page (/guides/[id])", () => {
       mount(GuideDetailPage, buildGlobalConfig(pinia));
 
       const meta = lastSeoMetaCall(useSeoMetaMock);
-      expect((meta.title as () => string)()).toBe("Wanderist — Guide");
+      expect((meta.title as () => string)()).toBe("FarFlung — Guide");
       expect((meta.description as () => string)()).toBe(
-        "A shared travel guide on Wanderist.",
+        "A shared travel guide on FarFlung.",
       );
     });
 
@@ -614,14 +614,14 @@ describe("Guide Detail page (/guides/[id])", () => {
 
       mount(GuideDetailPage, buildGlobalConfig(pinia));
       const beforeLoad = lastSeoMetaCall(useSeoMetaMock);
-      expect((beforeLoad.title as () => string)()).toBe("Wanderist — Guide");
+      expect((beforeLoad.title as () => string)()).toBe("FarFlung — Guide");
 
       guidesStore.currentGuide = { ...SAMPLE_GUIDE };
       await nextTick();
 
       const afterLoad = lastSeoMetaCall(useSeoMetaMock);
       expect((afterLoad.title as () => string)()).toBe(
-        "Wanderist — Tokyo on foot",
+        "FarFlung — Tokyo on foot",
       );
     });
 
@@ -631,12 +631,12 @@ describe("Guide Detail page (/guides/[id])", () => {
 
       mount(GuideDetailPage, buildGlobalConfig(pinia));
       const ogUrl = lastSeoMetaCall(useSeoMetaMock).ogUrl as () => string;
-      expect(ogUrl()).toBe("https://wanderist.test/guides/guide-1");
+      expect(ogUrl()).toBe("https://farflung.test/guides/guide-1");
 
       routeParams.id = "guide-2";
       await nextTick();
 
-      expect(ogUrl()).toBe("https://wanderist.test/guides/guide-2");
+      expect(ogUrl()).toBe("https://farflung.test/guides/guide-2");
     });
   });
 });

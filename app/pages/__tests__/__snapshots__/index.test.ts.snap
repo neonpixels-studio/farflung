@@ -13,7 +13,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
       <div data-v-16d9afef="" class="lp-hero__copy" data-reveal-stagger="" data-reveal-step="70">
         <div data-v-16d9afef="" class="label">// travel journal &amp; map · for nomads</div>
         <h1 data-v-16d9afef="">Every place you've been,<br data-v-16d9afef="">on one <b data-v-16d9afef="">living map.</b></h1>
-        <p data-v-16d9afef="" class="lp-hero__sub"> Wanderist is the journal and map for people who never quite stop moving. Drop a pin, write the moment, surface the hidden spots worth the detour — your whole world, quietly filling in. </p>
+        <p data-v-16d9afef="" class="lp-hero__sub"> FarFlung is the journal and map for people who never quite stop moving. Drop a pin, write the moment, surface the hidden spots worth the detour — your whole world, quietly filling in. </p>
         <form data-v-16d9afef="" class="lp-capture" novalidate=""><span data-v-16d9afef="" class="lp-capture__pill"><svg data-v-16d9afef="" data-icon="" name="mail" size="16"></svg><input data-v-16d9afef="" type="email" placeholder="you@domain.com" aria-label="Email address" autocomplete="email"></span><button data-v-16d9afef="" class="btn btn--primary btn--lg" type="submit"> start free <svg data-v-16d9afef="" data-icon="" name="arrow-right" size="15"></svg></button></form>
         <p data-v-16d9afef="" class="lp-capture__note"><svg data-v-16d9afef="" data-icon="" name="check" size="13"></svg> Free forever plan · no card needed </p>
       </div>
@@ -99,7 +99,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
       <div data-v-16d9afef="" class="sec-head" style="max-width: none;" data-reveal="">
         <div data-v-16d9afef="" class="label">// 04 — discover</div>
         <h2 data-v-16d9afef="">Find the spots <b data-v-16d9afef="">locals actually love.</b></h2>
-        <p data-v-16d9afef=""> Wanderist surfaces hidden places near you — pulled from the journals of travelers who've been there, not from a sponsored list. The detour-worthy stuff. </p><a data-v-16d9afef="" class="btn btn--outline btn--lg" style="margin-top: 24px;"><svg data-v-16d9afef="" data-icon="" name="compass" size="17"></svg> explore nearby </a>
+        <p data-v-16d9afef=""> FarFlung surfaces hidden places near you — pulled from the journals of travelers who've been there, not from a sponsored list. The detour-worthy stuff. </p><a data-v-16d9afef="" class="btn btn--outline btn--lg" style="margin-top: 24px;"><svg data-v-16d9afef="" data-icon="" name="compass" size="17"></svg> explore nearby </a>
       </div>
       <div data-v-16d9afef="" class="place-list" data-reveal-stagger="" data-reveal-step="80"><a data-v-16d9afef="" class="place">
           <div data-v-16d9afef="" class="place__img ph">
@@ -184,7 +184,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
       <div data-v-16d9afef="" class="quotes" data-reveal-stagger="" data-reveal-step="100">
         <figure data-v-16d9afef="" class="quote">
           <div data-v-16d9afef="" class="quote__stars"><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg></div>
-          <p data-v-16d9afef=""> "I've lived out of a backpack for two years across eleven countries. Wanderist is the only record of it that I actually trust — and the only one I reread." </p>
+          <p data-v-16d9afef=""> "I've lived out of a backpack for two years across eleven countries. FarFlung is the only record of it that I actually trust — and the only one I reread." </p>
           <figcaption data-v-16d9afef="" class="quote__who"><span data-v-16d9afef="" class="quote__av"><svg data-v-16d9afef="" data-icon="" name="user" size="18"></svg></span><span data-v-16d9afef=""><span data-v-16d9afef="" class="quote__name">Maya R.</span><br data-v-16d9afef=""><span data-v-16d9afef="" class="quote__role">Product designer · remote</span></span></figcaption>
         </figure>
         <figure data-v-16d9afef="" class="quote">
@@ -274,7 +274,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
           <h4 data-v-16d9afef="">Company</h4><a href="#" data-v-16d9afef="">About</a><a href="#" data-v-16d9afef="">Journal blog</a><a href="#" data-v-16d9afef="">Privacy</a><a href="#" data-v-16d9afef="">Terms</a>
         </div>
       </div>
-      <div data-v-16d9afef="" class="ftr__base"><span data-v-16d9afef="">© 2026 Wanderist · made for the perpetually elsewhere</span><span data-v-16d9afef="" class="hstack gap-12"><span data-v-16d9afef="">Space Grotesk · JetBrains Mono</span>
+      <div data-v-16d9afef="" class="ftr__base"><span data-v-16d9afef="">© 2026 FarFlung · made for the perpetually elsewhere</span><span data-v-16d9afef="" class="hstack gap-12"><span data-v-16d9afef="">Space Grotesk · JetBrains Mono</span>
         <div data-v-16d9afef="" class="theme-toggle"></div></span>
       </div>
     </div>

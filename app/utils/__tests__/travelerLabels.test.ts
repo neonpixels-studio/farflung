@@ -28,7 +28,7 @@ describe("formatHandle", () => {
 
 describe("DEFAULT_TRAVELER_NAME", () => {
   it("is the shared fallback label", () => {
-    expect(DEFAULT_TRAVELER_NAME).toBe("Wanderist traveler");
+    expect(DEFAULT_TRAVELER_NAME).toBe("FarFlung traveler");
   });
 });
 

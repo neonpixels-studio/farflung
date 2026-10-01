@@ -42,7 +42,7 @@ describe("ProfileFollowingList", () => {
     });
 
     const names = wrapper.findAll(".person__name b").map((node) => node.text());
-    expect(names).toEqual(["Marco", "nina", "Wanderist traveler"]);
+    expect(names).toEqual(["Marco", "nina", "FarFlung traveler"]);
   });
 
   it("shows an empty note when following nobody", () => {

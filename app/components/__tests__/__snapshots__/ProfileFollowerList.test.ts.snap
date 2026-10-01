@@ -8,7 +8,7 @@ exports[`ProfileFollowerList > renders each follower linked to their profile and
   </a><a data-v-1bc42a10="" data-v-42077964="" href="/u/user-3" class="person"><span data-v-1bc42a10="" class="person__av"><svg data-v-1bc42a10="" data-icon="" name="user" size="19"></svg></span>
     <div data-v-1bc42a10="" class="person__name"><b data-v-1bc42a10="">nina</b><span data-v-1bc42a10="">@nina</span></div>
   </a><a data-v-1bc42a10="" data-v-42077964="" href="/u/user-4" class="person"><span data-v-1bc42a10="" class="person__av"><svg data-v-1bc42a10="" data-icon="" name="user" size="19"></svg></span>
-    <div data-v-1bc42a10="" class="person__name"><b data-v-1bc42a10="">Wanderist traveler</b>
+    <div data-v-1bc42a10="" class="person__name"><b data-v-1bc42a10="">FarFlung traveler</b>
       <!--v-if-->
     </div>
   </a>

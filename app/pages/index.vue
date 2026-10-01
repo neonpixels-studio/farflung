@@ -25,7 +25,7 @@
           <div class="label">// travel journal &amp; map · for nomads</div>
           <h1>Every place you've been,<br />on one <b>living map.</b></h1>
           <p class="lp-hero__sub">
-            Wanderist is the journal and map for people who never quite stop
+            FarFlung is the journal and map for people who never quite stop
             moving. Drop a pin, write the moment, surface the hidden spots worth
             the detour — your whole world, quietly filling in.
           </p>
@@ -236,7 +236,7 @@
           <div class="label">// 04 — discover</div>
           <h2>Find the spots <b>locals actually love.</b></h2>
           <p>
-            Wanderist surfaces hidden places near you — pulled from the journals
+            FarFlung surfaces hidden places near you — pulled from the journals
             of travelers who've been there, not from a sponsored list. The
             detour-worthy stuff.
           </p>
@@ -384,8 +384,8 @@
             </div>
             <p>
               "I've lived out of a backpack for two years across eleven
-              countries. Wanderist is the only record of it that I actually
-              trust — and the only one I reread."
+              countries. FarFlung is the only record of it that I actually trust
+              — and the only one I reread."
             </p>
             <figcaption class="quote__who">
               <span class="quote__av"><AppIcon name="user" :size="18" /></span>
@@ -606,7 +606,7 @@
           </div>
         </div>
         <div class="ftr__base">
-          <span>© 2026 Wanderist · made for the perpetually elsewhere</span>
+          <span>© 2026 FarFlung · made for the perpetually elsewhere</span>
           <span class="hstack gap-12">
             <span>Space Grotesk · JetBrains Mono</span>
             <AppThemeToggle />
@@ -618,7 +618,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: "Wanderist — Track every place you wander" });
+useHead({ title: "FarFlung — Track every place you wander" });
 useScrollReveal();
 
 const { isSignedIn } = useClerkAuth();

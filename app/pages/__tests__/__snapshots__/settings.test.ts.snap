@@ -14,7 +14,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
           <div data-v-a376170b="" class="sect__head">
             <div data-v-a376170b="" class="label">// 01 — profile</div>
             <h3 data-v-a376170b="" class="display" style="margin-top: 8px;">Profile</h3>
-            <p data-v-a376170b=""> How you show up across Wanderist and your public traveler profile. </p>
+            <p data-v-a376170b=""> How you show up across FarFlung and your public traveler profile. </p>
           </div>
           <div data-v-a376170b="" class="avatar-row">
             <div data-v-a376170b="" class="avatar">
@@ -124,7 +124,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
                 </div>
               </label><label data-v-a376170b="" class="map-style"><input data-v-a376170b="" type="radio" name="mapstyle">
                 <div data-v-a376170b="" class="map-style__pv pv-custom"></div>
-                <div data-v-a376170b="" class="map-style__l">Wanderist violet
+                <div data-v-a376170b="" class="map-style__l">FarFlung violet
                   <!--v-if-->
                 </div>
               </label></div>
@@ -138,7 +138,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
           </div>
           <div data-v-a376170b="" class="opt-row">
             <div data-v-a376170b="" class="lbl"><b data-v-a376170b="">Public traveler profile</b>
-              <p data-v-a376170b=""> Let anyone view your published trips at wanderist.app/@danh. </p>
+              <p data-v-a376170b=""> Let anyone view your published trips at farflung.io/@danh. </p>
             </div><label data-v-a376170b="" class="switch"><input data-v-a376170b="" type="checkbox"><span data-v-a376170b=""></span></label>
           </div>
           <div data-v-a376170b="" class="opt-row">

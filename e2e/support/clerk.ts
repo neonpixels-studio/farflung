@@ -27,7 +27,14 @@ import { clerk, clerkSetup } from "@clerk/testing/playwright";
 // and no real email is sent. The matching user must exist in the dev instance
 // (create it once via /login); the domain is irrelevant since delivery is
 // bypassed.
-export const CLERK_TEST_EMAIL = "wanderist+clerk_test@example.com";
+//
+// This must match the primary email of the pre-provisioned Clerk dev-instance
+// account. The app-DB row is keyed by Clerk user id (not email) and provisioned
+// on demand (server/utils/auth.ts ensureUser upserts on users.id and syncs the
+// email), and CI runs each spec against a fresh Neon branch — so changing this
+// only requires editing the existing Clerk user's email to match, nothing in
+// the database.
+export const CLERK_TEST_EMAIL = "farflung+clerk_test@example.com";
 
 // clerkSetup needs the dev instance's Clerk keys, passed explicitly because
 // @clerk/testing reads CLERK_SECRET_KEY / CLERK_PUBLISHABLE_KEY, not the

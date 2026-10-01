@@ -65,7 +65,7 @@ describe("ProfilePersonRow", () => {
       },
     });
 
-    expect(wrapper.find("b").text()).toBe("Wanderist traveler");
+    expect(wrapper.find("b").text()).toBe("FarFlung traveler");
     expect(wrapper.find(".person__name span").exists()).toBe(false);
   });
 });

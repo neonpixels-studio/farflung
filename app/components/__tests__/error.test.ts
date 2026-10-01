@@ -98,7 +98,7 @@ describe("Error page (app/error.vue)", () => {
       props: { error: null },
       ...globalConfig,
     });
-    expect(wrapper.find(".nf-foot").text()).toContain("wanderist");
+    expect(wrapper.find(".nf-foot").text()).toContain("farflung");
     expect(wrapper.find(".nf-foot").text()).toContain("2026");
   });
 });

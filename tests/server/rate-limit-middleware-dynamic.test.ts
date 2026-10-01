@@ -1,5 +1,5 @@
 /**
- * End-to-end guard for the dynamic-route fix (wanderist#125): with a dynamic
+ * End-to-end guard for the dynamic-route fix (farflung#125): with a dynamic
  * policy configured, the middleware must meter every concrete id under the
  * one matched pattern, so an attacker can't dodge the limit by walking ids.
  * Also pins the method-aware matching: a policy on one method's route can't

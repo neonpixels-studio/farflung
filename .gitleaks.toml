@@ -1,4 +1,4 @@
-# gitleaks configuration for Wanderist.
+# gitleaks configuration for FarFlung.
 # Extends the built-in default ruleset and layers on project-specific rules
 # for Clerk secret keys and Postgres connection strings.
 # Docs: https://github.com/gitleaks/gitleaks#configuration
