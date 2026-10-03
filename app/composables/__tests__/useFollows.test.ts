@@ -253,3 +253,152 @@ describe("useFollows — cross-instance shared pendingUserIds", () => {
     expect(instanceB.isPending("user-2")).toBe(false);
   });
 });
+
+describe("useFollows viewer reset", () => {
+  let userRef: vue.Ref<{ id: string } | null>;
+  const stateStore = new Map<string, vue.Ref<unknown>>();
+  let scope: vue.EffectScope;
+
+  function useFollowsInScope(): ReturnType<typeof useFollows> {
+    return scope.run(() => useFollows())!;
+  }
+
+  afterEach(() => {
+    scope.stop();
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    scope = vue.effectScope();
+    userRef = vue.ref<{ id: string } | null>({ id: "viewer-1" });
+    stateStore.clear();
+    vi.stubGlobal("useClerkUser", () => ({ user: userRef }));
+    vi.stubGlobal("useState", <T>(key: string, init?: () => T) => {
+      if (!stateStore.has(key)) {
+        stateStore.set(key, vue.ref(init?.()));
+      }
+      return stateStore.get(key);
+    });
+  });
+
+  it("clears followingIds and pendingUserIds on sign-out for a mounted consumer", async () => {
+    const { followingIds, pendingUserIds } = useFollowsInScope();
+    followingIds.value = new Set(["user-2"]);
+    pendingUserIds.value = new Set(["user-3"]);
+
+    userRef.value = null;
+    await vue.nextTick();
+
+    expect(followingIds.value.size).toBe(0);
+    expect(pendingUserIds.value.size).toBe(0);
+  });
+
+  it("clears state when the signed-in user changes to a different user", async () => {
+    const { followingIds, pendingUserIds } = useFollowsInScope();
+    followingIds.value = new Set(["user-2"]);
+    pendingUserIds.value = new Set(["user-3"]);
+
+    userRef.value = { id: "viewer-2" };
+    await vue.nextTick();
+
+    expect(followingIds.value.size).toBe(0);
+    expect(pendingUserIds.value.size).toBe(0);
+  });
+
+  it("keeps state when the same user id is re-emitted", async () => {
+    const { followingIds } = useFollowsInScope();
+    followingIds.value = new Set(["user-2"]);
+
+    userRef.value = { id: "viewer-1" };
+    await vue.nextTick();
+
+    expect(followingIds.value).toEqual(new Set(["user-2"]));
+  });
+
+  it("does not clear state on the initial signed-out to signed-in transition", async () => {
+    userRef.value = null;
+    const { followingIds } = useFollowsInScope();
+    followingIds.value = new Set(["user-2"]);
+
+    userRef.value = { id: "viewer-1" };
+    await vue.nextTick();
+
+    expect(followingIds.value).toEqual(new Set(["user-2"]));
+  });
+
+  it("ignores a fetchFollowing response that lands after the viewer changed", async () => {
+    let resolveFetch!: (value: { followingIds: string[] }) => void;
+    mockApiFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+    const { fetchFollowing, followingIds } = useFollowsInScope();
+
+    const inFlight = fetchFollowing();
+    userRef.value = { id: "viewer-2" };
+    resolveFetch({ followingIds: ["user-2"] });
+    await inFlight;
+
+    expect(followingIds.value.size).toBe(0);
+  });
+
+  it("ignores a follow that completes after the viewer signed out", async () => {
+    let resolveFollow!: (value: unknown) => void;
+    mockApiFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFollow = resolve;
+      }),
+    );
+    const { toggleFollow, followingIds } = useFollowsInScope();
+
+    const inFlight = toggleFollow("user-2");
+    userRef.value = null;
+    resolveFollow({ ok: true });
+    await inFlight;
+
+    expect(followingIds.value.size).toBe(0);
+  });
+
+  it("ignores an unfollow that completes after the viewer changed", async () => {
+    let resolveUnfollow!: (value: unknown) => void;
+    mockApiFetch.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveUnfollow = resolve;
+      }),
+    );
+    const { toggleFollow, followingIds } = useFollowsInScope();
+    followingIds.value = new Set(["user-2"]);
+
+    const inFlight = toggleFollow("user-2");
+    userRef.value = { id: "viewer-2" };
+    followingIds.value = new Set(["user-2", "user-9"]);
+    resolveUnfollow({ ok: true });
+    await inFlight;
+
+    expect(followingIds.value).toEqual(new Set(["user-2", "user-9"]));
+  });
+
+  it("a stale toggle settling does not release the next viewer's pending guard", async () => {
+    let resolveFirst!: (value: unknown) => void;
+    mockApiFetch
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+      )
+      .mockReturnValueOnce(new Promise(() => {}));
+    const { toggleFollow, isPending } = useFollowsInScope();
+
+    const staleToggle = toggleFollow("user-2");
+    userRef.value = null;
+    userRef.value = { id: "viewer-2" };
+    void toggleFollow("user-2");
+    expect(isPending("user-2")).toBe(true);
+
+    resolveFirst({ ok: true });
+    await staleToggle;
+
+    expect(isPending("user-2")).toBe(true);
+  });
+});
