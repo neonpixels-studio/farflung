@@ -37,6 +37,23 @@ describe("SECURITY_HEADERS", () => {
   });
 });
 
+describe("CSP reporting wiring", () => {
+  it("points the policy at the collector via report-uri and report-to", () => {
+    expect(
+      getDirective(CONTENT_SECURITY_POLICY_REPORT_ONLY, "report-uri"),
+    ).toBe("report-uri /csp-report");
+    expect(getDirective(CONTENT_SECURITY_POLICY_REPORT_ONLY, "report-to")).toBe(
+      "report-to csp-endpoint",
+    );
+  });
+
+  it("declares the report-to endpoint in Reporting-Endpoints", () => {
+    expect(SECURITY_HEADERS["Reporting-Endpoints"]).toBe(
+      'csp-endpoint="/csp-report"',
+    );
+  });
+});
+
 describe("CONTENT_SECURITY_POLICY_REPORT_ONLY", () => {
   it("locks down defaults, framing, and form submission", () => {
     expect(CONTENT_SECURITY_POLICY_REPORT_ONLY).toContain("default-src 'self'");

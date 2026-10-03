@@ -20,6 +20,7 @@ import {
 
 const SERVER_API_DIR = resolve(__dirname, "../../server/api");
 const API_PATH_PREFIX = "/api/";
+const SERVER_ROUTES_DIR = resolve(__dirname, "../../server/routes");
 
 // farflung#89's three named targets. Pinned explicitly (rather than only
 // walking whatever keys happen to exist) so that deleting an entry — the
@@ -29,35 +30,57 @@ const EXPECTED_POLICY_KEYS = [
   "POST /api/media",
   "POST /api/connections/instagram/import",
   "GET /api/search",
+  "POST /csp-report",
 ];
 
 // Nitro accepts a method-suffixed handler (search.get.ts) or a method-agnostic
 // one (search.ts) that handles every verb itself, at either the file or the
 // directory-index level — all four shapes are valid places a route could
 // legitimately live.
-function candidateHandlerPaths(method: string, apiPath: string): string[] {
-  if (!apiPath.startsWith(API_PATH_PREFIX)) {
-    throw new Error(
-      `Policy key "${method} ${apiPath}" is outside ${API_PATH_PREFIX}; extend candidateHandlerPaths to cover it.`,
-    );
+function resolveHandlerRoot(
+  method: string,
+  routePath: string,
+): { rootDirectory: string; routeSegment: string } {
+  if (routePath.startsWith(API_PATH_PREFIX)) {
+    return {
+      rootDirectory: SERVER_API_DIR,
+      routeSegment: routePath.slice(API_PATH_PREFIX.length),
+    };
   }
+  // Public, non-/api/ routes (e.g. the unauthenticated CSP collector) live
+  // under server/routes, which maps to the URL root.
+  if (routePath.startsWith("/")) {
+    return {
+      rootDirectory: SERVER_ROUTES_DIR,
+      routeSegment: routePath.slice(1),
+    };
+  }
+  throw new Error(
+    `Policy key "${method} ${routePath}" is outside ${API_PATH_PREFIX} and server/routes; extend resolveHandlerRoot to cover it.`,
+  );
+}
+
+function candidateHandlerPaths(method: string, routePath: string): string[] {
+  const { rootDirectory, routeSegment: rawSegment } = resolveHandlerRoot(
+    method,
+    routePath,
+  );
   // Nitro compiles a `[id]` file to a `:id` route pattern, a `[...slug]` file
   // to `**:slug`, and a bare `[...]` file to `**`, so translate the pattern
   // back to file syntax before resolving it to a path on disk. Wildcards
   // first (they carry a `:name` suffix a later `:param` pass would otherwise
   // mangle).
-  const routeSegment = apiPath
-    .slice(API_PATH_PREFIX.length)
+  const routeSegment = rawSegment
     .replace(/\*\*:([^/]+)/g, "[...$1]")
     .replace(/\*\*/g, "[...]")
     .replace(/:([^/]+)/g, "[$1]");
   const methodSuffix = method.toLowerCase();
 
   return [
-    resolve(SERVER_API_DIR, `${routeSegment}.${methodSuffix}.ts`),
-    resolve(SERVER_API_DIR, `${routeSegment}/index.${methodSuffix}.ts`),
-    resolve(SERVER_API_DIR, `${routeSegment}.ts`),
-    resolve(SERVER_API_DIR, `${routeSegment}/index.ts`),
+    resolve(rootDirectory, `${routeSegment}.${methodSuffix}.ts`),
+    resolve(rootDirectory, `${routeSegment}/index.${methodSuffix}.ts`),
+    resolve(rootDirectory, `${routeSegment}.ts`),
+    resolve(rootDirectory, `${routeSegment}/index.ts`),
   ];
 }
 
