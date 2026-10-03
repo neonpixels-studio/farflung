@@ -1,3 +1,6 @@
+import { SSR_FETCH_TIMEOUT_MS } from "~/constants/ssr";
+import { rejectAfterTimeout } from "~/utils/rejectAfterTimeout";
+
 /**
  * Returns a thin $fetch wrapper that injects the Clerk session token as an
  * Authorization: Bearer header on /api/* requests.
@@ -70,6 +73,15 @@ export function useApiClient(
     return headers;
   }
 
+  // A caller may only tighten the SSR bound; 0, negatives and non-numbers
+  // fall back to the default (ofetch reads 0 as "no timeout").
+  function resolveSsrTimeout(callerTimeout: unknown): number {
+    if (typeof callerTimeout !== "number" || callerTimeout <= 0) {
+      return SSR_FETCH_TIMEOUT_MS;
+    }
+    return Math.min(callerTimeout, SSR_FETCH_TIMEOUT_MS);
+  }
+
   async function apiFetch<T>(
     url: string,
     options: Parameters<typeof $fetch>[1] = {},
@@ -79,7 +91,26 @@ export function useApiClient(
       options.headers as HeadersInit | undefined,
       token,
     );
-    return requestFetch<T>(url, { ...options, headers });
+    if (!isServer) {
+      return requestFetch<T>(url, { ...options, headers });
+    }
+    // Bound every SSR call so a slow/hung backend can't hang the whole page
+    // response. `timeout` is ofetch's native option (covers real network
+    // fetches); the race covers the in-process dispatch, which ignores it. A
+    // caller may only tighten the bound, never lift it.
+    const ssrTimeoutMs = resolveSsrTimeout(options.timeout);
+    return rejectAfterTimeout(
+      // retry: 0 by default — ofetch retries timed-out GETs, which would fire
+      // a second request at a backend that's already too slow, after the race
+      // has already given up on the first.
+      requestFetch<T>(url, {
+        ...options,
+        retry: options.retry ?? 0,
+        timeout: ssrTimeoutMs,
+        headers,
+      }),
+      ssrTimeoutMs,
+    );
   }
 
   return { apiFetch };

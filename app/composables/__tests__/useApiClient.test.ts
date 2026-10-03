@@ -29,6 +29,7 @@ vi.stubGlobal("useRequestFetch", () => mockFetch);
 // we re-stub useClerkAuth at call time (when useApiClient() is called), so
 // the ref is always read from the active stub.
 const { useApiClient } = await import("../useApiClient");
+const { SSR_FETCH_TIMEOUT_MS } = await import("~/constants/ssr");
 
 describe("useApiClient", () => {
   beforeEach(() => {
@@ -89,6 +90,106 @@ describe("useApiClient", () => {
     expect(mockGetToken).not.toHaveBeenCalled();
     const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
+  });
+
+  describe("SSR timeout (#304)", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function expectRejectsAtDeadline(
+      outcome: Promise<unknown>,
+      deadlineMs: number,
+    ): Promise<void> {
+      let settled = false;
+      const assertion = expect(outcome).rejects.toMatchObject({
+        name: "TimeoutError",
+      });
+      outcome
+        .catch(() => {})
+        .finally(() => {
+          settled = true;
+        });
+      await vi.advanceTimersByTimeAsync(deadlineMs - 1);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await assertion;
+    }
+
+    it("rejects with a TimeoutError when the server-side fetch hangs", async () => {
+      vi.useFakeTimers();
+      mockFetch.mockReturnValue(new Promise(() => {}));
+      const { apiFetch } = useApiClient(true);
+
+      await expectRejectsAtDeadline(
+        apiFetch("/api/guides/1"),
+        SSR_FETCH_TIMEOUT_MS,
+      );
+    });
+
+    it("does not let a caller-supplied timeout lift the SSR bound", async () => {
+      vi.useFakeTimers();
+      mockFetch.mockReturnValue(new Promise(() => {}));
+      const { apiFetch } = useApiClient(true);
+
+      await expectRejectsAtDeadline(
+        apiFetch("/api/guides/1", { timeout: 60000 }),
+        SSR_FETCH_TIMEOUT_MS,
+      );
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+    });
+
+    it("lets a caller tighten the SSR bound", async () => {
+      vi.useFakeTimers();
+      mockFetch.mockReturnValue(new Promise(() => {}));
+      const { apiFetch } = useApiClient(true);
+
+      await expectRejectsAtDeadline(
+        apiFetch("/api/guides/1", { timeout: 100 }),
+        100,
+      );
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(100);
+    });
+
+    it("treats timeout: 0 as unset rather than failing immediately", async () => {
+      const { apiFetch } = useApiClient(true);
+
+      await expect(apiFetch("/api/guides/1", { timeout: 0 })).resolves.toEqual({
+        ok: true,
+      });
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+    });
+
+    it("treats a negative timeout as unset", async () => {
+      const { apiFetch } = useApiClient(true);
+
+      await apiFetch("/api/guides/1", { timeout: -1 });
+
+      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+    });
+
+    it("disables ofetch retries server-side unless the caller opts in", async () => {
+      const { apiFetch } = useApiClient(true);
+
+      await apiFetch("/api/guides/1");
+      await apiFetch("/api/guides/1", { retry: 2 });
+      await apiFetch("/api/guides/1", { retry: undefined });
+
+      expect(mockFetch.mock.calls[0][1].retry).toBe(0);
+      expect(mockFetch.mock.calls[1][1].retry).toBe(2);
+      expect(mockFetch.mock.calls[2][1].retry).toBe(0);
+    });
+
+    it("applies no timeout client-side", async () => {
+      vi.useFakeTimers();
+      mockFetch.mockResolvedValue({ ok: true });
+      const { apiFetch } = useApiClient(false);
+
+      await apiFetch("/api/guides/1");
+
+      expect(mockFetch.mock.calls[0][1].timeout).toBeUndefined();
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 
   it("preserves caller-supplied headers alongside the injected token", async () => {
