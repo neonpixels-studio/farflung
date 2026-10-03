@@ -10,6 +10,8 @@
  * on a protected route.
  */
 
+import { buildLoginPath } from "~/utils/authRedirect";
+
 const PROTECTED_ROUTES = new Set([
   "/journal",
   "/map",
@@ -31,8 +33,9 @@ export default defineNuxtPlugin(() => {
     if (!isLoaded.value) {
       return;
     }
-    if (!isSignedIn.value && isProtectedRoute(router.currentRoute.value.path)) {
-      navigateTo("/login");
+    const currentRoute = router.currentRoute.value;
+    if (!isSignedIn.value && isProtectedRoute(currentRoute.path)) {
+      navigateTo(buildLoginPath(currentRoute.fullPath));
     }
   });
 });

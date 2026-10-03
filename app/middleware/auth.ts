@@ -1,4 +1,6 @@
-export default defineNuxtRouteMiddleware(() => {
+import { buildLoginPath } from "~/utils/authRedirect";
+
+export default defineNuxtRouteMiddleware((to) => {
   const { isSignedIn, isLoaded } = useAuth();
 
   if (!isLoaded.value) {
@@ -6,6 +8,6 @@ export default defineNuxtRouteMiddleware(() => {
   }
 
   if (!isSignedIn.value) {
-    return navigateTo("/login");
+    return navigateTo(buildLoginPath(to.fullPath));
   }
 });

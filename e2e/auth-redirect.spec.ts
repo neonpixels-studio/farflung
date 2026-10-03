@@ -26,8 +26,20 @@ for (const route of PROTECTED_ROUTES) {
     await page.goto(route);
     // The auth middleware navigates to /login; allow time for the redirect.
     await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
+    // The guard carries the requested route so sign-in lands back on it (#302).
+    expect(new URL(page.url()).searchParams.get("return_to")).toBe(route);
   });
 }
+
+test("a protected route's query string survives the /login redirect (#302)", async ({
+  page,
+}) => {
+  await page.goto("/trips?tab=stops");
+  await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
+  expect(new URL(page.url()).searchParams.get("return_to")).toBe(
+    "/trips?tab=stops",
+  );
+});
 
 test("home page (/) is accessible without authentication", async ({ page }) => {
   await page.goto("/");
