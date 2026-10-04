@@ -19,14 +19,21 @@ set -euo pipefail
 
 # High/critical advisories accepted because no patched version exists upstream.
 # Remove an entry the moment its package ships a fix and bump via `overrides`.
-# Currently empty: the image-size advisories previously allowlisted here
-# (GHSA-w3rx-r6r6-pgpr, GHSA-5p2g-fcmc-qvqq) dropped out of `npm audit`'s
-# report as of Sep 2026 — image-size is no longer reachable in the dependency
-# tree (verified via `npm ls image-size`, which now resolves nothing), most
-# likely because an updated @netlify/blobs/@netlify/dev-utils release stopped
-# pulling it transitively. Re-add an entry here only if a high/critical
-# advisory resurfaces with no upstream fix available.
-ALLOWLISTED_ADVISORIES=()
+#
+# GHSA-86w9-cpqp-85rv (node-forge <=1.4.0, RSA PKCS#1 v1.5 signature
+#   verification accepts malformed DigestInfo). No patched release as of Oct
+#   2026. Pulled in by @dotenvx/dotenvx and nuxt > @nuxt/cli > listhen, which
+#   only use forge to generate local dev/proxy certificates and never call
+#   signature verification. Remove once node-forge ships >1.4.0.
+# GHSA-vfj7-8cjw-p6xm (braces <=3.0.3, stack-exhaustion DoS on deeply nested
+#   patterns). No patched release as of Oct 2026. Pulled in by nuxt >
+#   nitropack > globby > fast-glob > micromatch, which only expands build-time
+#   glob patterns authored in this repo, never user input. Remove once braces
+#   ships >3.0.3.
+ALLOWLISTED_ADVISORIES=(
+  GHSA-86w9-cpqp-85rv
+  GHSA-vfj7-8cjw-p6xm
+)
 
 report="$(npm audit --json || true)"
 
