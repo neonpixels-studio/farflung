@@ -46,7 +46,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@netlify/blobs": "^11.1.0",
     "@pinia/nuxt": "^1.0.2",
-    "@sentry/nuxt": "^10.75.2",
+    "@sentry/nuxt": "^11.2.0",
     "@types/mapbox-gl": "^3.5.0",
     "@vue/devtools-api": "^8.2.1",
     "drizzle-orm": "^0.45.3",
