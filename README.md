@@ -82,9 +82,9 @@ npm run db:studio
 Migrations are generated and committed locally, then applied automatically by CI — never generated at deploy time.
 
 - **Deploy previews / e2e:** each spec run creates an ephemeral Neon branch (copy-on-write from production, so it starts with production's schema), then applies any pending committed migrations to it before the tests run. The migrate step uses the branch's **direct** (non-pooler) connection; the app under test uses the pooled one.
-- **Production:** the `migrate-production` job in `.github/workflows/ci.yml` runs on every push to `main`, after the `ci` job passes. It runs `npm run db:migrate:production` (`dotenvx run -f .env.production -- drizzle-kit migrate`), decrypting `.env.production` with the `DOTENV_PRIVATE_KEY_PRODUCTION` repository secret. Running it as its own job — rather than inside the Netlify build — makes a failed migration fail loudly instead of half-deploying.
+- **Production:** the weekly deploy workflow (`.github/workflows/weekly-production-deploy.yml`) runs `npm run db:migrate:production` (`dotenvx run -f .env.production -- drizzle-kit migrate`) right before it calls the Netlify build hook, decrypting `.env.production` with the `DOTENV_PRIVATE_KEY_PRODUCTION` repository secret. A push to `main` never touches the production database, so schema and code ship together. Running it as its own step — rather than inside the Netlify build — makes a failed migration fail loudly instead of half-deploying, and a failed migration means no hook call.
 
-Migrations must use a **direct** Neon connection, not the pooled one the running app uses. `.env.production` holds `DATABASE_URL_UNPOOLED` (the production Neon host without `-pooler`), and `drizzle.config.ts` prefers it over the pooled `DATABASE_URL`. Add a new migration to production by committing the generated SQL and merging to `main`.
+Migrations must use a **direct** Neon connection, not the pooled one the running app uses. `.env.production` holds `DATABASE_URL_UNPOOLED` (the production Neon host without `-pooler`), and `drizzle.config.ts` prefers it over the pooled `DATABASE_URL`. Add a new migration to production by committing the generated SQL and merging to `main`; it is applied at the next weekly (or manual) production deploy.
 
 ## Map (Mapbox GL)
 
@@ -296,7 +296,15 @@ npm run preview
 
 ## Deployment
 
-The app deploys to Netlify automatically on push to `main`. CI runs lint and unit tests before the build. E2e tests run as a separate job after CI passes.
+### Deploys
+
+Production deploys once a week, on Mondays at 14:00 UTC, via a Netlify build hook called by `.github/workflows/weekly-production-deploy.yml`. Merging to `main` does not start a production build or touch the production database: the `[context.production]` `ignore` command in `netlify.toml` cancels any production build that was not triggered by a hook. Pull requests still get Deploy Previews, and branch deploys still build on push.
+
+The weekly run first requires CI on the `main` HEAD commit to have concluded `success`, then applies Drizzle migrations to production, then calls the hook. A failed migration means no deploy. The scheduled run is skipped (and logs why) when `main` has no commits in the last 7 days.
+
+To ship a hotfix now, open the Actions tab, pick **Weekly production deploy**, and choose **Run workflow**. A manual run always migrates and deploys. It needs the `NETLIFY_BUILD_HOOK_URL` and `DOTENV_PRIVATE_KEY_PRODUCTION` repo secrets and fails if either is missing or the hook returns non-2xx. Production builds started from the Netlify UI are cancelled by the same gate, so use the workflow instead. GitHub disables scheduled workflows after 60 days without repo activity; re-enable it from the Actions tab if the weekly run stops appearing.
+
+CI runs lint and unit tests before the build. E2e tests run as a separate job after CI passes.
 
 Required repository secrets (Settings → Secrets → Actions):
 

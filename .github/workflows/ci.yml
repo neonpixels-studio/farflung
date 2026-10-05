@@ -30,42 +30,6 @@ jobs:
       - run: npx nuxt prepare
       - run: npm run test:ci
 
-  migrate-production:
-    name: Migrate production DB
-    runs-on: ubuntu-latest
-    # Apply committed Drizzle migrations to the production database on every push
-    # to main, as its own job (not buried in the Netlify build) so a failed
-    # migration fails loudly and visibly. Gated on `ci` so a broken build never
-    # migrates prod. Never runs on PRs or feature branches.
-    #
-    # `db:migrate:production` is `dotenvx run -f .env.production -- drizzle-kit
-    # migrate`. drizzle.config prefers .env.production's DATABASE_URL_UNPOOLED
-    # (the direct, non-pooler connection) over the pooled DATABASE_URL the app
-    # uses.
-    #
-    # Required repository secret (Settings -> Secrets and variables -> Actions):
-    #   DOTENV_PRIVATE_KEY_PRODUCTION - decrypts .env.production. Same key set in
-    #                                   Netlify (Builds scope).
-    needs: [ci]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-        env:
-          HUSKY: 0
-      - name: Apply Drizzle migrations to production
-        run: npm run db:migrate:production
-        env:
-          DOTENV_PRIVATE_KEY_PRODUCTION: ${{ secrets.DOTENV_PRIVATE_KEY_PRODUCTION }}
-
   changed:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
