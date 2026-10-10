@@ -30,9 +30,21 @@ set -euo pipefail
 #   nitropack > globby > fast-glob > micromatch, which only expands build-time
 #   glob patterns authored in this repo, never user input. Remove once braces
 #   ships >3.0.3.
+# GHSA-858h-whjf-mvg5, GHSA-g4wm-2vf7-vfgr, GHSA-x6jw-m9v5-85vh (simple-git
+#   <4.0.1 command execution) and GHSA-v5rq-49vh-5v5c (@simple-git/argv-parser
+#   <2.0.1). A fix exists in simple-git 4, but @nuxt/devtools 3.x imports its
+#   removed default export, so upgrading crashes nuxt build/dev/vitest, and
+#   disabling devtools is not acceptable. Only @nuxt/devtools uses simple-git,
+#   under `nuxt dev` on a local checkout (dev-only, never in the production
+#   bundle). Mirrors markpost 60a4c2f / basin #338. Remove once @nuxt/devtools
+#   supports simple-git 4.
 ALLOWLISTED_ADVISORIES=(
   GHSA-86w9-cpqp-85rv
   GHSA-vfj7-8cjw-p6xm
+  GHSA-858h-whjf-mvg5
+  GHSA-g4wm-2vf7-vfgr
+  GHSA-x6jw-m9v5-85vh
+  GHSA-v5rq-49vh-5v5c
 )
 
 report="$(npm audit --json || true)"
