@@ -38,7 +38,7 @@
     "shell-quote": "^1.9.0",
     "svgo": "^4.1.0",
     "nanoid": "^3.3.17",
-    "undici": "^8.11.2"
+    "undici": "^8.12.2"
   },
   "dependencies": {
     "@clerk/backend": "^3.26.0",
