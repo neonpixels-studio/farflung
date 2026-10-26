@@ -270,8 +270,8 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
         <div data-v-16d9afef="" class="ftr__col">
           <h4 data-v-16d9afef="">Explore</h4><a data-v-16d9afef="" href="#how">How it works</a><a data-v-16d9afef="" href="#discover">Discover</a><a data-v-16d9afef="">Product tour</a><a data-v-16d9afef="">Sign in</a>
         </div>
-        <div class="ftr__col" data-v-16d9afef="">
-          <h4 data-v-16d9afef="">Company</h4><a href="#" data-v-16d9afef="">About</a><a href="#" data-v-16d9afef="">Journal blog</a><a href="#" data-v-16d9afef="">Privacy</a><a href="#" data-v-16d9afef="">Terms</a>
+        <div data-v-16d9afef="" class="ftr__col">
+          <h4 data-v-16d9afef="">Company</h4><a data-v-16d9afef="" href="#">About</a><a data-v-16d9afef="">Contact</a><a data-v-16d9afef="" href="#">Journal blog</a><a data-v-16d9afef="" href="#">Privacy</a><a data-v-16d9afef="" href="#">Terms</a>
         </div>
       </div>
       <div data-v-16d9afef="" class="ftr__base"><span data-v-16d9afef="">© 2026 FarFlung · made for the perpetually elsewhere</span><span data-v-16d9afef="" class="hstack gap-12"><span data-v-16d9afef="">Space Grotesk · JetBrains Mono</span>
