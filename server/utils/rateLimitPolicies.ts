@@ -57,6 +57,10 @@ export const RATE_LIMIT_POLICIES: Record<string, RateLimitPolicy> = {
   // capping scripted scraping.
   "GET /api/search": { limit: 60, windowMs: ONE_MINUTE_MS },
 
+  // Proxies to the external Neon Pixels dashboard with a shared server token,
+  // so cap how hard one user can spam it. Real feedback is a few per hour.
+  "POST /api/feedback": { limit: 10, windowMs: ONE_HOUR_MS },
+
   // Unauthenticated CSP violation collector (server/routes/csp-report.post.ts),
   // so it is metered per client IP. One page load can legitimately fire a
   // handful of reports; 30 requests/minute absorbs that, and with the
