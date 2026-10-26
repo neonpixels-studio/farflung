@@ -50,6 +50,7 @@ export default defineNuxtConfig({
     instagramClientId: process.env.INSTAGRAM_CLIENT_ID || "",
     instagramClientSecret: process.env.INSTAGRAM_CLIENT_SECRET || "",
     tokenEncryptionKey: process.env.TOKEN_ENCRYPTION_KEY || "",
+    neonPixelsDashboardToken: process.env.NEON_PIXELS_DASHBOARD_TOKEN || "",
     public: {
       sentryDsn: "",
       siteOrigin: "",
