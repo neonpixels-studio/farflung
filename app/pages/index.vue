@@ -600,6 +600,7 @@
           <div class="ftr__col">
             <h4>Company</h4>
             <a href="#">About</a>
+            <NuxtLink to="/contact">Contact</NuxtLink>
             <a href="#">Journal blog</a>
             <a href="#">Privacy</a>
             <a href="#">Terms</a>

@@ -1,0 +1,29 @@
+<!doctype html>
+<!--
+  Netlify Forms blueprint. Nuxt renders pages on demand in a Netlify Function,
+  so Netlify's deploy-time form detection never sees the Vue form on /contact.
+  This static copy registers the "contact" form and its fields; the page then
+  POSTs url-encoded submissions to this file's path (see
+  app/utils/contactForm.ts). Keep the field names in sync with that file.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <title>Forms</title>
+  </head>
+  <body>
+    <form
+      name="contact"
+      data-netlify="true"
+      netlify-honeypot="bot-field"
+      hidden
+    >
+      <input type="hidden" name="form-name" value="contact" />
+      <input name="bot-field" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <textarea name="message"></textarea>
+    </form>
+  </body>
+</html>
