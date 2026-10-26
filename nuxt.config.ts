@@ -80,5 +80,12 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    // Dev-only. Vite otherwise discovers these lazily-loaded deps at runtime
+    // and force-reloads the page, which on a cold e2e dev server lands
+    // mid-test and wipes in-flight UI state. Taken from Vite's own
+    // "discovered new dependencies at runtime" suggestion.
+    optimizeDeps: {
+      include: ["@clerk/vue", "@vue/devtools-core", "mapbox-gl"],
+    },
   },
 });
