@@ -10,7 +10,7 @@ exports[`Trip Detail page (/trips/[id]) > renders without crashing and matches s
     <div data-v-a25903e0="" class="thero__in">
       <div data-v-a25903e0="" class="label">// ongoing trip</div>
       <h1 data-v-a25903e0="">Iceland, the ring road</h1>
-      <div data-v-a25903e0="" class="thero__meta"><span data-v-a25903e0=""><svg data-v-a25903e0="" data-icon="" name="calendar" size="14"></svg> Jun 9 – Jun 17</span><span data-v-a25903e0=""><svg data-v-a25903e0="" data-icon="" name="pin" size="14"></svg> 3 stops  · 1,332 km</span><span data-v-a25903e0=""><svg data-v-a25903e0="" data-icon="" name="image" size="14"></svg> 61 photos</span></div>
+      <div data-v-a25903e0="" class="thero__meta"><span data-v-a25903e0=""><svg data-v-a25903e0="" data-icon="" name="calendar" size="14"></svg> Jun 9 – Jun 17</span><span data-v-a25903e0=""><svg data-v-a25903e0="" data-icon="" name="pin" size="14"></svg> 3 stops  · 828 mi</span><span data-v-a25903e0=""><svg data-v-a25903e0="" data-icon="" name="image" size="14"></svg> 61 photos</span></div>
     </div>
   </div>
   <!--v-if-->
@@ -62,7 +62,7 @@ exports[`Trip Detail page (/trips/[id]) > renders without crashing and matches s
                 <div data-v-a25903e0="" class="stop__reorder"><button data-v-a25903e0="" type="button" class="stop__move-btn" aria-label="Move Jökulsárlón up"><svg data-v-a25903e0="" data-icon="" name="arrow-up" size="14"></svg></button><button data-v-a25903e0="" type="button" class="stop__move-btn" aria-label="Move Jökulsárlón down"><svg data-v-a25903e0="" data-icon="" name="arrow-down" size="14"></svg></button><span data-v-a25903e0="" class="stop__grip" aria-hidden="true"><svg data-v-a25903e0="" data-icon="" name="grip" size="16"></svg></span></div>
               </div>
               <!--v-if-->
-              <div data-v-a25903e0="" class="stop__foot"><span data-v-a25903e0="" class="m"><svg data-v-a25903e0="" data-icon="" name="ruler" size="12"></svg> 270 km</span></div>
+              <div data-v-a25903e0="" class="stop__foot"><span data-v-a25903e0="" class="m"><svg data-v-a25903e0="" data-icon="" name="ruler" size="12"></svg> 168 mi</span></div>
             </div>
           </li>
           <li data-v-a25903e0="" class="stop" draggable="true">
@@ -81,7 +81,7 @@ exports[`Trip Detail page (/trips/[id]) > renders without crashing and matches s
                 <div data-v-a25903e0="" class="stop__reorder"><button data-v-a25903e0="" type="button" class="stop__move-btn" aria-label="Move Höfn up"><svg data-v-a25903e0="" data-icon="" name="arrow-up" size="14"></svg></button><button data-v-a25903e0="" type="button" class="stop__move-btn" aria-label="Move Höfn down" disabled=""><svg data-v-a25903e0="" data-icon="" name="arrow-down" size="14"></svg></button><span data-v-a25903e0="" class="stop__grip" aria-hidden="true"><svg data-v-a25903e0="" data-icon="" name="grip" size="16"></svg></span></div>
               </div>
               <!--v-if-->
-              <div data-v-a25903e0="" class="stop__foot"><span data-v-a25903e0="" class="m"><svg data-v-a25903e0="" data-icon="" name="ruler" size="12"></svg> 180 km</span></div>
+              <div data-v-a25903e0="" class="stop__foot"><span data-v-a25903e0="" class="m"><svg data-v-a25903e0="" data-icon="" name="ruler" size="12"></svg> 112 mi</span></div>
             </div>
           </li>
         </ul>
@@ -103,8 +103,8 @@ exports[`Trip Detail page (/trips/[id]) > renders without crashing and matches s
       <div data-v-a25903e0="" class="rail-card">
         <h4 data-v-a25903e0="" class="display">Trip facts</h4>
         <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Status</span><span data-v-a25903e0="" class="v" style="color: var(--success-ink);">Ongoing</span></div>
-        <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Distance</span><span data-v-a25903e0="" class="v">1,332 km</span></div>
-        <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Logged</span><span data-v-a25903e0="" class="v">450 km / 1,332 km</span></div>
+        <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Distance</span><span data-v-a25903e0="" class="v">828 mi</span></div>
+        <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Logged</span><span data-v-a25903e0="" class="v">280 mi / 828 mi</span></div>
         <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Nights</span><span data-v-a25903e0="" class="v">3</span></div>
         <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Photos</span><span data-v-a25903e0="" class="v">61</span></div>
         <div data-v-a25903e0="" class="fact"><span data-v-a25903e0="" class="k">Visibility</span><span data-v-a25903e0="" class="v">Private</span></div>

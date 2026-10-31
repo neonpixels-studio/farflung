@@ -261,6 +261,15 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { usePlacesStore } from "~/stores/places";
 import type { Place, UpdatePlaceInput } from "~/stores/places";
 import { useMapbox } from "~/composables/useMapbox";
+import { usePreferences } from "~/composables/usePreferences";
+import { entitledPlan } from "~/utils/planFeatures";
+import {
+  DEFAULT_MAP_STYLE,
+  MAP_STYLE_OPTIONS,
+  PAID_MAP_STYLE_HINT,
+  isMapStyleAllowed,
+  resolveDefaultMapStyle,
+} from "~/utils/mapStyles";
 import { useBilling } from "~/composables/useBilling";
 import { resolveMapboxStyleLabel } from "~/composables/useMapboxStyles";
 import type { DropPinResult, MapInstance } from "~/composables/useMapbox";
@@ -288,29 +297,19 @@ const mapboxReady = ref(false);
 const isUnmounted = ref(false);
 
 const filters = ["All", "2026", "Journaled", "Wishlist"];
-const mapStyles = [
-  { value: "outdoors", label: "Outdoors" },
-  { value: "streets", label: "Streets" },
-  { value: "satellite", label: "Satellite" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "custom", label: "FarFlung violet" },
-];
+const mapStyles = MAP_STYLE_OPTIONS;
 
-// Mirrors PLAN_LIMITS[drifter].mapStyles on the server.
-const DRIFTER_MAP_STYLES = ["outdoors"];
-const paidStyleTitle = "Available on Wanderer and Nomad";
+const paidStyleTitle = PAID_MAP_STYLE_HINT;
 const { subscription, fetchSubscription } = useBilling();
+const { preferences, fetchPreferences } = usePreferences();
 
 function isStyleAllowed(style: string): boolean {
-  return (
-    subscription.value.plan !== "drifter" || DRIFTER_MAP_STYLES.includes(style)
-  );
+  return isMapStyleAllowed(entitledPlan(subscription.value), style);
 }
 
 const selectedPlace = ref<Place | null>(null);
 const activeFilter = ref("All");
-const mapStyle = ref("outdoors");
+const mapStyle = ref(DEFAULT_MAP_STYLE);
 
 const searchQuery = ref("");
 const layersPopOpen = ref(false);
@@ -695,10 +694,22 @@ watch(
   },
 );
 
+// The saved default only seeds the style the map opens with. Picking a style
+// in the layers popover (setMapStyle) stays session-only and never writes back.
+// Both fetches swallow their own errors, so a failure falls back to outdoors.
+async function loadDefaultMapStyle(): Promise<void> {
+  await Promise.all([fetchSubscription(), fetchPreferences()]);
+  mapStyle.value = resolveDefaultMapStyle(
+    preferences.value.defaultMapStyle,
+    entitledPlan(subscription.value),
+  );
+}
+
 onMounted(async () => {
-  fetchSubscription();
+  const defaultStyleLoaded = loadDefaultMapStyle();
   await placesStore.fetchPlaces().catch(() => undefined);
   focusPlaceFromQuery();
+  await defaultStyleLoaded;
   await initializeMap();
   fetchMapStats();
 });

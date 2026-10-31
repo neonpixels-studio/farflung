@@ -1,15 +1,17 @@
 /**
  * GET /api/connections/instagram/callback
  *
- * Handles the Instagram OAuth redirect. Exchanges the code for tokens, fetches
- * the Instagram user ID, stores the encrypted long-lived token in
- * `connected_accounts`, and redirects the user to /settings#connections.
+ * Handles the Instagram OAuth redirect. Instagram sends the browser here with
+ * no Authorization header, so server/middleware/auth.ts lets this path through
+ * and the user is identified from the signed `state` issued by /start, which
+ * must also match the nonce cookie set in this browser. Exchanges the code for
+ * tokens, fetches the Instagram user ID, stores the encrypted long-lived token
+ * in `connected_accounts`, and redirects the user to /settings#connections.
  *
  * One Instagram account per user is enforced: the upsert targets (userId,
  * provider) so reconnecting or switching accounts replaces the existing row.
  */
 
-import { ensureUser } from "../../../utils/auth";
 import { getDb } from "../../../db/index";
 import {
   connectedAccounts,
@@ -22,6 +24,7 @@ import {
 } from "../../../utils/instagramClient";
 import { expiryFromResponse } from "../../../utils/instagramToken";
 import { encryptToken } from "../../../utils/tokenCrypto";
+import { verifyOAuthState } from "../../../utils/oauthState";
 
 const STATE_COOKIE_NAME = "ig_oauth_state";
 const SETTINGS_REDIRECT_PATH =
@@ -56,8 +59,6 @@ function readInstagramConfig(): {
 }
 
 export default defineEventHandler(async (event) => {
-  const userId = await ensureUser(event);
-
   const query = getQuery(event);
   const code = query.code as string | undefined;
   const returnedState = query.state as string | undefined;
@@ -76,10 +77,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const storedState = getCookie(event, STATE_COOKIE_NAME);
+  const cookieNonce = getCookie(event, STATE_COOKIE_NAME);
   deleteCookie(event, STATE_COOKIE_NAME);
 
-  if (!storedState || storedState !== returnedState) {
+  const userId = verifyOAuthState(returnedState, cookieNonce);
+  if (!userId) {
     throw createError({
       statusCode: 400,
       statusMessage: "Invalid OAuth state",

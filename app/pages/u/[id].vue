@@ -149,6 +149,7 @@ import { buildLoginPath } from "~/utils/authRedirect";
 import { SITE_NAME, useOgMeta } from "~/composables/useOgMeta";
 import { useClerkGatedFetch } from "~/composables/useClerkGatedFetch";
 import { useViewerAuthResolved } from "~/composables/useViewerAuthResolved";
+import { isValidHandle } from "../../../server/utils/handle";
 
 const openCommandPalette = inject<(() => void) | undefined>(
   "openCommandPalette",
@@ -166,10 +167,19 @@ const openCommandPalette = inject<(() => void) | undefined>(
 // owner viewing their own page and simply reflect `profile.isSelf` from the
 // API response.
 //
+// This one page serves two routes: /u/<id> and /@<handle> (the second is
+// registered in nuxt.config.ts via addHandleProfileRoute). A /u/<id> visit
+// redirects to /@<handle> once the profile loads and has a usable handle; the
+// id URL otherwise keeps working.
 definePageMeta({ layout: "app" });
 
 const route = useRoute();
-const userId = computed(() => String(route.params.id));
+const handleParam = computed(() =>
+  typeof route.params.handle === "string" ? route.params.handle : null,
+);
+const routeUserId = computed(() => String(route.params.id));
+// What the current URL names: the handle on /@<handle>, the id on /u/<id>.
+const lookupKey = computed(() => handleParam.value ?? routeUserId.value);
 // Carries this profile's URL through /login so a visitor who signs in to
 // follow (or to view a private profile) lands back here afterward (#292).
 const signInHref = computed(() => buildLoginPath(route.fullPath));
@@ -196,6 +206,7 @@ const {
   tripsError,
   guidesError,
   fetchProfile,
+  fetchProfileByHandle,
   fetchFollowers,
   fetchFollowingList,
   fetchTrips,
@@ -239,8 +250,29 @@ const { viewerAuthResolved } = useViewerAuthResolved(isClerkLoaded);
 // traveler's data under the new URL), so only show the loaded profile once
 // it actually matches the id in the URL. Mirrors guides/[id].vue's `guide`
 // and trips/[id].vue's `tripDetail` guards.
+//
+// On /@<handle> the id isn't in the URL, so "matches" means the loaded profile
+// carries that handle (case-insensitively, as handles are).
+function matchesRoute(candidate: {
+  userId: string;
+  handle: string | null;
+}): boolean {
+  if (handleParam.value !== null) {
+    return candidate.handle?.toLowerCase() === handleParam.value.toLowerCase();
+  }
+  return candidate.userId === routeUserId.value;
+}
+
 const profile = computed(() =>
-  rawProfile.value?.userId === userId.value ? rawProfile.value : null,
+  rawProfile.value && matchesRoute(rawProfile.value) ? rawProfile.value : null,
+);
+
+// The profile owner's id: from the URL on /u/<id>, from the loaded profile on
+// /@<handle> (empty until it resolves).
+const userId = computed(() =>
+  handleParam.value !== null
+    ? (profile.value?.userId ?? "")
+    : routeUserId.value,
 );
 
 // notFound (from useProfile) is a plain alias, not a guarded computed: it's
@@ -267,7 +299,7 @@ function computeIsLoading(): boolean {
   if (rawIsLoading.value) {
     return true;
   }
-  if (rawProfile.value && rawProfile.value.userId !== userId.value) {
+  if (rawProfile.value && !matchesRoute(rawProfile.value)) {
     return true;
   }
   if (rawNotFound.value && !viewerAuthResolved.value) {
@@ -358,22 +390,61 @@ async function onToggleFollow(): Promise<void> {
 // Watches retryGeneration too so a session resolving (or clearing) after the
 // first fetch re-issues it with the new auth state, not just on route-param
 // (profile-to-profile) navigation.
+function fetchListsFor(targetUserId: string): Promise<unknown> {
+  return Promise.all([
+    fetchFollowers(targetUserId),
+    fetchFollowingList(targetUserId),
+    fetchTrips(targetUserId),
+    fetchGuides(targetUserId),
+  ]);
+}
+
+function fetchProfileById(targetUserId: string): Promise<unknown> {
+  return Promise.all([fetchProfile(targetUserId), fetchListsFor(targetUserId)]);
+}
+
+// The lists are keyed by id, so on /@<handle> the profile has to resolve first.
+// A 404 (unknown handle or private profile) leaves `profile` null and stops
+// here, so nothing else is requested for it.
+async function fetchProfileByHandleName(handle: string): Promise<void> {
+  await fetchProfileByHandle(handle);
+  if (!profile.value) {
+    return;
+  }
+  await fetchListsFor(profile.value.userId);
+}
+
 function fetchProfileDetail(): Promise<true> {
   return gateOnClerkLoad(() =>
-    Promise.all([
-      fetchProfile(userId.value),
-      fetchFollowers(userId.value),
-      fetchFollowingList(userId.value),
-      fetchTrips(userId.value),
-      fetchGuides(userId.value),
-    ]),
+    handleParam.value !== null
+      ? fetchProfileByHandleName(handleParam.value)
+      : fetchProfileById(routeUserId.value),
   );
 }
 
-useAsyncData(() => `profile-${userId.value}`, fetchProfileDetail, {
+useAsyncData(() => `profile-${lookupKey.value}`, fetchProfileDetail, {
   server: true,
-  watch: [userId, retryGeneration],
+  watch: [lookupKey, retryGeneration],
 });
+
+// Moves /u/<id> visitors onto the canonical /@<handle> URL. Client-side and
+// replace-style, so Back doesn't bounce; a handle that isn't a well-formed
+// public handle (e.g. one saved before the format rules) is left on /u/<id>.
+watch(
+  profile,
+  (loadedProfile) => {
+    if (handleParam.value !== null || !loadedProfile?.handle) {
+      return;
+    }
+    if (!isValidHandle(loadedProfile.handle)) {
+      return;
+    }
+    navigateTo(`/@${encodeURIComponent(loadedProfile.handle)}`, {
+      replace: true,
+    });
+  },
+  { immediate: true },
+);
 
 // Follow state depends on the session token, so it is client-only too. The
 // other fetches above get that from `server: false` on useAsyncData, but a

@@ -17,6 +17,7 @@ import {
   sql,
 } from "drizzle-orm";
 import type { getDb } from "../db/index";
+import { kmToMi } from "./distance";
 import {
   places,
   trips,
@@ -33,9 +34,6 @@ export type DistanceUnit = (typeof DISTANCE_UNIT)[keyof typeof DISTANCE_UNIT];
 // One calendar week expressed in milliseconds — used for period-over-period
 // delta queries (places added this week, miles logged this week).
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-// Conversion factor: kilometres to miles.
-const KM_TO_MI = 0.621371;
 
 /** Extracts the first integer count from a single-row aggregate result. */
 function firstCount(rows: { value: number | null }[]): number {
@@ -123,14 +121,6 @@ export async function sumTripStopDistanceKm(
   const raw = rows[0]?.totalKm;
   const parsed = parseFloat(String(raw ?? "0"));
   return isNaN(parsed) ? 0 : parsed;
-}
-
-/**
- * Converts kilometres to miles. Returns a full-precision float; callers are
- * expected to format the result (e.g. via formatCompact) before display.
- */
-export function kmToMi(km: number): number {
-  return km * KM_TO_MI;
 }
 
 /**

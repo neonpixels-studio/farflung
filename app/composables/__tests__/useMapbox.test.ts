@@ -13,8 +13,16 @@ const mockMapZoomIn = vi.fn();
 const mockMapZoomOut = vi.fn();
 const mockMapRemove = vi.fn();
 const mockMapFlyTo = vi.fn();
+const mockMapGetStyle = vi.fn();
+const mockMapSetPaintProperty = vi.fn();
+
+let lastMapOptions: unknown;
 
 class MockMap {
+  constructor(options?: unknown) {
+    lastMapOptions = options;
+  }
+
   on = mockMapOn;
   off = mockMapOff;
   setStyle = mockMapSetStyle;
@@ -22,6 +30,8 @@ class MockMap {
   zoomOut = mockMapZoomOut;
   remove = mockMapRemove;
   flyTo = mockMapFlyTo;
+  getStyle = mockMapGetStyle;
+  setPaintProperty = mockMapSetPaintProperty;
 }
 
 const mockMarkerSetLngLat = vi.fn().mockReturnThis();
@@ -162,6 +172,91 @@ describe("useMapbox", () => {
       errorHandler({ error: fakeError });
 
       expect(onMapError).toHaveBeenCalledWith(fakeError);
+    });
+  });
+
+  describe("FarFlung violet brand style", () => {
+    const STOCK_LAYERS = [
+      { id: "land", type: "background" },
+      { id: "water", type: "fill" },
+      { id: "road-street", type: "line" },
+      { id: "settlement-label", type: "symbol" },
+    ];
+
+    beforeEach(() => {
+      vi.stubGlobal("useRuntimeConfig", () => ({
+        public: { mapboxToken: "pk.test.token" },
+      }));
+      mockMapGetStyle.mockReturnValue({ layers: STOCK_LAYERS });
+    });
+
+    // The "style.load" listener initMap registered on the map.
+    function fireStyleLoad(): void {
+      const registration = mockMapOn.mock.calls.find(
+        ([eventName]) => eventName === "style.load",
+      );
+      (registration?.[1] as () => void)();
+    }
+
+    it("builds the brand style on the light base, not outdoors", async () => {
+      const { initMap } = useMapbox();
+      await initMap(document.createElement("div"), "custom");
+
+      expect(lastMapOptions).toMatchObject({
+        style: "mapbox://styles/mapbox/light-v11",
+      });
+    });
+
+    it("recolours water, land and roads when the brand style loads", async () => {
+      const { initMap } = useMapbox();
+      await initMap(document.createElement("div"), "custom");
+
+      fireStyleLoad();
+
+      const recoloured = mockMapSetPaintProperty.mock.calls.map(
+        ([layerId]) => layerId,
+      );
+      expect(recoloured).toEqual(["land", "water", "road-street"]);
+    });
+
+    it("does not recolour a stock style", async () => {
+      const { initMap } = useMapbox();
+      await initMap(document.createElement("div"), "outdoors");
+
+      fireStyleLoad();
+
+      expect(mockMapSetPaintProperty).not.toHaveBeenCalled();
+    });
+
+    it("re-applies the recolour after setStyle swaps the style back to the brand style", async () => {
+      const { initMap, setStyle } = useMapbox();
+      const map = (await initMap(
+        document.createElement("div"),
+        "outdoors",
+      )) as mapboxgl.Map;
+
+      setStyle(map, "custom");
+      expect(mockMapSetStyle).toHaveBeenCalledWith(
+        "mapbox://styles/mapbox/light-v11",
+      );
+      // setStyle discards runtime paint changes; the recolour happens on load.
+      expect(mockMapSetPaintProperty).not.toHaveBeenCalled();
+      fireStyleLoad();
+
+      expect(mockMapSetPaintProperty).toHaveBeenCalledTimes(3);
+    });
+
+    it("stops recolouring once the user switches away from the brand style", async () => {
+      const { initMap, setStyle } = useMapbox();
+      const map = (await initMap(
+        document.createElement("div"),
+        "custom",
+      )) as mapboxgl.Map;
+
+      setStyle(map, "dark");
+      fireStyleLoad();
+
+      expect(mockMapSetPaintProperty).not.toHaveBeenCalled();
     });
   });
 

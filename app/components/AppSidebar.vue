@@ -63,20 +63,14 @@
 </template>
 
 <script setup lang="ts">
+import { resolveClerkDisplayName } from "~/utils/clerkDisplayName";
+
 defineProps<{ isOpen: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 
 const { user } = useClerkUser();
 
-function resolveDisplayName(): string {
-  const u = user.value;
-  if (!u) {
-    return "Traveler";
-  }
-  return u.fullName || u.username || "Traveler";
-}
-
-const displayName = computed(resolveDisplayName);
+const displayName = computed(() => resolveClerkDisplayName(user.value));
 
 function close() {
   emit("close");

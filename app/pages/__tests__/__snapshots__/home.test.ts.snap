@@ -6,7 +6,7 @@ exports[`Home / Dashboard page (/home) > renders without crashing and matches sn
   <div data-v-10844834="" class="hello">
     <div data-v-10844834="">
       <div data-v-10844834="" class="label">// evening · fri, jun 14</div>
-      <h1 data-v-10844834="" style="margin-top: 10px;"> Welcome back, <b data-v-10844834="">Dan.</b></h1>
+      <h1 data-v-10844834="" style="margin-top: 10px;"> Welcome back, <b data-v-10844834="">Dan Holloran.</b></h1>
       <p data-v-10844834=""> You've been to 9 countries. Iceland, the ring road is your current trip. </p>
     </div><a data-v-10844834="" class="btn btn--outline"><svg data-v-10844834="" data-icon="" name="map" size="16"></svg> open the map </a>
   </div><!-- Import alert: only show when Instagram is connected -->

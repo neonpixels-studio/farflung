@@ -18,6 +18,27 @@ describe("usePreferences", () => {
     vi.clearAllMocks();
   });
 
+  describe("hasLoaded", () => {
+    it("is false until preferences have been fetched, then true", async () => {
+      mockApiFetch.mockResolvedValue({ distanceUnit: "km" });
+      const { fetchPreferences, hasLoaded } = usePreferences();
+      expect(hasLoaded.value).toBe(false);
+
+      await fetchPreferences();
+
+      expect(hasLoaded.value).toBe(true);
+    });
+
+    it("stays false when the fetch fails, so callers don't trust the default", async () => {
+      mockApiFetch.mockRejectedValue(new Error("down"));
+      const { fetchPreferences, hasLoaded } = usePreferences();
+
+      await fetchPreferences();
+
+      expect(hasLoaded.value).toBe(false);
+    });
+  });
+
   describe("fetchPreferences", () => {
     it("sets preferences on success", async () => {
       const serverData = {

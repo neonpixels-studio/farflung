@@ -73,6 +73,7 @@ Object.assign(globalThis, {
     importResult: vue.ref(null),
     fetchConnections: vi.fn().mockResolvedValue(undefined),
     startInstagramConnect: vi.fn(),
+    startGoogleConnect: vi.fn(),
     disconnectInstagram: vi.fn().mockResolvedValue(true),
     disconnectGoogle: vi.fn().mockResolvedValue(true),
     importInstagramPhotos: vi.fn().mockResolvedValue(true),

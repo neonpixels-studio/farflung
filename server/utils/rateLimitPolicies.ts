@@ -52,6 +52,19 @@ export const RATE_LIMIT_POLICIES: Record<string, RateLimitPolicy> = {
     windowMs: ONE_HOUR_MS,
   },
 
+  // Exchanges the OAuth code with Instagram (two outbound calls) and is
+  // reachable without a bearer token, so it is metered per client IP. A real
+  // user connects once; a handful of retries an hour covers a denied or
+  // abandoned attempt.
+  "GET /api/connections/instagram/callback": {
+    limit: 10,
+    windowMs: ONE_HOUR_MS,
+  },
+
+  // Writes the name through to Clerk's backend API. People rename themselves
+  // rarely; this only stops a script from hammering Clerk with our secret key.
+  "PATCH /api/account/name": { limit: 20, windowMs: ONE_HOUR_MS },
+
   // Runs a multi-table query (places/trips/entries/people) per call. Kept
   // generous relative to realistic debounced-typeahead usage while still
   // capping scripted scraping.

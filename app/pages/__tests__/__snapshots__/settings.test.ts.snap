@@ -27,7 +27,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
               <!--v-if-->
             </div>
           </div>
-          <div data-v-a376170b="" class="row"><input data-v-a376170b=""><input data-v-a376170b=""></div><input data-v-a376170b=""><textarea data-v-a376170b=""></textarea>
+          <div data-v-a376170b="" class="row"><input data-v-a376170b="" autocomplete="given-name"><input data-v-a376170b="" autocomplete="family-name"></div><input data-v-a376170b="" autocomplete="off" autocapitalize="none"><input data-v-a376170b=""><textarea data-v-a376170b=""></textarea>
         </section><!-- Account -->
         <section data-v-a376170b="" id="account" class="sect">
           <div data-v-a376170b="" class="sect__head">
@@ -60,20 +60,21 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
           <!--v-if-->
           <!--v-if-->
           <!--v-if-->
+          <!--v-if-->
           <!-- Instagram -->
           <div data-v-a376170b="" class="conn">
             <div data-v-a376170b="" class="conn__logo"><svg data-v-a376170b="" data-icon="" name="instagram" size="20"></svg></div>
             <div data-v-a376170b="" class="conn__meta"><b data-v-a376170b="">Instagram</b>
               <p data-v-a376170b="">Auto-import geotagged photos into your entries.</p>
             </div>
-            <div data-v-a376170b="" class="right"><button data-v-a376170b="" class="btn btn--primary btn--sm"><svg data-v-a376170b="" data-icon="" name="plus" size="14"></svg> connect </button></div>
+            <div data-v-a376170b="" class="right"><span data-v-a376170b="" class="muted" style="font-size: 12px;">Wanderer and Nomad plans</span><a data-v-a376170b="" class="btn btn--outline btn--sm" data-testid="instagram-upgrade">upgrade</a></div>
           </div><!-- Google -->
           <div data-v-a376170b="" class="conn">
             <div data-v-a376170b="" class="conn__logo"><svg data-v-a376170b="" data-icon="" name="google" size="20"></svg></div>
             <div data-v-a376170b="" class="conn__meta"><b data-v-a376170b="">Google</b>
               <p data-v-a376170b="">Sign in faster with your Google account.</p>
             </div>
-            <div data-v-a376170b="" class="right"><span data-v-a376170b="" class="muted" style="font-size: 12px;">not connected</span></div>
+            <div data-v-a376170b="" class="right"><button data-v-a376170b="" class="btn btn--primary btn--sm" data-testid="google-connect"><svg data-v-a376170b="" data-icon="" name="plus" size="14"></svg> connect </button></div>
           </div>
         </section><!-- Plan & billing -->
         <section data-v-a376170b="" id="billing" class="sect">
@@ -108,32 +109,33 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
             <div data-v-a376170b="" class="map-style-grid"><label data-v-a376170b="" class="map-style is-active"><input data-v-a376170b="" type="radio" name="mapstyle" checked="">
                 <div data-v-a376170b="" class="map-style__pv pv-outdoors"></div>
                 <div data-v-a376170b="" class="map-style__l">Outdoors <svg data-v-a376170b="" data-icon="" name="check" size="14" class="check"></svg></div>
-              </label><label data-v-a376170b="" class="map-style"><input data-v-a376170b="" type="radio" name="mapstyle">
+              </label><label data-v-a376170b="" class="map-style is-locked" title="Available on Wanderer and Nomad"><input data-v-a376170b="" type="radio" name="mapstyle" disabled="">
                 <div data-v-a376170b="" class="map-style__pv pv-streets"></div>
                 <div data-v-a376170b="" class="map-style__l">Streets
                   <!--v-if-->
                 </div>
-              </label><label data-v-a376170b="" class="map-style"><input data-v-a376170b="" type="radio" name="mapstyle">
+              </label><label data-v-a376170b="" class="map-style is-locked" title="Available on Wanderer and Nomad"><input data-v-a376170b="" type="radio" name="mapstyle" disabled="">
                 <div data-v-a376170b="" class="map-style__pv pv-satellite"></div>
                 <div data-v-a376170b="" class="map-style__l">Satellite
                   <!--v-if-->
                 </div>
-              </label><label data-v-a376170b="" class="map-style"><input data-v-a376170b="" type="radio" name="mapstyle">
+              </label><label data-v-a376170b="" class="map-style is-locked" title="Available on Wanderer and Nomad"><input data-v-a376170b="" type="radio" name="mapstyle" disabled="">
                 <div data-v-a376170b="" class="map-style__pv pv-light"></div>
                 <div data-v-a376170b="" class="map-style__l">Light
                   <!--v-if-->
                 </div>
-              </label><label data-v-a376170b="" class="map-style"><input data-v-a376170b="" type="radio" name="mapstyle">
+              </label><label data-v-a376170b="" class="map-style is-locked" title="Available on Wanderer and Nomad"><input data-v-a376170b="" type="radio" name="mapstyle" disabled="">
                 <div data-v-a376170b="" class="map-style__pv pv-dark"></div>
                 <div data-v-a376170b="" class="map-style__l">Dark
                   <!--v-if-->
                 </div>
-              </label><label data-v-a376170b="" class="map-style"><input data-v-a376170b="" type="radio" name="mapstyle">
+              </label><label data-v-a376170b="" class="map-style is-locked" title="Available on Wanderer and Nomad"><input data-v-a376170b="" type="radio" name="mapstyle" disabled="">
                 <div data-v-a376170b="" class="map-style__pv pv-custom"></div>
                 <div data-v-a376170b="" class="map-style__l">FarFlung violet
                   <!--v-if-->
                 </div>
               </label></div>
+            <p data-v-a376170b="" class="upgrade-hint" data-testid="map-style-upgrade">Available on Wanderer and Nomad. <a data-v-a376170b="">View plans</a></p>
           </div>
         </section><!-- Privacy -->
         <section data-v-a376170b="" id="privacy" class="sect">
@@ -144,7 +146,8 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
           </div>
           <div data-v-a376170b="" class="opt-row">
             <div data-v-a376170b="" class="lbl"><b data-v-a376170b="">Public traveler profile</b>
-              <p data-v-a376170b=""> Let anyone view your published trips at farflung.io/@danh. </p>
+              <p data-v-a376170b="" data-testid="public-profile-url"> Let anyone view your published trips at http://localhost:3000/@danh. </p>
+              <p data-v-a376170b="" class="upgrade-hint" data-testid="public-profile-upgrade"> Available on the Nomad plan. <a data-v-a376170b="">View plans</a></p>
             </div><label data-v-a376170b="" class="switch"><input data-v-a376170b="" type="checkbox"><span data-v-a376170b=""></span></label>
           </div>
           <div data-v-a376170b="" class="opt-row">

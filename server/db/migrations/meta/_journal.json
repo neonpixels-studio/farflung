@@ -85,6 +85,13 @@
       "when": 1787216901578,
       "tag": "0012_add_media_fk_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793480733153,
+      "tag": "0013_add_handle_lower_unique",
+      "breakpoints": true
     }
   ]
 }
