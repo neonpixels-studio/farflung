@@ -3,7 +3,7 @@
 exports[`Pricing page (/pricing) > renders without crashing and matches snapshot 1`] = `
 "<div data-v-330b0f26="">
   <!-- NAV -->
-  <nav data-v-330b0f26="" class="mk-nav"><a data-v-330b0f26="" to="/" class="brand"><svg data-v-330b0f26="" data-icon="" name="compass" size="26" class="brand__mark"></svg><span data-v-330b0f26="" class="brand__name">wander<b data-v-330b0f26="">ist</b></span></a>
+  <nav data-v-330b0f26="" class="mk-nav"><a data-v-330b0f26="" to="/" class="brand"><svg data-v-330b0f26="" data-icon="" name="compass" size="26" class="brand__mark"></svg><span data-v-330b0f26="" class="brand__name">far<b data-v-330b0f26="">flung</b></span></a>
     <div data-v-330b0f26="" class="links"><a data-v-330b0f26="" to="/home">Product</a><a data-v-330b0f26="" to="/pricing">Plans</a><a data-v-330b0f26="" to="/login">Sign in</a>
       <div data-v-330b0f26="" class="theme-toggle"></div>
     </div>

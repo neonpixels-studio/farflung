@@ -1,4 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
+import { buildPublicRuntimeConfig } from "./public-runtime-config";
 import { buildSecurityRouteRules } from "./security-headers.config";
 
 export default defineNuxtConfig({
@@ -24,6 +25,8 @@ export default defineNuxtConfig({
   },
   clerk: {
     skipServerMiddleware: true,
+    // Captured at build for the same reason as buildPublicRuntimeConfig.
+    publishableKey: process.env.NUXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
   },
   runtimeConfig: {
     databaseUrl: process.env.E2E_DATABASE_URL || process.env.DATABASE_URL || "",
@@ -51,15 +54,7 @@ export default defineNuxtConfig({
     instagramClientSecret: process.env.INSTAGRAM_CLIENT_SECRET || "",
     tokenEncryptionKey: process.env.TOKEN_ENCRYPTION_KEY || "",
     neonPixelsDashboardToken: process.env.NEON_PIXELS_DASHBOARD_TOKEN || "",
-    public: {
-      sentryDsn: "",
-      siteOrigin: "",
-      mapboxToken: "",
-      // GA4 measurement ID, injected via NUXT_PUBLIC_GOOGLE_ANALYTICS_ID (set
-      // only in .env.production). Blank everywhere else, and the client plugin
-      // no-ops when blank, so analytics loads in production builds alone.
-      googleAnalyticsId: "",
-    },
+    public: buildPublicRuntimeConfig(process.env),
   },
   css: ["~/assets/css/main.css", "mapbox-gl/dist/mapbox-gl.css"],
   devtools: { enabled: true },

@@ -4,7 +4,7 @@
     <nav id="mk-nav" class="mk-nav" :class="{ 'is-stuck': navStuck }">
       <NuxtLink class="brand" to="/">
         <AppIcon name="compass" :size="26" class="brand__mark" />
-        <span class="brand__name">wander<b>ist</b></span>
+        <span class="brand__name">far<b>flung</b></span>
       </NuxtLink>
       <div class="mk-nav__links">
         <a class="nl" href="#features">Features</a>
@@ -576,7 +576,7 @@
           <div class="ftr__brand">
             <NuxtLink class="brand" to="/">
               <AppIcon name="compass" :size="26" class="brand__mark" />
-              <span class="brand__name">wander<b>ist</b></span>
+              <span class="brand__name">far<b>flung</b></span>
             </NuxtLink>
             <p>
               The travel journal &amp; map for people who never quite stop
@@ -602,8 +602,8 @@
             <a href="#">About</a>
             <NuxtLink to="/contact">Contact</NuxtLink>
             <a href="#">Journal blog</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
+            <NuxtLink to="/privacy">Privacy</NuxtLink>
+            <NuxtLink to="/terms">Terms</NuxtLink>
           </div>
         </div>
         <div class="ftr__base">

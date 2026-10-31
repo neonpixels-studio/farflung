@@ -2,7 +2,7 @@
 
 exports[`Error page (app/error.vue) > renders without crashing and matches snapshot 1`] = `
 "<div data-v-fa4da55a="" class="nf-wrap">
-  <div data-v-fa4da55a="" class="nf-top"><a data-v-fa4da55a="" class="brand"><svg data-v-fa4da55a="" data-icon="" name="compass" size="22" class="brand__mark"></svg><span data-v-fa4da55a="" class="brand__name">wander<b data-v-fa4da55a="">ist</b></span></a>
+  <div data-v-fa4da55a="" class="nf-top"><a data-v-fa4da55a="" class="brand"><svg data-v-fa4da55a="" data-icon="" name="compass" size="22" class="brand__mark"></svg><span data-v-fa4da55a="" class="brand__name">far<b data-v-fa4da55a="">flung</b></span></a>
     <div data-v-fa4da55a="" class="theme-toggle"></div>
   </div>
   <main data-v-fa4da55a="" class="nf">

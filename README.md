@@ -38,8 +38,15 @@ command with a file's secrets injected, the npm scripts wrap it in
 Server-side secrets are read as `process.env.X || useRuntimeConfig().x`: at
 build time dotenvx injects them into `process.env`, Nuxt bakes them into the
 server bundle via `runtimeConfig`, and the deployed function reads them from
-there — so they do **not** need to be set in Netlify's runtime env. The only
-variables Netlify needs are the `DOTENV_PRIVATE_KEY_*` keys.
+there — so they do **not** need to be set in Netlify's runtime env. Public
+client values (`NUXT_PUBLIC_*`) are captured the same way, by
+`public-runtime-config.ts` and the `clerk` block in `nuxt.config.ts`. A new
+public value must be added there, or it reaches production blank.
+
+Netlify's environment does need the `DOTENV_PRIVATE_KEY_*` keys for builds, plus
+the runtime variables read outside the Nuxt bundle: `DATABASE_URL` and
+`TOKEN_ENCRYPTION_KEY` (scheduled functions) and `TRUST_NETLIFY_CLIENT_IP` (rate
+limiting).
 
 `NUXT_PUBLIC_SENTRY_DSN` is a special case: `sentry.server.config.ts` runs
 before `useRuntimeConfig()` exists, so per Sentry's docs it can only read the

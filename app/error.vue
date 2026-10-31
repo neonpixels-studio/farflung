@@ -3,7 +3,7 @@
     <div class="nf-top">
       <NuxtLink class="brand" to="/">
         <AppIcon name="compass" :size="22" class="brand__mark" />
-        <span class="brand__name">wander<b>ist</b></span>
+        <span class="brand__name">far<b>flung</b></span>
       </NuxtLink>
       <AppThemeToggle />
     </div>
