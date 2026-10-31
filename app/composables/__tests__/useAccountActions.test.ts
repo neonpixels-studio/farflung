@@ -10,6 +10,7 @@ import { useAccountActions } from "../useAccountActions";
 
 const mockApiFetch = vi.fn();
 const mockSignOut = vi.fn().mockResolvedValue(undefined);
+const mockUserReload = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("~/composables/useApiClient", () => ({
   useApiClient: vi.fn(() => ({ apiFetch: mockApiFetch })),
@@ -21,13 +22,69 @@ vi.mock("~/composables/useApiClient", () => ({
 // would silently let that regress.
 vi.stubGlobal(
   "useClerkInstance",
-  vi.fn(() => shallowRef({ signOut: mockSignOut })),
+  vi.fn(() =>
+    shallowRef({ signOut: mockSignOut, user: { reload: mockUserReload } }),
+  ),
 );
 
 describe("useAccountActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSignOut.mockResolvedValue(undefined);
+    mockUserReload.mockResolvedValue(undefined);
+  });
+
+  describe("updateName", () => {
+    it("PATCHes the name and reloads the Clerk user so the sidebar and greeting update", async () => {
+      mockApiFetch.mockResolvedValue({ displayName: "Dan Holloran" });
+      const { updateName, nameError } = useAccountActions();
+
+      const result = await updateName("Dan", "Holloran");
+
+      expect(result).toBe(true);
+      expect(mockApiFetch).toHaveBeenCalledWith("/api/account/name", {
+        method: "PATCH",
+        body: { firstName: "Dan", lastName: "Holloran" },
+      });
+      expect(mockUserReload).toHaveBeenCalledTimes(1);
+      expect(nameError.value).toBeNull();
+    });
+
+    it("sends an empty last name for a user without one", async () => {
+      mockApiFetch.mockResolvedValue({});
+      const { updateName } = useAccountActions();
+
+      await updateName("Cher", "");
+
+      expect(mockApiFetch.mock.calls[0][1].body).toEqual({
+        firstName: "Cher",
+        lastName: "",
+      });
+    });
+
+    it("surfaces the server's message and skips the reload when the save fails", async () => {
+      mockApiFetch.mockRejectedValue({
+        data: { statusMessage: "Name is too long." },
+      });
+      const { updateName, nameError } = useAccountActions();
+
+      const result = await updateName("Dan", "Holloran");
+
+      expect(result).toBe(false);
+      expect(nameError.value).toBe("Name is too long.");
+      expect(mockUserReload).not.toHaveBeenCalled();
+    });
+
+    it("still reports success when only the local Clerk reload fails (the name is saved)", async () => {
+      mockApiFetch.mockResolvedValue({});
+      mockUserReload.mockRejectedValue(new Error("network"));
+      const { updateName, nameError } = useAccountActions();
+
+      const result = await updateName("Dan", "Holloran");
+
+      expect(result).toBe(true);
+      expect(nameError.value).toBeNull();
+    });
   });
 
   describe("signOut", () => {

@@ -51,8 +51,27 @@ vi.stubGlobal("useApiClient", () => ({ apiFetch: mockApiFetch }));
 const mockPlan = { value: "wanderer" };
 vi.mock("~/composables/useBilling", () => ({
   useBilling: () => ({
-    subscription: { value: { plan: mockPlan.value } },
-    fetchSubscription: vi.fn(),
+    subscription: { value: { plan: mockPlan.value, status: "active" } },
+    fetchSubscription: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
+// The saved default map style (Settings > Default map style) as the page's
+// usePreferences() would load it. savePreferences is exposed so a test can
+// prove the map's picker never writes back.
+const mockSavedStyle = { value: null as string | null };
+const mockSavePreferences = vi.fn();
+vi.mock("~/composables/usePreferences", () => ({
+  usePreferences: () => ({
+    preferences: {
+      value: {
+        get defaultMapStyle() {
+          return mockSavedStyle.value;
+        },
+      },
+    },
+    fetchPreferences: vi.fn().mockResolvedValue(undefined),
+    savePreferences: mockSavePreferences,
   }),
 }));
 
@@ -218,6 +237,8 @@ describe("Map page (/map)", () => {
     delete routeQuery.category;
     mockHasToken = false;
     mockInitMap.mockResolvedValue(null);
+    mockSavedStyle.value = null;
+    mockPlan.value = "wanderer";
   });
 
   it("renders the map stage and matches snapshot", async () => {
@@ -282,6 +303,55 @@ describe("Map page (/map)", () => {
     expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
       "outdoors",
     );
+  });
+
+  describe("saved default map style", () => {
+    it("opens on the saved default style", async () => {
+      mockSavedStyle.value = "dark";
+      const wrapper = await mountWithPlaces();
+      expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
+        "dark",
+      );
+    });
+
+    it("initialises the Mapbox map with the saved default style", async () => {
+      mockHasToken = true;
+      mockSavedStyle.value = "custom";
+      mockInitMap.mockResolvedValueOnce({ on: vi.fn() });
+      await mountWithPlaces();
+      expect(mockInitMap).toHaveBeenCalledWith(
+        expect.anything(),
+        "custom",
+        expect.any(Function),
+      );
+    });
+
+    it("falls back to outdoors when nothing is saved", async () => {
+      mockSavedStyle.value = null;
+      const wrapper = await mountWithPlaces();
+      expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
+        "outdoors",
+      );
+    });
+
+    it("falls back to outdoors when the plan no longer allows the saved style", async () => {
+      mockPlan.value = "drifter";
+      mockSavedStyle.value = "satellite";
+      const wrapper = await mountWithPlaces();
+      expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
+        "outdoors",
+      );
+    });
+
+    it("keeps picking a style in the map session-only (never saves it)", async () => {
+      mockSavedStyle.value = "dark";
+      const wrapper = await mountWithPlaces();
+      await wrapper.findAll(".lstyle")[2].trigger("click");
+      expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
+        "satellite",
+      );
+      expect(mockSavePreferences).not.toHaveBeenCalled();
+    });
   });
 
   it("changes map style when a style is selected", async () => {

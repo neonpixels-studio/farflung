@@ -120,6 +120,8 @@ describe("GET /api/preferences", () => {
       userId: "user-1",
       distanceUnit: "km",
       defaultMapStyle: "dark",
+      theme: null,
+      accentColor: null,
       publicProfile: true,
       preciseLocation: false,
       showOnExplore: true,
@@ -131,6 +133,8 @@ describe("GET /api/preferences", () => {
     const expectedDto = {
       distanceUnit: "km",
       defaultMapStyle: "dark",
+      theme: null,
+      accentColor: null,
       publicProfile: true,
       preciseLocation: false,
       showOnExplore: true,
@@ -214,6 +218,8 @@ const patchPreferences =
 const updatedRow = {
   distanceUnit: "km",
   defaultMapStyle: "dark",
+  theme: null,
+  accentColor: null,
   publicProfile: true,
   preciseLocation: true,
   showOnExplore: false,
@@ -302,6 +308,26 @@ describe("PATCH /api/preferences", () => {
     ).rejects.toMatchObject({ statusCode: 400 });
   });
 
+  it("rejects an unknown theme with 400", async () => {
+    mockReadBody.mockResolvedValue({ theme: "sepia" });
+    mockGetDb.mockReturnValue(
+      makeFullDb([]) as unknown as ReturnType<typeof getDb>,
+    );
+    await expect(
+      (patchPreferences as (e: unknown) => unknown)({}),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it("rejects an unknown accent colour with 400", async () => {
+    mockReadBody.mockResolvedValue({ accentColor: "chartreuse" });
+    mockGetDb.mockReturnValue(
+      makeFullDb([]) as unknown as ReturnType<typeof getDb>,
+    );
+    await expect(
+      (patchPreferences as (e: unknown) => unknown)({}),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
   it("rejects an invalid defaultMapStyle with 400", async () => {
     mockEnsureUser.mockResolvedValue("user-1");
     mockReadBody.mockResolvedValue({ defaultMapStyle: "neon" });
@@ -326,16 +352,89 @@ describe("PATCH /api/preferences", () => {
     ).rejects.toMatchObject({ statusCode: 400 });
   });
 
-  it("rejects a non-string displayName with 400", async () => {
+  it("does not accept displayName: it is derived from Clerk's name by PATCH /api/account/name", async () => {
     mockEnsureUser.mockResolvedValue("user-1");
-    mockReadBody.mockResolvedValue({ displayName: 42 });
-    mockGetDb.mockReturnValue(
-      makeFullDb([]) as unknown as ReturnType<typeof getDb>,
-    );
+    mockReadBody.mockResolvedValue({ displayName: "Made Up" });
+    const db = makeFullDb([updatedRow]);
+    mockGetDb.mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
     await expect(
       (patchPreferences as (e: unknown) => unknown)({}),
     ).rejects.toMatchObject({ statusCode: 400 });
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
+  it("does not write displayName when it is sent alongside valid fields", async () => {
+    mockEnsureUser.mockResolvedValue("user-1");
+    mockReadBody.mockResolvedValue({ displayName: "Made Up", bio: "Hi" });
+    const db = makeFullDb([updatedRow]);
+    mockGetDb.mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+    await (patchPreferences as (e: unknown) => unknown)({});
+
+    const written = db._values.mock.calls[0][0] as Record<string, unknown>;
+    expect(written).toMatchObject({ bio: "Hi" });
+    expect(written).not.toHaveProperty("displayName");
+  });
+
+  describe("handle validation", () => {
+    async function patchHandle(handle: unknown) {
+      mockEnsureUser.mockResolvedValue("user-1");
+      mockReadBody.mockResolvedValue({ handle });
+      const db = makeFullDb([updatedRow]);
+      mockGetDb.mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+      return {
+        db,
+        outcome: (patchPreferences as (e: unknown) => unknown)({}),
+      };
+    }
+
+    it.each([
+      ["too short", "ab"],
+      ["too long", "a".repeat(31)],
+      ["spaces", "no spaces"],
+      ["an at sign", "@danh"],
+      ["a leading hyphen", "-danh"],
+      ["a trailing underscore", "danh_"],
+      ["non-ascii letters", "dán"],
+    ])("rejects a handle with %s", async (_label, handle) => {
+      const { db, outcome } = await patchHandle(handle);
+      await expect(outcome).rejects.toMatchObject({ statusCode: 400 });
+      expect(db.insert).not.toHaveBeenCalled();
+    });
+
+    it.each(["admin", "Settings", "API", "www"])(
+      "rejects the reserved handle %s",
+      async (handle) => {
+        const { db, outcome } = await patchHandle(handle);
+        await expect(outcome).rejects.toMatchObject({
+          statusCode: 400,
+          statusMessage: "That handle is reserved",
+        });
+        expect(db.insert).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(["Grimicorn", "dan-h", "dan_h", "dan123"])(
+      "accepts %s and keeps the casing as typed",
+      async (handle) => {
+        const { db, outcome } = await patchHandle(handle);
+        await outcome;
+        expect(db._values.mock.calls[0][0]).toMatchObject({ handle });
+      },
+    );
+
+    it("trims surrounding whitespace before validating", async () => {
+      const { db, outcome } = await patchHandle("  dan-h  ");
+      await outcome;
+      expect(db._values.mock.calls[0][0]).toMatchObject({ handle: "dan-h" });
+    });
+
+    it("clears the handle for an empty string", async () => {
+      const { db, outcome } = await patchHandle("   ");
+      await outcome;
+      expect(db._values.mock.calls[0][0]).toMatchObject({ handle: null });
+    });
   });
 
   it("rejects an empty body with 400", async () => {
@@ -450,16 +549,16 @@ describe("PATCH /api/preferences", () => {
 
   it("accepts null for a string field to clear it", async () => {
     mockEnsureUser.mockResolvedValue("user-1");
-    mockReadBody.mockResolvedValue({ displayName: null });
+    mockReadBody.mockResolvedValue({ bio: null });
     mockGetDb.mockReturnValue(
-      makeFullDb([
-        { ...updatedRow, displayName: null },
-      ]) as unknown as ReturnType<typeof getDb>,
+      makeFullDb([{ ...updatedRow, bio: null }]) as unknown as ReturnType<
+        typeof getDb
+      >,
     );
 
     const result = await (patchPreferences as (e: unknown) => unknown)({});
 
-    expect((result as Record<string, unknown>).displayName).toBeNull();
+    expect((result as Record<string, unknown>).bio).toBeNull();
   });
 
   it("accepts all valid map styles without throwing", async () => {

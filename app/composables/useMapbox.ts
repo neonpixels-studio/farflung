@@ -10,9 +10,11 @@
  * because there is only ever one active map at a time. Call destroyMap before
  * unmounting the page to fully clean up.
  */
+import { toRaw } from "vue";
 import type mapboxgl from "mapbox-gl";
 import type { Place } from "~/stores/places";
-import { resolveMapboxStyleUrl } from "./useMapboxStyles";
+import { applyFarflungVioletTheme } from "./mapboxBrandStyle";
+import { BRAND_STYLE_KEY, resolveMapboxStyleUrl } from "./useMapboxStyles";
 
 // Named constant for the default map view
 const DEFAULT_CENTER: [number, number] = [0, 20];
@@ -38,6 +40,9 @@ const markerRegistry = new Map<string, MapboxMarker>();
 let dropPinMarker: MapboxMarker | null = null;
 let dropPinHandler: MapMouseEventHandler | null = null;
 let dropPinMap: MapInstance | null = null;
+// The style key each live map is showing, read by the style.load listener so
+// the brand recolour is re-applied whenever setStyle swaps the style back in.
+const activeStyleKeys = new WeakMap<MapInstance, string>();
 
 export function useMapbox() {
   const config = useRuntimeConfig();
@@ -87,6 +92,13 @@ export function useMapbox() {
       return null;
     }
 
+    activeStyleKeys.set(mapInstance, styleKey);
+    mapInstance.on("style.load", () => {
+      if (activeStyleKeys.get(mapInstance) === BRAND_STYLE_KEY) {
+        applyFarflungVioletTheme(mapInstance);
+      }
+    });
+
     mapInstance.on("error", (event) => {
       if (onMapError) {
         const error = event.error ?? new Error("Mapbox map error");
@@ -99,6 +111,9 @@ export function useMapbox() {
   }
 
   function setStyle(map: MapInstance, styleKey: string): void {
+    // Callers may hold the map in a Vue ref, which hands us a reactive proxy, but
+    // the style.load listener looks the key up on the raw map.
+    activeStyleKeys.set(toRaw(map), styleKey);
     map.setStyle(resolveMapboxStyleUrl(styleKey));
   }
 

@@ -61,6 +61,16 @@ vi.stubGlobal("useClerkAuth", () => ({
 
 const TRIP_OWNER_ID = "user-1";
 
+// The saved distance unit useDistanceUnit reads for a signed-in viewer.
+const mockPreferences = ref({ distanceUnit: "mi" });
+vi.mock("~/composables/usePreferences", () => ({
+  usePreferences: () => ({
+    preferences: mockPreferences,
+    hasLoaded: ref(true),
+    fetchPreferences: vi.fn(),
+  }),
+}));
+
 // The global useAsyncData stub never invokes its handler and returns no status,
 // so the page's client-only fetch wiring is dead under test. Override it to run
 // the handler once and record its options so tests can assert the trip is
@@ -224,6 +234,7 @@ describe("Trip Detail page (/trips/[id])", () => {
     clerkLoadedRef.value = true;
     clerkSignedInRef.value = true;
     clerkUserRef.value = { id: TRIP_OWNER_ID };
+    mockPreferences.value = { distanceUnit: "mi" };
     pinia = createPinia();
     setActivePinia(pinia);
 
@@ -285,6 +296,30 @@ describe("Trip Detail page (/trips/[id])", () => {
       .map((element) => element.text());
     expect(factValues).toContain("Ongoing");
     expect(factValues).toContain("61");
+  });
+
+  describe("distances follow the viewer's saved unit", () => {
+    function renderedFactValues(): string[] {
+      const wrapper = mount(TripDetailPage, buildGlobalConfig(pinia));
+      return wrapper.findAll(".fact .v").map((element) => element.text());
+    }
+
+    it("shows miles for a signed-in viewer who prefers miles (1332 km is 828 mi)", () => {
+      mockPreferences.value = { distanceUnit: "mi" };
+      expect(renderedFactValues()).toContain("828 mi");
+    });
+
+    it("shows kilometres for a signed-in viewer who prefers kilometres", () => {
+      mockPreferences.value = { distanceUnit: "km" };
+      expect(renderedFactValues()).toContain("1,332 km");
+    });
+
+    it("shows kilometres to an anonymous visitor regardless of the preference state", () => {
+      clerkSignedInRef.value = false;
+      clerkUserRef.value = null;
+      mockPreferences.value = { distanceUnit: "mi" };
+      expect(renderedFactValues()).toContain("1,332 km");
+    });
   });
 
   it("renders the companions invite section", () => {

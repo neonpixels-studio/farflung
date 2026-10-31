@@ -1,7 +1,10 @@
 import {
+  applyAccent,
   applyTheme,
+  DEFAULT_ACCENT,
   DEFAULT_THEME,
   PREFERS_DARK_QUERY,
+  readStoredAccent,
   readStoredTheme,
 } from "~/utils/theme";
 
@@ -12,6 +15,18 @@ export function useTheme() {
     "theme",
     () => DEFAULT_THEME,
   );
+
+  const accent = useState<import("~/utils/theme").AccentColor>(
+    "accent",
+    () => DEFAULT_ACCENT,
+  );
+
+  function setAccent(next: import("~/utils/theme").AccentColor) {
+    accent.value = next;
+    if (import.meta.client) {
+      applyAccent(next);
+    }
+  }
 
   function setTheme(t: import("~/utils/theme").Theme) {
     theme.value = t;
@@ -35,6 +50,7 @@ export function useTheme() {
       const stored = readStoredTheme();
       theme.value = stored;
       applyTheme(stored);
+      setAccent(readStoredAccent());
       window
         .matchMedia?.(PREFERS_DARK_QUERY)
         .addEventListener("change", handleSystemThemeChange);
@@ -47,5 +63,11 @@ export function useTheme() {
     });
   }
 
-  return { theme: readonly(theme), setTheme, toggleTheme };
+  return {
+    theme: readonly(theme),
+    accent: readonly(accent),
+    setTheme,
+    setAccent,
+    toggleTheme,
+  };
 }

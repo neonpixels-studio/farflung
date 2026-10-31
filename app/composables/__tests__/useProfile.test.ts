@@ -72,6 +72,37 @@ describe("useProfile", () => {
     expect(notFound.value).toBe(false);
   });
 
+  it("fetchProfileByHandle requests the handle endpoint, URL-encoded, and loads the profile", async () => {
+    mockApiFetch.mockResolvedValue(SAMPLE_PROFILE);
+    const { profile, notFound, fetchProfileByHandle } = useProfile();
+
+    await fetchProfileByHandle("Elsa_Far");
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/handles/Elsa_Far");
+    expect(profile.value).toEqual(SAMPLE_PROFILE);
+    expect(notFound.value).toBe(false);
+  });
+
+  it("fetchProfileByHandle encodes characters that are not path-safe", async () => {
+    mockApiFetch.mockResolvedValue(SAMPLE_PROFILE);
+    const { fetchProfileByHandle } = useProfile();
+
+    await fetchProfileByHandle("a/b?c");
+
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/handles/a%2Fb%3Fc");
+  });
+
+  it("fetchProfileByHandle sets notFound on a 404 (unknown handle or private profile)", async () => {
+    mockApiFetch.mockRejectedValue(notFoundError());
+    const { profile, notFound, error, fetchProfileByHandle } = useProfile();
+
+    await fetchProfileByHandle("nobody");
+
+    expect(profile.value).toBeNull();
+    expect(notFound.value).toBe(true);
+    expect(error.value).toBeNull();
+  });
+
   it("fetchProfile sets notFound on a 404 without setting a generic error", async () => {
     mockApiFetch.mockRejectedValue(notFoundError());
     const { profile, notFound, error, fetchProfile } = useProfile();

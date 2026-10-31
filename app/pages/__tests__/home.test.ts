@@ -295,10 +295,10 @@ describe("Home / Dashboard page (/home)", () => {
     expect(wrapper.html()).toMatchSnapshot();
   });
 
-  it("renders the greeting with the Clerk user's first name", () => {
+  it("renders the greeting with the Clerk user's full name, matching the sidebar", () => {
     const wrapper = mount(HomePage, globalConfig);
     expect(wrapper.find(".hello h1").text()).toContain("Welcome back");
-    expect(wrapper.find(".hello h1 b").text()).toBe("Dan.");
+    expect(wrapper.find(".hello h1 b").text()).toBe("Dan Holloran.");
   });
 
   it("renders a dynamic time-of-day label in the greeting", async () => {

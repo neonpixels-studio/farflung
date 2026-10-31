@@ -43,6 +43,20 @@ const PUBLIC_READ_PROFILE_SUB_PATH =
 // the access control.
 const PUBLIC_READ_MEDIA_PATH = /^\/api\/media\/[^/]+$/;
 
+// GET /api/handles/<handle> resolves a public `/@handle` page to its profile.
+// One segment only, so the authenticated sub-resource
+// /api/handles/<handle>/availability stays behind a bearer token. The route
+// handler resolves the handle and then runs the same requireViewableProfile
+// gate as /api/users/<id>, so an unknown handle and a private profile are
+// indistinguishable 404s.
+const PUBLIC_READ_HANDLE_PATH = /^\/api\/handles\/[^/]+$/;
+
+// Instagram redirects the browser back here with no Authorization header, so a
+// bearer token can't be required. The handler authenticates the request itself
+// from the HMAC-signed `state` it issued at /start (bound to the user and to a
+// cookie in the same browser); it never reads event.context.userId.
+const INSTAGRAM_CALLBACK_PATH = "/api/connections/instagram/callback";
+
 // Every GET path pattern a request may match without a bearer token. A list
 // (not one growing `||` chain) so a fourth/fifth public route is a one-line
 // addition to isOptionalAuthRoute below, not another branch to thread through
@@ -53,6 +67,7 @@ const OPTIONAL_AUTH_GET_PATTERNS = [
   PUBLIC_READ_PROFILE_PATH,
   PUBLIC_READ_PROFILE_SUB_PATH,
   PUBLIC_READ_MEDIA_PATH,
+  PUBLIC_READ_HANDLE_PATH,
 ];
 
 function isApiPath(path: string): boolean {
@@ -80,6 +95,12 @@ function isOptionalAuthRoute(event: H3Event): boolean {
 
   const path = pathname(event);
   return OPTIONAL_AUTH_GET_PATTERNS.some((pattern) => pattern.test(path));
+}
+
+function isSelfAuthenticatedCallback(event: H3Event): boolean {
+  return (
+    event.method === HTTP_GET && pathname(event) === INSTAGRAM_CALLBACK_PATH
+  );
 }
 
 function extractBearerToken(event: H3Event): string | null {
@@ -126,6 +147,10 @@ export default defineEventHandler(async (event) => {
 
   // Webhook routes authenticate via Svix signature, not a bearer token.
   if (isWebhookPath(event.path)) {
+    return;
+  }
+
+  if (isSelfAuthenticatedCallback(event)) {
     return;
   }
 

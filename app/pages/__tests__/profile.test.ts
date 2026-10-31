@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mount, enableAutoUnmount } from "@vue/test-utils";
+import { mount, enableAutoUnmount, flushPromises } from "@vue/test-utils";
 import { nextTick, reactive, ref, watch } from "vue";
 import ProfilePage from "../u/[id].vue";
 import { CLERK_BOOTSTRAP_TIMEOUT_MS } from "~/composables/useClerkGatedFetch";
@@ -25,7 +25,9 @@ import { AUTH_REDIRECT_QUERY_PARAM } from "~/utils/authRedirect";
 // simulate the viewer navigating to another profile mid-interaction. `path`
 // is a getter (not a static string) so useOgMeta's og:url reflects a
 // route-param change, not just the value at mount.
-const routeParams = reactive({ id: "user-1" });
+const routeParams = reactive<{ id?: string; handle?: string }>({
+  id: "user-1",
+});
 vi.stubGlobal("useRoute", () => ({
   params: routeParams,
   query: {},
@@ -126,6 +128,7 @@ const followingError = ref<string | null>(null);
 const tripsError = ref<string | null>(null);
 const guidesError = ref<string | null>(null);
 const mockFetchProfile = vi.fn();
+const mockFetchProfileByHandle = vi.fn();
 const mockFetchFollowers = vi.fn();
 const mockFetchFollowingList = vi.fn();
 const mockFetchTrips = vi.fn();
@@ -153,6 +156,7 @@ vi.stubGlobal("useProfile", () => ({
   tripsError,
   guidesError,
   fetchProfile: mockFetchProfile,
+  fetchProfileByHandle: mockFetchProfileByHandle,
   fetchFollowers: mockFetchFollowers,
   fetchFollowingList: mockFetchFollowingList,
   fetchTrips: mockFetchTrips,
@@ -224,6 +228,8 @@ describe("profile page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     routeParams.id = "user-1";
+    delete routeParams.handle;
+    mockFetchProfileByHandle.mockResolvedValue(undefined);
     profile.value = null;
     followers.value = [];
     hasMoreFollowers.value = false;
@@ -866,6 +872,155 @@ describe("profile page", () => {
       await nextTick();
 
       expect(ogUrl()).toBe("https://farflung.test/u/user-2");
+    });
+  });
+
+  describe("/@handle route", () => {
+    beforeEach(() => {
+      delete routeParams.id;
+      routeParams.handle = "Elsa_Far";
+      // The by-handle fetch resolves the profile; the page then needs its id
+      // to load the lists.
+      mockFetchProfileByHandle.mockImplementation(async () => {
+        profile.value = { ...SAMPLE_PROFILE };
+      });
+    });
+
+    it("keys and watches the page on the handle", () => {
+      mount(ProfilePage, globalConfig);
+
+      expect(lastAsyncDataCall?.key()).toBe("profile-Elsa_Far");
+      const watched = lastAsyncDataCall?.options.watch?.[0] as {
+        value: string;
+      };
+      expect(watched.value).toBe("Elsa_Far");
+    });
+
+    it("resolves the profile by handle, not by id", async () => {
+      mount(ProfilePage, globalConfig);
+      await flushPromises();
+
+      expect(mockFetchProfileByHandle).toHaveBeenCalledWith("Elsa_Far");
+      expect(mockFetchProfile).not.toHaveBeenCalled();
+    });
+
+    it("loads the follower, following, trip and guide lists with the resolved user id", async () => {
+      mount(ProfilePage, globalConfig);
+      await flushPromises();
+
+      expect(mockFetchFollowers).toHaveBeenCalledWith("user-1");
+      expect(mockFetchFollowingList).toHaveBeenCalledWith("user-1");
+      expect(mockFetchTrips).toHaveBeenCalledWith("user-1");
+      expect(mockFetchGuides).toHaveBeenCalledWith("user-1");
+    });
+
+    it("renders the profile once resolved, matching the handle case-insensitively", async () => {
+      // The route says Elsa_Far; the stored handle is elsa_far.
+      const wrapper = mount(ProfilePage, globalConfig);
+      await flushPromises();
+
+      expect(wrapper.find("h1").text()).toContain("Elsa");
+    });
+
+    it("shows profile unavailable and fetches no lists for an unknown or private handle", async () => {
+      mockFetchProfileByHandle.mockImplementation(async () => {
+        profile.value = null;
+        notFound.value = true;
+      });
+      const wrapper = mount(ProfilePage, globalConfig);
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("Profile unavailable");
+      expect(mockFetchFollowers).not.toHaveBeenCalled();
+      expect(mockFetchTrips).not.toHaveBeenCalled();
+    });
+
+    it("never shows a previously loaded different profile under this handle", async () => {
+      mockFetchProfileByHandle.mockResolvedValue(undefined);
+      profile.value = { ...SAMPLE_PROFILE, userId: "user-9", handle: "other" };
+      const wrapper = mount(ProfilePage, globalConfig);
+      await flushPromises();
+
+      expect(wrapper.find("h1").exists()).toBe(false);
+      expect(mockFetchFollowers).not.toHaveBeenCalled();
+    });
+
+    it("does not redirect: it is already the canonical URL", async () => {
+      mount(ProfilePage, globalConfig);
+      await flushPromises();
+
+      expect(navigateTo).not.toHaveBeenCalled();
+    });
+
+    it("follows using the resolved user's id", async () => {
+      const wrapper = mount(ProfilePage, globalConfig);
+      await flushPromises();
+
+      const followButton = wrapper
+        .findAll("button")
+        .find((button) => button.text().toLowerCase().includes("follow"));
+      await followButton?.trigger("click");
+
+      expect(mockToggleFollow).toHaveBeenCalledWith("user-1");
+    });
+
+    it("refetches when navigating between handles", async () => {
+      mount(ProfilePage, globalConfig);
+      await flushPromises();
+      mockFetchProfileByHandle.mockClear();
+
+      routeParams.handle = "someone_else";
+      await flushPromises();
+
+      expect(mockFetchProfileByHandle).toHaveBeenCalledWith("someone_else");
+    });
+  });
+
+  describe("/u/<id> redirects to the handle URL", () => {
+    it("replaces the URL with /@handle once the profile has a handle", () => {
+      profile.value = { ...SAMPLE_PROFILE, handle: "elsa_far" };
+
+      mount(ProfilePage, globalConfig);
+
+      expect(navigateTo).toHaveBeenCalledWith("/@elsa_far", { replace: true });
+    });
+
+    it("redirects when the profile loads after mount", async () => {
+      mount(ProfilePage, globalConfig);
+      expect(navigateTo).not.toHaveBeenCalled();
+
+      profile.value = { ...SAMPLE_PROFILE, handle: "elsa_far" };
+      await nextTick();
+
+      expect(navigateTo).toHaveBeenCalledWith("/@elsa_far", { replace: true });
+    });
+
+    it("stays on /u/<id> when there is no handle", () => {
+      profile.value = { ...SAMPLE_PROFILE, handle: null };
+
+      mount(ProfilePage, globalConfig);
+
+      expect(navigateTo).not.toHaveBeenCalled();
+    });
+
+    it("stays on /u/<id> when the stored handle is not a well-formed public handle", () => {
+      profile.value = { ...SAMPLE_PROFILE, handle: "old handle!" };
+
+      mount(ProfilePage, globalConfig);
+
+      expect(navigateTo).not.toHaveBeenCalled();
+    });
+
+    it("does not redirect for a stale profile of a different user", () => {
+      profile.value = {
+        ...SAMPLE_PROFILE,
+        userId: "user-9",
+        handle: "someone_else",
+      };
+
+      mount(ProfilePage, globalConfig);
+
+      expect(navigateTo).not.toHaveBeenCalled();
     });
   });
 });

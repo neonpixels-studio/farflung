@@ -195,7 +195,7 @@ vi.mock("../../../server/utils/instagramClient", () => ({
   fetchInstagramMedia: mockFetchInstagramMedia,
   fetchInstagramImage: mockFetchInstagramImage,
   filterGeotaggedMedia: mockFilterGeotaggedMedia,
-  INSTAGRAM_SCOPES: "instagram_basic,instagram_manage_media",
+  INSTAGRAM_SCOPES: "instagram_business_basic",
   INSTAGRAM_MEDIA_FIELDS:
     "id,caption,media_type,timestamp,permalink,media_url,location",
   INSTAGRAM_MEDIA_LIMIT: 50,
@@ -208,9 +208,12 @@ vi.mock("../../../server/utils/instagramClient", () => ({
   INSTAGRAM_IMPORT_TIME_BUDGET_MS: 60000,
 }));
 
+// The signed-state helper derives its HMAC key from the encryption key; the
+// real oauthState module runs below so the CSRF checks are genuinely exercised.
 vi.mock("../../../server/utils/tokenCrypto", () => ({
   encryptToken: mockEncryptToken,
   decryptToken: mockDecryptToken,
+  readEncryptionKey: () => Buffer.alloc(32, 7),
 }));
 
 const MS_PER_DAY_FOR_MOCK = 24 * 60 * 60 * 1000;
@@ -267,6 +270,8 @@ Object.assign(globalThis, {
 // Import handlers after mocks
 // ---------------------------------------------------------------------------
 
+const { issueOAuthState, OAUTH_STATE_TTL_MS } =
+  await import("../../../server/utils/oauthState");
 const { default: startHandler } =
   await import("../../../server/api/connections/instagram/start.get");
 const { default: callbackHandler } =
@@ -292,6 +297,12 @@ function makeEvent(): object {
   return { context: { userId: "user-1" } };
 }
 
+// Instagram redirects the browser to the callback with no Authorization
+// header, so the middleware leaves event.context.userId unset there.
+function makeCallbackEvent(): object {
+  return { context: {} };
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/connections/instagram/start
 // ---------------------------------------------------------------------------
@@ -299,7 +310,7 @@ function makeEvent(): object {
 describe("GET /api/connections/instagram/start", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireUser.mockReturnValue("user-1");
+    mockEnsureUser.mockResolvedValue("user-1");
     mockAssertInstagramSyncAllowed.mockResolvedValue(undefined);
     process.env.INSTAGRAM_CLIENT_ID = "test-client-id";
     process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://farflung.io";
@@ -314,23 +325,38 @@ describe("GET /api/connections/instagram/start", () => {
       statusCode: 402,
     });
     expect(mockAssertInstagramSyncAllowed).toHaveBeenCalledWith("user-1");
+    expect(mockSetCookie).not.toHaveBeenCalled();
+  });
+
+  it("returns the Instagram authorization URL as { url } instead of redirecting", async () => {
+    const result = await call(startHandler, makeEvent());
+
+    expect(result).toEqual({
+      url: "https://instagram.com/oauth/authorize?foo",
+    });
     expect(mockSendRedirect).not.toHaveBeenCalled();
   });
 
-  it("sets the state cookie and redirects to Instagram OAuth", async () => {
+  it("puts a signed state for the user in the URL and its nonce in the cookie", async () => {
     await call(startHandler, makeEvent());
 
+    const { state } = mockBuildInstagramAuthUrl.mock.calls[0][0] as {
+      state: string;
+    };
+    const cookieNonce = mockSetCookie.mock.calls[0][2] as string;
     expect(mockSetCookie).toHaveBeenCalledWith(
       expect.anything(),
       "ig_oauth_state",
       expect.any(String),
-      expect.objectContaining({ httpOnly: true }),
+      expect.objectContaining({ httpOnly: true, sameSite: "lax" }),
     );
-    expect(mockSendRedirect).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.stringContaining("instagram.com"),
-      302,
-    );
+    // The cookie holds only the nonce, never the whole signed state.
+    expect(cookieNonce).not.toBe(state);
+
+    // The pair the start route issued is accepted by the callback's check.
+    const { verifyOAuthState } =
+      await import("../../../server/utils/oauthState");
+    expect(verifyOAuthState(state, cookieNonce)).toBe("user-1");
   });
 
   it("sets secure: true only in production", async () => {
@@ -366,9 +392,9 @@ describe("GET /api/connections/instagram/start", () => {
   });
 
   it("throws 401 when the user is not authenticated", async () => {
-    mockRequireUser.mockImplementation(() => {
-      throw Object.assign(new Error("Unauthorized"), { statusCode: 401 });
-    });
+    mockEnsureUser.mockRejectedValue(
+      Object.assign(new Error("Unauthorized"), { statusCode: 401 }),
+    );
 
     await expect(call(startHandler, makeEvent())).rejects.toMatchObject({
       statusCode: 401,
@@ -381,13 +407,16 @@ describe("GET /api/connections/instagram/start", () => {
 // ---------------------------------------------------------------------------
 
 describe("GET /api/connections/instagram/callback", () => {
+  let issued: { state: string; nonce: string };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    mockEnsureUser.mockResolvedValue("user-1");
-    mockGetCookie.mockReturnValue("test-state-token");
+    const { state, nonce } = issueOAuthState("user-1");
+    issued = { state, nonce };
+    mockGetCookie.mockReturnValue(nonce);
     mockGetQuery.mockReturnValue({
       code: "auth-code-123",
-      state: "test-state-token",
+      state,
     });
     process.env.INSTAGRAM_CLIENT_ID = "test-client-id";
     process.env.INSTAGRAM_CLIENT_SECRET = "test-client-secret";
@@ -404,7 +433,7 @@ describe("GET /api/connections/instagram/callback", () => {
   });
 
   it("stores the encrypted token and redirects to /settings with success query on success", async () => {
-    await call(callbackHandler, makeEvent());
+    await call(callbackHandler, makeCallbackEvent());
 
     expect(mockEncryptToken).toHaveBeenCalledWith("long-token");
     expect(mockDbInsert).toHaveBeenCalled();
@@ -415,21 +444,85 @@ describe("GET /api/connections/instagram/callback", () => {
     );
   });
 
-  it("throws 400 when the state does not match the cookie", async () => {
+  it("authenticates from the signed state alone, with no bearer-derived userId on the event", async () => {
+    await call(callbackHandler, makeCallbackEvent());
+
+    const calledValues = mockDbInsertValues.mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+    expect(calledValues?.userId).toBe("user-1");
+    expect(mockEnsureUser).not.toHaveBeenCalled();
+  });
+
+  it("throws 400 when the state is garbage", async () => {
     mockGetQuery.mockReturnValue({
       code: "auth-code-123",
       state: "wrong-state",
     });
 
-    await expect(call(callbackHandler, makeEvent())).rejects.toMatchObject({
-      statusCode: 400,
+    await expect(
+      call(callbackHandler, makeCallbackEvent()),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockExchangeInstagramCode).not.toHaveBeenCalled();
+  });
+
+  it("rejects a state whose payload was tampered with to name another user", async () => {
+    const [encodedPayload, signature] = issued.state.split(".");
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString("utf8"),
+    ) as Record<string, unknown>;
+    payload.userId = "victim";
+    const forgedPayload = Buffer.from(JSON.stringify(payload)).toString(
+      "base64url",
+    );
+    mockGetQuery.mockReturnValue({
+      code: "auth-code-123",
+      state: `${forgedPayload}.${signature}`,
     });
+
+    await expect(
+      call(callbackHandler, makeCallbackEvent()),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockDbInsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects an attacker's validly signed state replayed in a victim's browser (cookie nonce mismatch, login CSRF)", async () => {
+    const attacker = issueOAuthState("attacker");
+    // The victim's browser carries its own nonce cookie, not the attacker's.
+    mockGetCookie.mockReturnValue(issued.nonce);
+    mockGetQuery.mockReturnValue({
+      code: "attacker-code",
+      state: attacker.state,
+    });
+
+    await expect(
+      call(callbackHandler, makeCallbackEvent()),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockExchangeInstagramCode).not.toHaveBeenCalled();
+    expect(mockDbInsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects an expired state", async () => {
+    const stale = issueOAuthState(
+      "user-1",
+      Date.now() - OAUTH_STATE_TTL_MS - 1,
+    );
+    mockGetCookie.mockReturnValue(stale.nonce);
+    mockGetQuery.mockReturnValue({ code: "auth-code-123", state: stale.state });
+
+    await expect(
+      call(callbackHandler, makeCallbackEvent()),
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockDbInsert).not.toHaveBeenCalled();
   });
 
   it("throws 400 when the state cookie is missing", async () => {
     mockGetCookie.mockReturnValue(undefined);
 
-    await expect(call(callbackHandler, makeEvent())).rejects.toMatchObject({
+    await expect(
+      call(callbackHandler, makeCallbackEvent()),
+    ).rejects.toMatchObject({
       statusCode: 400,
     });
   });
@@ -437,7 +530,7 @@ describe("GET /api/connections/instagram/callback", () => {
   it("redirects to error path when Instagram returns an error query param", async () => {
     mockGetQuery.mockReturnValue({ error: "access_denied" });
 
-    await call(callbackHandler, makeEvent());
+    await call(callbackHandler, makeCallbackEvent());
 
     expect(mockSendRedirect).toHaveBeenCalledWith(
       expect.anything(),
@@ -447,15 +540,17 @@ describe("GET /api/connections/instagram/callback", () => {
   });
 
   it("throws 400 when code is missing from the query", async () => {
-    mockGetQuery.mockReturnValue({ state: "test-state-token" });
+    mockGetQuery.mockReturnValue({ state: issued.state });
 
-    await expect(call(callbackHandler, makeEvent())).rejects.toMatchObject({
+    await expect(
+      call(callbackHandler, makeCallbackEvent()),
+    ).rejects.toMatchObject({
       statusCode: 400,
     });
   });
 
   it("deletes the state cookie after validation", async () => {
-    await call(callbackHandler, makeEvent());
+    await call(callbackHandler, makeCallbackEvent());
 
     expect(mockDeleteCookie).toHaveBeenCalledWith(
       expect.anything(),
@@ -464,7 +559,7 @@ describe("GET /api/connections/instagram/callback", () => {
   });
 
   it("includes the userId in the insert values", async () => {
-    await call(callbackHandler, makeEvent());
+    await call(callbackHandler, makeCallbackEvent());
 
     const calledValues = mockDbInsertValues.mock.calls[0]?.[0] as Record<
       string,
@@ -484,7 +579,7 @@ describe("GET /api/connections/instagram/callback", () => {
     });
     const before = Date.now();
 
-    await call(callbackHandler, makeEvent());
+    await call(callbackHandler, makeCallbackEvent());
 
     const after = Date.now();
     const calledValues = mockDbInsertValues.mock.calls[0]?.[0] as Record<
@@ -507,7 +602,7 @@ describe("GET /api/connections/instagram/callback", () => {
     });
     const before = Date.now();
 
-    await call(callbackHandler, makeEvent());
+    await call(callbackHandler, makeCallbackEvent());
     const after = Date.now();
 
     const calledValues = mockDbInsertValues.mock.calls[0]?.[0] as Record<

@@ -1,10 +1,13 @@
 import { useApiClient } from "~/composables/useApiClient";
 import { extractErrorMessage } from "~/utils/extractErrorMessage";
+import type { AccentColor, Theme } from "~/utils/theme";
 import type { DISTANCE_UNIT } from "../../server/db/schema";
 
 export interface UserPreferences {
   distanceUnit: (typeof DISTANCE_UNIT)[keyof typeof DISTANCE_UNIT];
   defaultMapStyle: string | null;
+  theme: Theme | null;
+  accentColor: AccentColor | null;
   publicProfile: boolean;
   preciseLocation: boolean;
   showOnExplore: boolean;
@@ -17,6 +20,8 @@ export interface UserPreferences {
 export const PREFERENCES_DEFAULTS: UserPreferences = {
   distanceUnit: "mi",
   defaultMapStyle: null,
+  theme: null,
+  accentColor: null,
   publicProfile: false,
   preciseLocation: false,
   showOnExplore: true,
@@ -33,6 +38,11 @@ export function usePreferences() {
     ...PREFERENCES_DEFAULTS,
   }));
 
+  // Shared (not per-call) so a page that only reads a preference, like the
+  // trip distance display, can tell "not fetched yet" from "fetched, and it is
+  // the default".
+  const hasLoaded = useState<boolean>("user-preferences-loaded", () => false);
+
   const isLoading = ref(false);
   const loadError = ref<string | null>(null);
   const saveError = ref<string | null>(null);
@@ -44,6 +54,7 @@ export function usePreferences() {
     try {
       const data = await apiFetch<UserPreferences>("/api/preferences");
       preferences.value = data;
+      hasLoaded.value = true;
     } catch (error: unknown) {
       const message = extractErrorMessage(error);
       loadError.value = message;
@@ -63,6 +74,7 @@ export function usePreferences() {
         body: patch,
       });
       preferences.value = data;
+      hasLoaded.value = true;
       return true;
     } catch (error: unknown) {
       saveError.value = extractErrorMessage(error);
@@ -72,6 +84,7 @@ export function usePreferences() {
 
   return {
     preferences,
+    hasLoaded,
     isLoading: readonly(isLoading),
     loadError: readonly(loadError),
     saveError: readonly(saveError),

@@ -12,6 +12,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
@@ -555,22 +556,36 @@ export const guideLikes = pgTable(
 // user_preferences — 1:1 with users, userId is PK
 // ---------------------------------------------------------------------------
 
-export const userPreferences = pgTable("user_preferences", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => users.id, { onDelete: ON_DELETE.CASCADE }),
-  distanceUnit: distanceUnitEnum("distance_unit")
-    .notNull()
-    .default(DISTANCE_UNIT.MI),
-  defaultMapStyle: text("default_map_style"),
-  publicProfile: boolean("public_profile").notNull().default(false),
-  preciseLocation: boolean("precise_location").notNull().default(false),
-  showOnExplore: boolean("show_on_explore").notNull().default(true),
-  displayName: text("display_name"),
-  handle: text("handle").unique(),
-  homeBase: text("home_base"),
-  bio: text("bio"),
-});
+export const userPreferences = pgTable(
+  "user_preferences",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: ON_DELETE.CASCADE }),
+    distanceUnit: distanceUnitEnum("distance_unit")
+      .notNull()
+      .default(DISTANCE_UNIT.MI),
+    defaultMapStyle: text("default_map_style"),
+    // Null means the visitor hasn't chosen: the client keeps its local default.
+    theme: text("theme"),
+    accentColor: text("accent_color"),
+    publicProfile: boolean("public_profile").notNull().default(false),
+    preciseLocation: boolean("precise_location").notNull().default(false),
+    showOnExplore: boolean("show_on_explore").notNull().default(true),
+    // Derived from Clerk's first + last name (PATCH /api/account/name); not
+    // edited directly.
+    displayName: text("display_name"),
+    handle: text("handle"),
+    homeBase: text("home_base"),
+    bio: text("bio"),
+  },
+  (table) => [
+    // Handles are case-insensitive: "Dan" and "dan" are one handle.
+    uniqueIndex("user_preferences_handle_lower_unique").on(
+      sql`lower(${table.handle})`,
+    ),
+  ],
+);
 
 // ---------------------------------------------------------------------------
 // subscriptions — 1:1 with users, userId is PK.

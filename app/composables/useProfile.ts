@@ -187,16 +187,14 @@ export function useProfile() {
 
   let profileRequestId = 0;
 
-  async function fetchProfile(userId: string): Promise<void> {
+  async function loadProfile(url: string): Promise<void> {
     const requestId = ++profileRequestId;
     isLoading.value = true;
     notFound.value = false;
     error.value = null;
 
     try {
-      const result = await apiFetch<ProfileUser>(
-        `/api/users/${encodeURIComponent(userId)}`,
-      );
+      const result = await apiFetch<ProfileUser>(url);
       if (requestId !== profileRequestId) {
         return;
       }
@@ -217,6 +215,16 @@ export function useProfile() {
         isLoading.value = false;
       }
     }
+  }
+
+  function fetchProfile(userId: string): Promise<void> {
+    return loadProfile(`/api/users/${encodeURIComponent(userId)}`);
+  }
+
+  // Same visibility rules and payload as fetchProfile; the server resolves the
+  // `/@handle` to a user and 404s for an unknown handle or a private profile.
+  function fetchProfileByHandle(handle: string): Promise<void> {
+    return loadProfile(`/api/handles/${encodeURIComponent(handle)}`);
   }
 
   const fetchFollowers = createListFetcher<
@@ -297,6 +305,7 @@ export function useProfile() {
     tripsError: tripsState.errorMessage,
     guidesError: guidesState.errorMessage,
     fetchProfile,
+    fetchProfileByHandle,
     fetchFollowers,
     fetchFollowingList,
     fetchTrips,

@@ -1,6 +1,6 @@
 /**
- * Composable for account-management actions: password change, avatar, sign
- * out, and account deletion.
+ * Composable for account-management actions: name, password change, avatar,
+ * sign out, and account deletion.
  *
  * All API calls go through `apiFetch` so the Clerk session token is injected
  * automatically.
@@ -22,6 +22,7 @@ export function useAccountActions() {
   const avatarError = ref<string | null>(null);
   const deleteError = ref<string | null>(null);
   const signOutError = ref<string | null>(null);
+  const nameError = ref<string | null>(null);
 
   async function runAction<T>(
     action: () => Promise<T>,
@@ -50,6 +51,28 @@ export function useAccountActions() {
         return true;
       },
       passwordError,
+      false,
+    );
+  }
+
+  // The name lives in Clerk, so the sidebar and home greeting read it from the
+  // Clerk user. The server saves it (and syncs the stored display name), then
+  // the local Clerk user is reloaded so those update without a page refresh.
+  // The reload is best effort: the name is already saved by then.
+  async function updateName(
+    firstName: string,
+    lastName: string,
+  ): Promise<boolean> {
+    return runAction(
+      async () => {
+        await apiFetch("/api/account/name", {
+          method: "PATCH",
+          body: { firstName, lastName },
+        });
+        await clerk.value?.user?.reload().catch(() => undefined);
+        return true;
+      },
+      nameError,
       false,
     );
   }
@@ -167,7 +190,9 @@ export function useAccountActions() {
     avatarError: readonly(avatarError),
     deleteError: readonly(deleteError),
     signOutError: readonly(signOutError),
+    nameError: readonly(nameError),
     changePassword,
+    updateName,
     uploadAvatar,
     removeAvatar,
     deleteAccount,

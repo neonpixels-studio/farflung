@@ -5,10 +5,12 @@
  * tests can mock the network without touching the real endpoint.
  *
  * NOTE: Instagram's Basic Display API was deprecated in December 2024.
- * This implementation targets the Instagram Graph API, which requires a
- * Facebook App connected to a Business or Creator Instagram account. Users
- * must grant the `instagram_basic` and `instagram_manage_media` permissions
- * during OAuth.
+ * This implementation targets "Instagram API with Instagram Login" (the
+ * graph.instagram.com / api.instagram.com hosts below), which works with
+ * Business or Creator Instagram accounts and needs no Facebook Page. Its read
+ * permission is `instagram_business_basic`; `instagram_basic` and
+ * `instagram_manage_media` belong to the Facebook Login flavour on
+ * graph.facebook.com and are rejected as invalid scopes here.
  */
 
 export const INSTAGRAM_GRAPH_BASE_URL = "https://graph.instagram.com";
@@ -21,10 +23,7 @@ export const INSTAGRAM_LONG_LIVED_TOKEN_URL =
 export const INSTAGRAM_REFRESH_TOKEN_URL =
   "https://graph.instagram.com/refresh_access_token";
 
-export const INSTAGRAM_SCOPES = [
-  "instagram_basic",
-  "instagram_manage_media",
-].join(",");
+export const INSTAGRAM_SCOPES = "instagram_business_basic";
 
 export const INSTAGRAM_MEDIA_FIELDS =
   "id,caption,media_type,timestamp,permalink,media_url,location";

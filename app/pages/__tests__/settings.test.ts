@@ -15,6 +15,9 @@ import type { Trip } from "~/stores/trips";
 // real Clerk user resource the page reads, so populateEmailFromClerk (which
 // also watches `user`) doesn't blow up on a partial mock.
 type MockClerkUser = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
   passwordEnabled: boolean;
   emailAddresses: { id: string; emailAddress: string }[];
   primaryEmailAddressId: string | null;
@@ -28,6 +31,9 @@ vi.stubGlobal(
 
 function buildClerkUser(overrides: Partial<MockClerkUser> = {}): MockClerkUser {
   return {
+    id: "user_clerk_1",
+    firstName: "Dan",
+    lastName: "Holloran",
     passwordEnabled: true,
     emailAddresses: [],
     primaryEmailAddressId: null,
@@ -135,6 +141,8 @@ const mockAvatarError = ref<string | null>(null);
 const mockDeleteError = ref<string | null>(null);
 const mockSignOut = vi.fn().mockResolvedValue(true);
 const mockSignOutError = ref<string | null>(null);
+const mockUpdateName = vi.fn().mockResolvedValue(true);
+const mockNameError = ref<string | null>(null);
 
 vi.mock("~/composables/useAccountActions", () => ({
   useAccountActions: vi.fn(() => ({
@@ -143,6 +151,8 @@ vi.mock("~/composables/useAccountActions", () => ({
     avatarError: readonly(mockAvatarError),
     deleteError: readonly(mockDeleteError),
     signOutError: readonly(mockSignOutError),
+    nameError: readonly(mockNameError),
+    updateName: mockUpdateName,
     changePassword: mockChangePassword,
     uploadAvatar: mockUploadAvatar,
     removeAvatar: mockRemoveAvatar,
@@ -226,6 +236,20 @@ vi.mock("~/composables/useApiClient", () => ({
   })),
 }));
 
+const WANDERER_SUBSCRIPTION: UserSubscriptionDto = {
+  plan: "wanderer",
+  status: "active",
+  billingCycle: "monthly",
+  trialEndsAt: null,
+  currentPeriodEnd: "2026-08-01T00:00:00.000Z",
+  cancelAtPeriodEnd: false,
+};
+
+const NOMAD_SUBSCRIPTION: UserSubscriptionDto = {
+  ...WANDERER_SUBSCRIPTION,
+  plan: "nomad",
+};
+
 const defaultSubscriptionData: UserSubscriptionDto = {
   plan: "drifter",
   status: "active",
@@ -250,6 +274,9 @@ vi.mock("~/composables/useBilling", () => ({
   useBilling: vi.fn(() => makeBillingMock()),
 }));
 
+const mockStartInstagramConnect = vi.fn();
+const mockStartGoogleConnect = vi.fn();
+
 vi.mock("~/composables/useConnections", () => {
   const { ref: vueRef, readonly: vueReadonly } = require("vue");
 
@@ -266,7 +293,10 @@ vi.mock("~/composables/useConnections", () => {
       actionError: vueReadonly(vueRef(null)),
       importResult: vueReadonly(vueRef(null)),
       fetchConnections: vi.fn().mockResolvedValue(undefined),
-      startInstagramConnect: vi.fn(),
+      startInstagramConnect: (...args: unknown[]) =>
+        mockStartInstagramConnect(...args),
+      startGoogleConnect: (...args: unknown[]) =>
+        mockStartGoogleConnect(...args),
       disconnectInstagram: vi.fn().mockResolvedValue(true),
       disconnectGoogle: vi.fn().mockResolvedValue(true),
       importInstagramPhotos: vi.fn().mockResolvedValue(true),
@@ -276,6 +306,7 @@ vi.mock("~/composables/useConnections", () => {
 
 const iconStub = { template: "<svg data-icon />" };
 const inputStub = {
+  name: "InputText",
   template: "<input />",
   props: [
     "modelValue",
@@ -293,6 +324,7 @@ const textareaStub = {
   props: ["modelValue", "label", "placeholder", "rows"],
 };
 const alertStub = {
+  name: "AppAlert",
   template: '<div class="alert" />',
   props: ["intent", "title"],
 };
@@ -340,6 +372,8 @@ describe("Settings page (/settings)", () => {
     vi.spyOn(tripsStore, "fetchTrips").mockResolvedValue();
 
     clerkUserRef.value = null;
+    mockUpdateName.mockResolvedValue(true);
+    mockNameError.value = null;
   });
 
   it("renders without crashing and matches snapshot", async () => {
@@ -349,14 +383,14 @@ describe("Settings page (/settings)", () => {
     expect(wrapper.html()).toMatchSnapshot();
   });
 
-  it("renders the side navigation with all 7 sections", () => {
+  it("renders the side navigation with all 8 sections", () => {
     const wrapper = mount(SettingsPage, globalConfig);
-    expect(wrapper.findAll(".set-nav a")).toHaveLength(7);
+    expect(wrapper.findAll(".set-nav a")).toHaveLength(8);
   });
 
-  it("renders all 7 settings sections", () => {
+  it("renders all 8 settings sections", () => {
     const wrapper = mount(SettingsPage, globalConfig);
-    expect(wrapper.findAll(".sect")).toHaveLength(7);
+    expect(wrapper.findAll(".sect")).toHaveLength(8);
   });
 
   it("shows an upgrade CTA on the free Drifter plan", () => {
@@ -511,7 +545,12 @@ describe("Settings page (/settings)", () => {
   });
 
   it("toggles map style selection", async () => {
+    const { useBilling } = await import("~/composables/useBilling");
+    vi.mocked(useBilling).mockReturnValueOnce(
+      makeBillingMock({ subscription: WANDERER_SUBSCRIPTION }),
+    );
     const wrapper = mount(SettingsPage, globalConfig);
+    await flushPromises();
     const styles = wrapper.findAll(".map-style");
     await styles[1].trigger("click");
     expect(styles[1].classes()).toContain("is-active");
@@ -679,7 +718,7 @@ describe("Settings page (/settings)", () => {
     expect(wrapper.find(".saved-bar").classes()).toContain("show");
   });
 
-  it("save button calls savePreferences with the correct payload", async () => {
+  it("sends only the fields that changed, not the whole form", async () => {
     const { usePreferences } = await import("~/composables/usePreferences");
     const savePreferencesMock = vi.fn().mockResolvedValue(true);
     vi.mocked(usePreferences).mockReturnValueOnce(
@@ -687,23 +726,346 @@ describe("Settings page (/settings)", () => {
     );
 
     const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.findAll(".segmented button")[1].trigger("click");
     await wrapper.find(".btn--primary").trigger("click");
-    await wrapper.vm.$nextTick();
-    await wrapper.vm.$nextTick();
+    await flushPromises();
+
+    expect(savePreferencesMock).toHaveBeenCalledTimes(1);
+    expect(savePreferencesMock.mock.calls[0][0]).toEqual({
+      distanceUnit: "km",
+    });
+  });
+
+  it("does not call savePreferences or updateName when nothing changed", async () => {
+    const { usePreferences } = await import("~/composables/usePreferences");
+    const savePreferencesMock = vi.fn().mockResolvedValue(true);
+    vi.mocked(usePreferences).mockReturnValueOnce(
+      makePreferencesMock({ savePreferences: savePreferencesMock }),
+    );
+    clerkUserRef.value = buildClerkUser();
+
+    const wrapper = mount(SettingsPage, globalConfig);
+    await flushPromises();
+    await wrapper.find(".btn--primary").trigger("click");
+    await flushPromises();
+
+    expect(savePreferencesMock).not.toHaveBeenCalled();
+    expect(mockUpdateName).not.toHaveBeenCalled();
+  });
+
+  it("lets a Drifter save an unrelated field without sending paid-only fields (no 402)", async () => {
+    const { usePreferences } = await import("~/composables/usePreferences");
+    const savePreferencesMock = vi.fn().mockResolvedValue(true);
+    vi.mocked(usePreferences).mockReturnValueOnce(
+      makePreferencesMock({
+        savePreferences: savePreferencesMock,
+        preferences: { ...defaultPreferencesData, publicProfile: false },
+      }),
+    );
+
+    const wrapper = mount(SettingsPage, globalConfig);
+    await flushPromises();
+    (wrapper.vm as unknown as { profile: { bio: string } }).profile.bio =
+      "New bio";
+    await wrapper.find(".btn--primary").trigger("click");
+    await flushPromises();
 
     expect(savePreferencesMock).toHaveBeenCalledTimes(1);
     const payload = savePreferencesMock.mock.calls[0][0] as Record<
       string,
       unknown
     >;
-    // Verify key fields are sent; name comes from the mock ("Dan H.") which
-    // is not null so should be sent as-is after nullableString trims it.
-    expect(payload).toMatchObject({
-      distanceUnit: "mi",
-      defaultMapStyle: "outdoors",
-      publicProfile: true,
-      preciseLocation: false,
-      showOnExplore: true,
+    expect(payload).toEqual({ bio: "New bio" });
+    expect(payload).not.toHaveProperty("publicProfile");
+    expect(payload).not.toHaveProperty("defaultMapStyle");
+  });
+
+  describe("name", () => {
+    function setForm(
+      wrapper: ReturnType<typeof mount>,
+      fields: Record<string, string>,
+    ) {
+      const profile = (
+        wrapper.vm as unknown as { profile: Record<string, string> }
+      ).profile;
+      Object.assign(profile, fields);
+    }
+
+    it("fills first and last name from Clerk, as two separate fields", async () => {
+      clerkUserRef.value = buildClerkUser();
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      const labels = wrapper
+        .findAllComponents({ name: "InputText" })
+        .map((input) => input.props("label"));
+      expect(labels).toContain("First name");
+      expect(labels).toContain("Last name");
+      expect(labels).not.toContain("Display name");
+
+      const profile = (
+        wrapper.vm as unknown as { profile: Record<string, string> }
+      ).profile;
+      expect(profile.firstName).toBe("Dan");
+      expect(profile.lastName).toBe("Holloran");
+    });
+
+    it("saves a changed name through updateName, not through preferences", async () => {
+      const { usePreferences } = await import("~/composables/usePreferences");
+      const savePreferencesMock = vi.fn().mockResolvedValue(true);
+      vi.mocked(usePreferences).mockReturnValueOnce(
+        makePreferencesMock({ savePreferences: savePreferencesMock }),
+      );
+      clerkUserRef.value = buildClerkUser();
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      setForm(wrapper, { firstName: "Daniel", lastName: "Holloran" });
+      await wrapper.find(".btn--primary").trigger("click");
+      await flushPromises();
+
+      expect(mockUpdateName).toHaveBeenCalledWith("Daniel", "Holloran");
+      expect(savePreferencesMock).not.toHaveBeenCalled();
+    });
+
+    it("allows a user with no last name", async () => {
+      clerkUserRef.value = buildClerkUser({ lastName: "Holloran" });
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      setForm(wrapper, { lastName: "" });
+      await wrapper.find(".btn--primary").trigger("click");
+      await flushPromises();
+
+      expect(mockUpdateName).toHaveBeenCalledWith("Dan", "");
+    });
+
+    it("requires a first name and does not call updateName without one", async () => {
+      clerkUserRef.value = buildClerkUser();
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      setForm(wrapper, { firstName: "   " });
+      await wrapper.find(".btn--primary").trigger("click");
+      await flushPromises();
+
+      expect(mockUpdateName).not.toHaveBeenCalled();
+      expect(wrapper.find(".saved-bar").classes()).toContain("show");
+      expect(wrapper.find(".alert").exists()).toBe(true);
+    });
+
+    it("shows the error toast when the name save fails", async () => {
+      mockUpdateName.mockResolvedValue(false);
+      mockNameError.value = "Could not save";
+      clerkUserRef.value = buildClerkUser();
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      setForm(wrapper, { firstName: "Daniel" });
+      await wrapper.find(".btn--primary").trigger("click");
+      await flushPromises();
+
+      expect(wrapper.find(".saved-bar").attributes("class")).toContain("show");
+      expect(wrapper.findComponent({ name: "AppAlert" }).props("title")).toBe(
+        "Could not save",
+      );
+    });
+  });
+
+  describe("public handle", () => {
+    it("shows the saved handle's real URL, not a hard-coded one", async () => {
+      const { usePreferences } = await import("~/composables/usePreferences");
+      vi.mocked(usePreferences).mockReturnValueOnce(
+        makePreferencesMock({
+          preferences: { ...defaultPreferencesData, handle: "grimicorn" },
+        }),
+      );
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      const description = wrapper.find('[data-testid="public-profile-url"]');
+      expect(description.text()).toContain("/@grimicorn");
+      expect(description.text()).not.toContain("danh");
+    });
+
+    it("falls back to the id URL when no handle is set", async () => {
+      const { usePreferences } = await import("~/composables/usePreferences");
+      vi.mocked(usePreferences).mockReturnValueOnce(
+        makePreferencesMock({
+          preferences: { ...defaultPreferencesData, handle: null as never },
+        }),
+      );
+      clerkUserRef.value = buildClerkUser();
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      expect(
+        wrapper.find('[data-testid="public-profile-url"]').text(),
+      ).toContain("/u/user_clerk_1");
+    });
+
+    it("no longer renders an always-green success state on the handle field", async () => {
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      const handleInput = wrapper
+        .findAllComponents({ name: "InputText" })
+        .find((input) => input.props("label") === "Public handle");
+      expect(handleInput?.props("state")).toBe("default");
+    });
+
+    it("blocks the save and reports why when the handle breaks the format rules", async () => {
+      const { usePreferences } = await import("~/composables/usePreferences");
+      const savePreferencesMock = vi.fn().mockResolvedValue(true);
+      vi.mocked(usePreferences).mockReturnValueOnce(
+        makePreferencesMock({ savePreferences: savePreferencesMock }),
+      );
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      (
+        wrapper.vm as unknown as { profile: { handle: string } }
+      ).profile.handle = "no spaces!";
+      await flushPromises();
+
+      const handleInput = wrapper
+        .findAllComponents({ name: "InputText" })
+        .find((input) => input.props("label") === "Public handle");
+      expect(handleInput?.props("state")).toBe("error");
+      expect(handleInput?.props("hint")).toContain("letters, numbers");
+
+      await wrapper.find(".btn--primary").trigger("click");
+      await flushPromises();
+
+      expect(savePreferencesMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("plan-gated controls for a Drifter", () => {
+    it("locks the paid map style tiles and explains why, leaving Outdoors usable", async () => {
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      const tiles = wrapper.findAll(".map-style");
+      const unlocked = tiles.filter((tile) => !tile.classes("is-locked"));
+      expect(unlocked).toHaveLength(1);
+      expect(unlocked[0].text()).toContain("Outdoors");
+      expect(
+        tiles[1].find("input[type=radio]").attributes("disabled"),
+      ).toBeDefined();
+      expect(wrapper.find('[data-testid="map-style-upgrade"]').exists()).toBe(
+        true,
+      );
+    });
+
+    it("does not let a locked map style be selected", async () => {
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      const tiles = wrapper.findAll(".map-style");
+      await tiles[2].trigger("click");
+
+      expect(tiles[2].classes()).not.toContain("is-active");
+      expect(tiles[0].classes()).toContain("is-active");
+    });
+
+    it("disables the public profile toggle with an upgrade hint", async () => {
+      const { usePreferences } = await import("~/composables/usePreferences");
+      vi.mocked(usePreferences).mockReturnValueOnce(
+        makePreferencesMock({
+          preferences: { ...defaultPreferencesData, publicProfile: false },
+        }),
+      );
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      const toggle = wrapper.find(".switch input");
+      expect(toggle.attributes("disabled")).toBeDefined();
+      expect(
+        wrapper.find('[data-testid="public-profile-upgrade"]').exists(),
+      ).toBe(true);
+    });
+
+    it("leaves the public profile toggle usable on the Nomad plan", async () => {
+      const { useBilling } = await import("~/composables/useBilling");
+      vi.mocked(useBilling).mockReturnValueOnce(
+        makeBillingMock({ subscription: NOMAD_SUBSCRIPTION }),
+      );
+      const { usePreferences } = await import("~/composables/usePreferences");
+      vi.mocked(usePreferences).mockReturnValueOnce(
+        makePreferencesMock({
+          preferences: { ...defaultPreferencesData, publicProfile: false },
+        }),
+      );
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      expect(
+        wrapper.find(".switch input").attributes("disabled"),
+      ).toBeUndefined();
+      expect(
+        wrapper.find('[data-testid="public-profile-upgrade"]').exists(),
+      ).toBe(false);
+    });
+
+    it("keeps a lapsed subscriber able to turn an already-on public profile off", async () => {
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      // defaultPreferencesData has publicProfile: true on a Drifter.
+      expect(
+        wrapper.find(".switch input").attributes("disabled"),
+      ).toBeUndefined();
+    });
+  });
+
+  describe("connections", () => {
+    it("offers a Drifter an upgrade prompt instead of an Instagram connect button", async () => {
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      const connections = wrapper.find("#connections");
+      expect(
+        connections.find('[data-testid="instagram-upgrade"]').exists(),
+      ).toBe(true);
+      const connectButtons = connections
+        .findAll("button")
+        .filter((button) => button.text().includes("connect"));
+      // Only the Google connect button remains.
+      expect(connectButtons).toHaveLength(1);
+      expect(connectButtons[0].attributes("data-testid")).toBe(
+        "google-connect",
+      );
+    });
+
+    it("shows the Instagram connect button on a paid plan and starts the flow", async () => {
+      const { useBilling } = await import("~/composables/useBilling");
+      vi.mocked(useBilling).mockReturnValueOnce(
+        makeBillingMock({ subscription: WANDERER_SUBSCRIPTION }),
+      );
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      expect(wrapper.find('[data-testid="instagram-upgrade"]').exists()).toBe(
+        false,
+      );
+      const connect = wrapper
+        .findAll("#connections .btn--primary")
+        .find(
+          (button) => button.attributes("data-testid") !== "google-connect",
+        );
+      await connect?.trigger("click");
+
+      expect(mockStartInstagramConnect).toHaveBeenCalledTimes(1);
+    });
+
+    it("starts the Google connection from the connect button", async () => {
+      const wrapper = mount(SettingsPage, globalConfig);
+      await flushPromises();
+
+      await wrapper.find('[data-testid="google-connect"]').trigger("click");
+
+      expect(mockStartGoogleConnect).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -892,9 +1254,9 @@ describe("Settings page (/settings)", () => {
     );
 
     const wrapper = mount(SettingsPage, globalConfig);
+    await wrapper.findAll(".segmented button")[1].trigger("click");
     await wrapper.find(".btn--primary").trigger("click");
-    await wrapper.vm.$nextTick();
-    await wrapper.vm.$nextTick();
+    await flushPromises();
     // The error bar has show class; the success bar is hidden via v-else
     const allSavedBars = wrapper.findAll(".saved-bar");
     expect(allSavedBars[0].classes()).toContain("show");

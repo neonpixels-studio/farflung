@@ -1503,3 +1503,89 @@ textarea.field__input {
     padding-top: 8vh;
   }
 }
+
+/* accent colours, chosen in Settings > Appearance; violet is the :root default */
+html[data-accent="indigo"] {
+  --accent: #6366f1;
+  --accent-ink: #4338ca;
+  --accent-weak: #e8e8fd;
+  --accent-line: #d3d4fb;
+}
+html[data-theme="dark"][data-accent="indigo"] {
+  --accent: #818cf8;
+  --accent-ink: #a5b4fc;
+  --accent-weak: #1e1f3d;
+  --accent-line: #2f3159;
+}
+html[data-accent="blue"] {
+  --accent: #2f6fed;
+  --accent-ink: #1d4fc0;
+  --accent-weak: #e2ebfd;
+  --accent-line: #cbdcfb;
+}
+html[data-theme="dark"][data-accent="blue"] {
+  --accent: #5b8ff5;
+  --accent-ink: #93b6fa;
+  --accent-weak: #16233f;
+  --accent-line: #24375e;
+}
+html[data-accent="emerald"] {
+  --accent: #0f9d6b;
+  --accent-ink: #0a7550;
+  --accent-weak: #dcf3ea;
+  --accent-line: #c2e8da;
+}
+html[data-theme="dark"][data-accent="emerald"] {
+  --accent: #2bbd87;
+  --accent-ink: #6ad9b0;
+  --accent-weak: #10291f;
+  --accent-line: #1b4031;
+}
+html[data-accent="amber"] {
+  --accent: #d98a0b;
+  --accent-ink: #a06404;
+  --accent-weak: #fbeed6;
+  --accent-line: #f5dfb5;
+}
+html[data-theme="dark"][data-accent="amber"] {
+  --accent: #eba62d;
+  --accent-ink: #f5c76f;
+  --accent-weak: #2e2210;
+  --accent-line: #49371a;
+}
+html[data-accent="orange"] {
+  --accent: #ea5a0c;
+  --accent-ink: #b84406;
+  --accent-weak: #fde6d9;
+  --accent-line: #fbd3bc;
+}
+html[data-theme="dark"][data-accent="orange"] {
+  --accent: #f47a35;
+  --accent-ink: #f9a877;
+  --accent-weak: #311c10;
+  --accent-line: #4e2e1b;
+}
+html[data-accent="rose"] {
+  --accent: #e11d6f;
+  --accent-ink: #b0115a;
+  --accent-weak: #fce1ec;
+  --accent-line: #f9c9dd;
+}
+html[data-theme="dark"][data-accent="rose"] {
+  --accent: #f04a8c;
+  --accent-ink: #f78db7;
+  --accent-weak: #32131f;
+  --accent-line: #512034;
+}
+html[data-accent="graphite"] {
+  --accent: #3f3c36;
+  --accent-ink: #2b2925;
+  --accent-weak: #e7e5e0;
+  --accent-line: #d6d3cc;
+}
+html[data-theme="dark"][data-accent="graphite"] {
+  --accent: #a8a498;
+  --accent-ink: #d1cdc2;
+  --accent-weak: #272622;
+  --accent-line: #3b3933;
+}

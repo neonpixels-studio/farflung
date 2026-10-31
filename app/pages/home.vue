@@ -265,6 +265,7 @@
 <script setup lang="ts">
 import { formatCompact } from "~/utils/formatNumber";
 import { useStats } from "~/composables/useStats";
+import { resolveClerkDisplayName } from "~/utils/clerkDisplayName";
 import { useConnections } from "~/composables/useConnections";
 import type { Place } from "~/stores/places";
 import type { Entry } from "~/stores/entries";
@@ -277,20 +278,7 @@ useHead({ title: "FarFlung — Home" });
 
 const { user } = useClerkUser();
 
-function resolveDisplayName(): string {
-  const currentUser = user.value;
-  if (!currentUser) {
-    return "Traveler";
-  }
-  return (
-    currentUser.firstName ||
-    currentUser.fullName ||
-    currentUser.username ||
-    "Traveler"
-  );
-}
-
-const displayName = computed(resolveDisplayName);
+const displayName = computed(() => resolveClerkDisplayName(user.value));
 
 // ── Time-of-day greeting ──────────────────────────────────────────────────────
 

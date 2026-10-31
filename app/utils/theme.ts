@@ -49,3 +49,48 @@ export function applyTheme(
     // ignore
   }
 }
+
+export const ACCENT_COLORS = [
+  "violet",
+  "indigo",
+  "blue",
+  "emerald",
+  "amber",
+  "orange",
+  "rose",
+  "graphite",
+] as const;
+
+export type AccentColor = (typeof ACCENT_COLORS)[number];
+
+export const ACCENT_STORAGE_KEY = "farflung:accent";
+export const ACCENT_ATTR = "data-accent";
+export const DEFAULT_ACCENT: AccentColor = "violet";
+
+export function isValidAccent(value: unknown): value is AccentColor {
+  return ACCENT_COLORS.includes(value as AccentColor);
+}
+
+export function readStoredAccent(): AccentColor {
+  try {
+    const stored = localStorage.getItem(ACCENT_STORAGE_KEY);
+    if (isValidAccent(stored)) {
+      return stored;
+    }
+  } catch {
+    // localStorage unavailable (private browsing, SSR)
+  }
+  return DEFAULT_ACCENT;
+}
+
+export function applyAccent(
+  accent: AccentColor,
+  root: HTMLElement = document.documentElement,
+) {
+  root.setAttribute(ACCENT_ATTR, accent);
+  try {
+    localStorage.setItem(ACCENT_STORAGE_KEY, accent);
+  } catch {
+    // ignore
+  }
+}

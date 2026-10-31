@@ -15,7 +15,7 @@ const IV_BYTE_LENGTH = 12;
 const AUTH_TAG_BYTE_LENGTH = 16;
 const EXPECTED_KEY_HEX_LENGTH = 64;
 
-function readEncryptionKey(): Buffer {
+export function readEncryptionKey(): Buffer {
   const hex =
     process.env.TOKEN_ENCRYPTION_KEY || useRuntimeConfig().tokenEncryptionKey;
   if (hex.length !== EXPECTED_KEY_HEX_LENGTH) {
