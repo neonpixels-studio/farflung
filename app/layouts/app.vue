@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import { useAppearanceSync } from "~/composables/useAppearanceSync";
 import type { Entry, EditEntryHandler } from "~/stores/entries";
 
 // Auth resolves client-side only (Clerk's skipServerMiddleware: true), so this

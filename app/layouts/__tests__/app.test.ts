@@ -10,7 +10,9 @@ import { useCommandPaletteShortcut } from "../../composables/useCommandPaletteSh
 // The real implementation is used (not a mock) so these tests exercise the
 // actual shortcut wiring.
 vi.stubGlobal("useCommandPaletteShortcut", useCommandPaletteShortcut);
-vi.stubGlobal("useAppearanceSync", vi.fn());
+vi.mock("~/composables/useAppearanceSync", () => ({
+  useAppearanceSync: vi.fn(),
+}));
 
 // Heavy children (real Clerk/store/composable usage) are stubbed with simple
 // open/close mirrors so these tests exercise the layout's own wiring —
