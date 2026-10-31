@@ -8,7 +8,7 @@ import type {
  * Returns a db mock that handles the update -> set -> where -> returning chain,
  * used by like.post and like.delete handlers.
  */
-export function makeDbForUpdate(updatedEntry: Record<string, unknown>) {
+function makeDbForUpdate(updatedEntry: Record<string, unknown>) {
   const returningMock = vi.fn().mockResolvedValue([updatedEntry]);
   const whereMock = vi.fn().mockReturnValue({ returning: returningMock });
   const setMock = vi.fn().mockReturnValue({ where: whereMock });
@@ -28,7 +28,7 @@ export function makeDbForDelete() {
 /**
  * Asserts that a handler throws 404 when assertOwnership rejects with 404.
  */
-export async function assertThrows404ViaOwnership(
+async function assertThrows404ViaOwnership(
   mockRequireRouterParam: ReturnType<typeof vi.fn>,
   mockAssertOwnership: ReturnType<typeof vi.mocked<typeof assertOwnership>>,
   handler:
@@ -51,7 +51,7 @@ export async function assertThrows404ViaOwnership(
 /**
  * Asserts that a handler throws 401 when assertOwnership rejects with 401.
  */
-export async function assertThrows401ViaOwnership(
+async function assertThrows401ViaOwnership(
   mockRequireRouterParam: ReturnType<typeof vi.fn>,
   mockAssertOwnership: ReturnType<typeof vi.mocked<typeof assertOwnership>>,
   handler:
@@ -74,7 +74,7 @@ export async function assertThrows401ViaOwnership(
 /**
  * Returns a db mock for the entry GET handler (two select chains: photos + tags).
  */
-export function makeDbForEntryGet() {
+function makeDbForEntryGet() {
   const photosWhereMock = vi.fn().mockResolvedValue([]);
   const photosFromMock = vi.fn().mockReturnValue({ where: photosWhereMock });
 
