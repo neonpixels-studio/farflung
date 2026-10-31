@@ -237,7 +237,7 @@
               <h3 class="display" style="margin-top: 8px">
                 Connected accounts
               </h3>
-              <p>Pull in geotagged photos and sign in faster.</p>
+              <p>Pull in your Instagram photos and sign in faster.</p>
             </div>
 
             <div v-if="connectionsLoadError" style="margin-bottom: 12px">
@@ -285,7 +285,10 @@
               </div>
               <div class="conn__meta">
                 <b>Instagram</b>
-                <p>Auto-import geotagged photos into your entries.</p>
+                <p>
+                  Import your Instagram photos into your journal, then place
+                  them yourself.
+                </p>
               </div>
               <div class="right">
                 <template v-if="connections.instagram.connected">

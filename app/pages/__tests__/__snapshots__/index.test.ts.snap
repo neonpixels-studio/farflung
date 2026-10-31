@@ -43,7 +43,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
         <div data-v-16d9afef="" class="feat">
           <div data-v-16d9afef="" class="feat__ico"><svg data-v-16d9afef="" data-icon="" name="instagram" size="21"></svg></div>
           <h3 data-v-16d9afef="">Auto-import photos</h3>
-          <p data-v-16d9afef=""> Connect your camera roll and Instagram — geotagged shots flow straight onto the right place on the map. </p>
+          <p data-v-16d9afef=""> Connect your camera roll and Instagram. Photos import to your journal, then you place them on the map. </p>
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
           <div data-v-16d9afef="" class="step__n">STEP 01</div>
           <div data-v-16d9afef="" class="step__ico"><svg data-v-16d9afef="" data-icon="" name="pin" size="22"></svg></div>
           <h3 data-v-16d9afef="">Pin it</h3>
-          <p data-v-16d9afef=""> Tap the map or import a geotagged photo. The place is saved with its exact coordinates and date. </p>
+          <p data-v-16d9afef=""> Tap the map to drop a pin. The place is saved with its exact coordinates and date. </p>
         </div>
         <div data-v-16d9afef="" class="step">
           <div data-v-16d9afef="" class="step__n">STEP 02</div>

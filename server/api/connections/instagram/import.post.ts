@@ -1,17 +1,16 @@
 /**
  * POST /api/connections/instagram/import
  *
- * Pulls the user's recent geotagged Instagram media, fetches image bytes from
- * the Instagram CDN, stores them via the media-storage-and-uploads layer, and
- * creates journal entries linked to the matching place for each photo.
+ * Pulls the user's recent Instagram photos, fetches image bytes from the
+ * Instagram CDN, stores them via the media-storage-and-uploads layer, and
+ * creates a journal entry per photo. Entries are created without a place:
+ * Instagram's media API exposes no location field, so users place them
+ * themselves.
  *
  * Idempotent: items whose Instagram media ID already exists in `media.source_id`
  * for this user are skipped rather than duplicated.
  *
- * Place deduplication: photos taken at the same location (name + coordinates)
- * reuse the existing `places` row rather than inserting duplicates.
- *
- * Bounded per run: a first-time account can hold ~500 geotagged photos, and
+ * Bounded per run: a first-time account can hold ~500 photos, and
  * importing each is expensive (CDN fetch + image processing + DB transaction +
  * blob writes), so an unbounded run overruns the Netlify function timeout and
  * commits partial work. Each run imports at most
@@ -32,7 +31,6 @@ import {
   connectedAccounts,
   media,
   entries,
-  places,
   entryPhotos,
   CONNECTED_ACCOUNT_PROVIDER,
   MEDIA_SOURCE,
@@ -46,7 +44,7 @@ import { removeMediaBlob, toThumbnailKey } from "../../../utils/mediaStore";
 import {
   fetchInstagramMedia,
   fetchInstagramImage,
-  filterGeotaggedMedia,
+  filterImportableMedia,
   INSTAGRAM_IMPORT_MAX_ITEMS_PER_RUN,
   INSTAGRAM_IMPORT_TIME_BUDGET_MS,
   type InstagramMediaItem,
@@ -82,11 +80,13 @@ async function resolveFreshAccessToken(
   }
 }
 
+const IMPORTED_ENTRY_FALLBACK_TITLE = "Instagram photo";
+
 function buildEntryTitle(item: InstagramMediaItem): string {
   if (item.caption) {
     return item.caption.slice(0, 100);
   }
-  return `Photo from ${item.location!.name}`;
+  return IMPORTED_ENTRY_FALLBACK_TITLE;
 }
 
 function detectContentType(mediaUrl: string): string {
@@ -119,51 +119,6 @@ async function fetchAlreadyImportedIds(
       ),
     );
   return new Set(rows.map((row) => row.sourceId).filter(Boolean) as string[]);
-}
-
-async function resolveOrCreatePlace(
-  database: DbClient,
-  userId: string,
-  item: InstagramMediaItem,
-): Promise<string> {
-  const locationName = item.location!.name;
-  const latitude = item.location!.latitude;
-  const longitude = item.location!.longitude;
-
-  const existingRows = await database
-    .select({ id: places.id })
-    .from(places)
-    .where(
-      and(
-        eq(places.userId, userId),
-        eq(places.name, locationName),
-        eq(places.latitude, latitude),
-        eq(places.longitude, longitude),
-      ),
-    )
-    .limit(1);
-
-  if (existingRows[0]) {
-    return existingRows[0].id;
-  }
-
-  const [placeRow] = await database
-    .insert(places)
-    .values({
-      id: crypto.randomUUID(),
-      userId,
-      name: locationName,
-      latitude,
-      longitude,
-    })
-    .returning({ id: places.id });
-
-  if (!placeRow) {
-    throw new Error(
-      `Failed to insert place record for Instagram item ${item.id}`,
-    );
-  }
-  return placeRow.id;
 }
 
 // Runs one best-effort rollback delete in isolation so a failure in an earlier
@@ -206,10 +161,7 @@ interface RollbackResult {
 // its entryPhotos, and deleting the media row cascades any entryPhotos that
 // hung off it (both FKs are ON DELETE CASCADE). Deletes are id-scoped (and
 // owner-scoped as defence in depth), so deleting a row that was never written
-// is a harmless no-op. A newly-created place row is intentionally left: it is
-// deduplicated (matched on name + coordinates) and reused by the next import
-// run for the same location, so deleting it risks nulling a sibling entry's
-// placeId. Returns which deletes succeeded.
+// is a harmless no-op. Returns which deletes succeeded.
 async function rollbackPartialImport(
   database: DbClient,
   userId: string,
@@ -298,16 +250,12 @@ interface MediaInsertInput {
 // Writes the media, entry, and entryPhotos rows for one imported photo. The
 // media insert runs ALONE, first — not folded into the batch below — because
 // its (user_id, source, source_id) unique index is the concurrency guard: a
-// second import racing the same Instagram item must lose *here*, before ever
-// calling resolveOrCreatePlace. resolveOrCreatePlace is select-then-maybe-insert
-// on (name, coordinates) with no unique index behind it, so two racing callers
-// that both reached it could both miss the select and both insert a duplicate
-// place row; keeping the media insert as the sole first write preserves the
-// original "only the race winner ever resolves a place" invariant. Once media
-// commits and placeId is resolved, entries + entryPhotos ARE result-independent
-// of each other (entryId and mediaInput.mediaId are already known), so they run
-// as one atomic database.batch() call — the neon-http driver's real
-// BEGIN/COMMIT unit (see server/db/index.ts) — instead of two separate writes.
+// second import racing the same Instagram item must lose *here*, before it
+// writes an entry, or both runs would create an entry for the same photo. Once
+// media commits, entries + entryPhotos are result-independent of each other
+// (entryId and mediaInput.mediaId are already known), so they run as one atomic
+// database.batch() call (the neon-http driver's real BEGIN/COMMIT unit, see
+// server/db/index.ts) instead of two separate writes.
 // A SQL-level failure there (e.g. an unrelated constraint violation) rolls that
 // pair back on Neon's side, so the id-scoped deletes below are harmless no-ops
 // for that case — but this is still one HTTP round trip, and a transaction that
@@ -338,13 +286,10 @@ async function persistImportedPhotoRows(
       sourceId: item.id,
     });
 
-    const placeId = await resolveOrCreatePlace(database, userId, item);
-
     await runBatch(database, [
       database.insert(entries).values({
         id: entryId,
         userId,
-        placeId,
         title: buildEntryTitle(item),
         body: item.caption ?? null,
         occurredAt: new Date(item.timestamp),
@@ -536,18 +481,18 @@ export default defineEventHandler(async (event): Promise<ImportRunSummary> => {
     expiresAt: connection.expiresAt,
   });
   const mediaResponse = await fetchInstagramMedia(accessToken);
-  const geotagged = filterGeotaggedMedia(mediaResponse.data);
+  const importable = filterImportableMedia(mediaResponse.data);
 
-  const instagramIds = geotagged.map((item) => item.id);
+  const instagramIds = importable.map((item) => item.id);
   const alreadyImportedIds = await fetchAlreadyImportedIds(
     userId,
     instagramIds,
   );
 
-  const pendingItems = geotagged.filter(
+  const pendingItems = importable.filter(
     (item) => !alreadyImportedIds.has(item.id),
   );
-  const skipped = geotagged.length - pendingItems.length;
+  const skipped = importable.length - pendingItems.length;
 
   // Bound the expensive per-item work so the run stays under the function
   // timeout; the overflow resumes on the next call (already-imported items are

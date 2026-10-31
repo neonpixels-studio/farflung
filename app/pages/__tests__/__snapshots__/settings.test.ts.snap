@@ -53,7 +53,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
           <div data-v-a376170b="" class="sect__head">
             <div data-v-a376170b="" class="label">// 03 — connections</div>
             <h3 data-v-a376170b="" class="display" style="margin-top: 8px;"> Connected accounts </h3>
-            <p data-v-a376170b="">Pull in geotagged photos and sign in faster.</p>
+            <p data-v-a376170b="">Pull in your Instagram photos and sign in faster.</p>
           </div>
           <!--v-if-->
           <!--v-if-->
@@ -65,7 +65,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
           <div data-v-a376170b="" class="conn">
             <div data-v-a376170b="" class="conn__logo"><svg data-v-a376170b="" data-icon="" name="instagram" size="20"></svg></div>
             <div data-v-a376170b="" class="conn__meta"><b data-v-a376170b="">Instagram</b>
-              <p data-v-a376170b="">Auto-import geotagged photos into your entries.</p>
+              <p data-v-a376170b=""> Import your Instagram photos into your journal, then place them yourself. </p>
             </div>
             <div data-v-a376170b="" class="right"><span data-v-a376170b="" class="muted" style="font-size: 12px;">Wanderer and Nomad plans</span><a data-v-a376170b="" class="btn btn--outline btn--sm" data-testid="instagram-upgrade">upgrade</a></div>
           </div><!-- Google -->

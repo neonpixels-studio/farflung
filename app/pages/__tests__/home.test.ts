@@ -329,7 +329,7 @@ describe("Home / Dashboard page (/home)", () => {
     const wrapper = mount(HomePage, globalConfig);
     expect(wrapper.find(".alert--info").exists()).toBe(true);
     expect(wrapper.find(".alert__title").text()).toContain(
-      "Geotagged photos from Instagram",
+      "Photos from Instagram",
     );
   });
 
