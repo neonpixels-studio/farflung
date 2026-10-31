@@ -118,6 +118,14 @@ describe("auth middleware", () => {
     expect(mockVerifyClerkToken).not.toHaveBeenCalled();
   });
 
+  it("lets an anonymous GET on a media thumbnail through", async () => {
+    const event = makeEvent({ path: "/api/media/abc-123/thumbnail" });
+
+    await runMiddleware(event);
+
+    expect(mockVerifyClerkToken).not.toHaveBeenCalled();
+  });
+
   it("does not open writes or other paths under /api/media", async () => {
     await expect(
       runMiddleware(

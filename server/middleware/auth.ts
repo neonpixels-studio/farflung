@@ -38,10 +38,10 @@ const PUBLIC_READ_PROFILE_PATH = /^\/api\/users\/[^/]+$/;
 const PUBLIC_READ_PROFILE_SUB_PATH =
   /^\/api\/users\/[^/]+\/(followers|following|trips|guides)$/;
 
-// GET /api/media/<id> serves photos to plain <img> tags and social crawlers,
-// neither of which can send a token. The handler treats the unguessable id as
-// the access control.
-const PUBLIC_READ_MEDIA_PATH = /^\/api\/media\/[^/]+$/;
+// GET /api/media/<id> and its /thumbnail serve photos to plain <img> tags and
+// social crawlers, neither of which can send a token. The handlers require a
+// signed URL instead (see server/utils/mediaUrl.ts).
+const PUBLIC_READ_MEDIA_PATH = /^\/api\/media\/[^/]+(\/thumbnail)?$/;
 
 // GET /api/handles/<handle> resolves a public `/@handle` page to its profile.
 // One segment only, so the authenticated sub-resource

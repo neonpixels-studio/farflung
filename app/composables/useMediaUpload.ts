@@ -11,6 +11,7 @@
  * generic fallback so a caller can supply its own context-specific fallback
  * (e.g. "Could not upload cover") instead of a one-size-fits-all string.
  */
+import { useApiClient } from "~/composables/useApiClient";
 import { extractServerErrorMessage } from "~/utils/extractErrorMessage";
 
 export interface MediaUploadResult {
@@ -19,6 +20,7 @@ export interface MediaUploadResult {
 }
 
 export function useMediaUpload() {
+  const { apiFetch } = useApiClient();
   const isUploading = ref(false);
   const error = ref<string | null>(null);
 
@@ -27,7 +29,7 @@ export function useMediaUpload() {
     error.value = null;
 
     try {
-      const response = await $fetch<MediaUploadResult>("/api/media", {
+      const response = await apiFetch<MediaUploadResult>("/api/media", {
         method: "POST",
         headers: { "Content-Type": file.type },
         body: await file.arrayBuffer(),

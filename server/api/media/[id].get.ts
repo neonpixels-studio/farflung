@@ -2,17 +2,25 @@ import { eq } from "drizzle-orm";
 import { getDb } from "../../db/index";
 import { media } from "../../db/schema";
 import { getMediaBlob } from "../../utils/mediaStore";
+import { verifyMediaSignature } from "../../utils/mediaUrl";
 
 const FALLBACK_CONTENT_TYPE = "application/octet-stream";
 
-// This route is intentionally public (no auth). Media objects are addressed by
-// UUIDs; the 128-bit key space is the access control. DELETE enforces ownership,
-// so only the uploader can remove their media. If this changes to private storage,
-// add requireUser() and scope the select by userId.
+// Reached without a Bearer token (see server/middleware/auth.ts), so the signature
+// issued by buildSignedMediaPath is the access control. DELETE enforces ownership.
 export default defineEventHandler(async (event) => {
   const mediaId = getRouterParam(event, "id");
   if (!mediaId) {
     throw createError({ statusCode: 400, statusMessage: "Missing media id" });
+  }
+
+  const secondsLeft = verifyMediaSignature(
+    mediaId,
+    "original",
+    getQuery(event),
+  );
+  if (secondsLeft === null) {
+    throw createError({ statusCode: 403, statusMessage: "Invalid media link" });
   }
 
   const db = getDb();
@@ -36,11 +44,8 @@ export default defineEventHandler(async (event) => {
     blob.contentType ?? row.contentType ?? FALLBACK_CONTENT_TYPE;
 
   setResponseHeader(event, "Content-Type", resolvedContentType);
-  setResponseHeader(
-    event,
-    "Cache-Control",
-    "public, max-age=31536000, immutable",
-  );
+  // Private so a shared cache can't outlive the signature.
+  setResponseHeader(event, "Cache-Control", `private, max-age=${secondsLeft}`);
   setResponseHeader(event, "X-Content-Type-Options", "nosniff");
 
   return new Uint8Array(blob.data);

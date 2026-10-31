@@ -1,4 +1,5 @@
 import { eq, and, asc, desc, inArray, sql } from "drizzle-orm";
+import { buildSignedMediaPath } from "../../utils/mediaUrl";
 import type { SQL } from "drizzle-orm";
 import { requireUser } from "../../utils/auth";
 import { getDb } from "../../db/index";
@@ -82,6 +83,10 @@ async function fetchEntryPhotos(
     .orderBy(asc(entryPhotos.sortOrder));
 }
 
+function withSignedUrl<Photo extends { mediaId: string }>(photo: Photo) {
+  return { ...photo, url: buildSignedMediaPath(photo.mediaId) };
+}
+
 async function fetchEntryTags(
   database: ReturnType<typeof getDb>,
   entryIds: string[],
@@ -159,7 +164,7 @@ export default defineEventHandler(async (event) => {
 
   const result = rows.map((row) => ({
     ...row,
-    photos: photosByEntry[row.id] ?? [],
+    photos: (photosByEntry[row.id] ?? []).map(withSignedUrl),
     tags: (tagsByEntry[row.id] ?? []).map((tagRow) => ({
       id: tagRow.tagId,
       name: tagRow.tagName,

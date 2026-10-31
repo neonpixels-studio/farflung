@@ -14,6 +14,14 @@ import { INVITE_UNAVAILABLE_TITLE } from "~/constants/trips";
 import { UNEXPECTED_ERROR_MESSAGE } from "~/utils/extractErrorMessage";
 import { AUTH_REDIRECT_QUERY_PARAM } from "~/utils/authRedirect";
 
+vi.mock("~/composables/useMediaUpload", () => ({
+  useMediaUpload: () => ({
+    upload: vi.fn(),
+    isUploading: ref(false),
+    error: ref(null),
+  }),
+}));
+
 // The expected /login href once the trip's own URL (see the useRoute stub
 // below, default routeParams.id "trip-1") is carried through as the redirect
 // param (#292).
@@ -1168,14 +1176,20 @@ describe("Trip Detail page (/trips/[id])", () => {
       const tripsStore = useTripsStore();
       tripsStore.currentTripDetail = {
         ...SAMPLE_DETAIL,
-        trip: { ...SAMPLE_DETAIL.trip, coverImageId: "media-abc123" },
+        trip: {
+          ...SAMPLE_DETAIL.trip,
+          coverImageId: "media-abc123",
+          coverImageUrl: "/api/media/media-abc123?exp=1&sig=abc",
+        },
       };
 
       mount(TripDetailPage, buildGlobalConfig(pinia));
 
       const meta = lastSeoMetaCall(useSeoMetaMock);
       const ogImage = meta.ogImage as () => string;
-      expect(ogImage()).toBe("https://farflung.test/api/media/media-abc123");
+      expect(ogImage()).toBe(
+        "https://farflung.test/api/media/media-abc123?exp=1&sig=abc",
+      );
       expect(meta.twitterCard).toBe("summary_large_image");
     });
 

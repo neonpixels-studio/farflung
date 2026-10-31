@@ -1,4 +1,5 @@
 import { eq, and, asc, count } from "drizzle-orm";
+import { buildSignedMediaPath } from "../../utils/mediaUrl";
 import { getDb } from "../../db/index";
 import {
   trips,
@@ -134,6 +135,17 @@ export default defineEventHandler(
 
     const facts = computeFacts(trip, stops, photoCount);
 
-    return { trip, stops, facts };
+    return {
+      trip: {
+        ...trip,
+        // Issued only here, past the read check above, so a private trip's cover
+        // can't be fetched by someone who only knows its media id.
+        coverImageUrl: trip.coverImageId
+          ? buildSignedMediaPath(trip.coverImageId)
+          : null,
+      },
+      stops,
+      facts,
+    };
   },
 );

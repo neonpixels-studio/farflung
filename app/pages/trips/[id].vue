@@ -56,11 +56,11 @@
     <div
       class="thero ph"
       :style="
-        pendingCoverUrl
-          ? `background-image: url('${encodeURI(pendingCoverUrl)}')`
+        displayedCoverUrl
+          ? `background-image: url('${encodeURI(displayedCoverUrl)}')`
           : ''
       "
-      :class="{ 'thero--has-cover': !!pendingCoverUrl }"
+      :class="{ 'thero--has-cover': !!displayedCoverUrl }"
     >
       <div class="topo" />
       <div class="thero__veil" />
@@ -572,14 +572,12 @@ const tripDescription = computed(() => {
   return `${statusLabel.value} trip with ${stopsPhrase}${distancePhrase} on ${SITE_NAME}.`;
 });
 
-// The trip's own coverImageId (not the optimistic pendingCoverUrl, which only
+// The trip's own signed cover URL (not the optimistic pendingCoverUrl, which only
 // exists after an upload in the current session) drives the preview image so
-// a fresh visitor following a shared link — who never triggered an upload —
-// still gets the trip's real cover.
-const tripOgImagePath = computed(() =>
-  tripDetail.value?.trip.coverImageId
-    ? `/api/media/${tripDetail.value.trip.coverImageId}`
-    : null,
+// a fresh visitor following a shared link, who never triggered an upload, still
+// gets the trip's real cover.
+const tripOgImagePath = computed(
+  () => tripDetail.value?.trip.coverImageUrl ?? null,
 );
 
 useOgMeta(() => ({
@@ -647,6 +645,9 @@ const mapPins = computed<TripStop[]>(() => displayedStops.value.slice(0, 6));
 // Set only after both the upload AND the patchTrip calls succeed so the visible
 // state never diverges from the persisted state.
 const pendingCoverUrl = ref<string | null>(null);
+const displayedCoverUrl = computed(
+  () => pendingCoverUrl.value ?? tripDetail.value?.trip.coverImageUrl ?? null,
+);
 
 const STATUS_STYLE_MAP: Record<Trip["status"], string> = {
   ongoing: "color: var(--success-ink)",

@@ -34,7 +34,15 @@
       class="post__media"
     >
       <div v-for="(photo, index) in visiblePhotos" :key="photo.id" class="ph">
-        <div class="topo" style="opacity: 0.4" />
+        <img
+          v-if="photo.url"
+          class="post__photo"
+          :src="photo.url"
+          :alt="entry.title"
+          loading="lazy"
+          decoding="async"
+        />
+        <div v-else class="topo" style="opacity: 0.4" />
         <span
           v-if="
             index === visiblePhotos.length - 1 &&
@@ -131,6 +139,12 @@ const entryTimestamp = computed(() => {
 </script>
 
 <style scoped>
+.post__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 /* Tags render as <button> so they're clickable (filter the feed to that tag)
    but must keep the same look as the plain-span .tag style in main.css. */
 .tag--clickable {

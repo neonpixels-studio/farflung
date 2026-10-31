@@ -130,7 +130,10 @@ vi.mock("../../server/utils/planLimits", () => ({
 }));
 
 // Stub Nitro/h3 auto-imports
+const mockGetQuery = vi.fn();
+
 Object.assign(globalThis, {
+  getQuery: mockGetQuery,
   defineEventHandler: (handler: (event: object) => unknown) => handler,
   createError: (options: { statusCode: number; statusMessage: string }) =>
     Object.assign(new Error(options.statusMessage), options),
@@ -151,6 +154,17 @@ const { default: postHandler } =
 const { default: deleteHandler } =
   await import("../../server/api/media/[id].delete");
 const { default: getHandler } = await import("../../server/api/media/[id].get");
+const { buildSignedMediaPath } = await import("../../server/utils/mediaUrl");
+
+process.env.NUXT_CLERK_SECRET_KEY = "sk_test_signing";
+
+function signedQuery(variant: "original" | "thumbnail") {
+  const params = new URL(
+    buildSignedMediaPath("media-123", variant),
+    "https://x.test",
+  ).searchParams;
+  return { exp: params.get("exp"), sig: params.get("sig") };
+}
 const { default: thumbnailGetHandler } =
   await import("../../server/api/media/[id]/thumbnail.get");
 
@@ -586,6 +600,7 @@ describe("DELETE /api/media/[id]", () => {
 describe("GET /api/media/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetQuery.mockReturnValue(signedQuery("original"));
     mockGetRouterParam.mockReturnValue("media-123");
     mockDbSelectLimit.mockResolvedValue([
       { url: "user-1/media-123", contentType: "image/jpeg" },
@@ -607,14 +622,27 @@ describe("GET /api/media/[id]", () => {
     );
   });
 
-  it("sets Cache-Control to immutable", async () => {
+  it("keeps the photo out of shared caches, for no longer than the signature", async () => {
     await callHandler(getHandler, buildEvent());
-
-    expect(mockSetResponseHeader).toHaveBeenCalledWith(
-      expect.anything(),
-      "Cache-Control",
-      "public, max-age=31536000, immutable",
+    const cacheCall = mockSetResponseHeader.mock.calls.find(
+      (call) => call[1] === "Cache-Control",
     );
+    expect(cacheCall?.[2]).toMatch(/^private, max-age=\d+$/);
+  });
+
+  it("refuses a request with no signature, before touching storage", async () => {
+    mockGetQuery.mockReturnValue({});
+    await expect(callHandler(getHandler, buildEvent())).rejects.toMatchObject({
+      statusCode: 403,
+    });
+    expect(mockGetMediaBlob).not.toHaveBeenCalled();
+  });
+
+  it("refuses a thumbnail signature on the original", async () => {
+    mockGetQuery.mockReturnValue(signedQuery("thumbnail"));
+    await expect(callHandler(getHandler, buildEvent())).rejects.toMatchObject({
+      statusCode: 403,
+    });
   });
 
   it("sets X-Content-Type-Options: nosniff to prevent MIME sniffing", async () => {
@@ -659,6 +687,7 @@ describe("GET /api/media/[id]", () => {
 describe("GET /api/media/[id]/thumbnail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetQuery.mockReturnValue(signedQuery("thumbnail"));
     mockGetRouterParam.mockReturnValue("media-123");
     mockDbSelectLimit.mockResolvedValue([
       { url: "user-1/media-123", contentType: "image/jpeg" },
