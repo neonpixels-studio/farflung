@@ -6,7 +6,7 @@ exports[`Trips page (/trips) > renders without crashing and matches snapshot 1`]
     <div data-v-f103826c="">
       <div data-v-f103826c="" class="label"> // 6 trips · 117 places · 48.2k miles</div>
       <h1 data-v-f103826c="">Your trips</h1>
-      <p data-v-f103826c="">One ongoing, two on the calendar, six in the books.</p>
+      <p data-v-f103826c="">1 ongoing, 2 on the calendar, 3 in the books.</p>
     </div><button data-v-f103826c="" class="btn btn--outline"><svg data-v-f103826c="" data-icon="" name="route" size="15"></svg> plan a new route </button>
   </div><!-- New trip form -->
   <!--v-if-->
@@ -30,7 +30,9 @@ exports[`Trips page (/trips) > renders without crashing and matches snapshot 1`]
   </div><!-- Toolbar -->
   <div data-v-f103826c="" class="trip-toolbar">
     <div data-v-f103826c="" class="seg-tabs"><button data-v-f103826c="" class="is-active">All</button><button data-v-f103826c="" class="">Ongoing</button><button data-v-f103826c="" class="">Upcoming</button><button data-v-f103826c="" class="">Past</button></div><span data-v-f103826c="" class="spacer"></span><span data-v-f103826c="" class="label label--plain" style="font-size: 10px;">sort</span><button data-v-f103826c="" class="btn btn--outline btn--sm"><svg data-v-f103826c="" data-icon="" name="sliders" size="14"></svg> recent first </button>
-  </div><!-- Grid -->
+  </div>
+  <!--v-if-->
+  <!-- Grid -->
   <div data-v-f103826c="" class="trip-grid"><a data-v-f103826c="" href="/trips/1" class="tcard">
       <div data-v-f103826c="" class="tcard__cover ph">
         <div data-v-f103826c="" class="topo"></div><span data-v-f103826c="" class="tcard__status tag tag--ongoing">2026</span><button data-v-f103826c="" class="tcard__save" aria-label="Save"><svg data-v-f103826c="" data-icon="" name="bookmark" size="15"></svg></button>

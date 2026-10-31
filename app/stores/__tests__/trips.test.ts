@@ -42,6 +42,29 @@ describe("useTripsStore", () => {
     vi.clearAllMocks();
   });
 
+  describe("fetchTrips", () => {
+    it("marks the list as loaded only after a successful fetch", async () => {
+      mockApiFetch.mockResolvedValueOnce({ trips: [], hasMore: false });
+      const store = useTripsStore();
+      expect(store.hasLoadedList).toBe(false);
+
+      await store.fetchTrips();
+
+      expect(store.hasLoadedList).toBe(true);
+      expect(store.tripList).toEqual([]);
+    });
+
+    it("does not mark the list as loaded when the fetch fails", async () => {
+      mockApiFetch.mockRejectedValueOnce(new Error("boom"));
+      const store = useTripsStore();
+
+      await expect(store.fetchTrips()).rejects.toThrow();
+
+      expect(store.hasLoadedList).toBe(false);
+      expect(store.listError).not.toBeNull();
+    });
+  });
+
   describe("fetchTripById", () => {
     it("populates currentTripDetail on success", async () => {
       mockApiFetch.mockResolvedValueOnce(SAMPLE_TRIP_DETAIL);

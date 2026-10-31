@@ -216,6 +216,97 @@ describe("Trips page (/trips)", () => {
     expect(wrapper.html()).toContain("dates TBD");
   });
 
+  describe("subtitle", () => {
+    it("derives the counts from the store's trips, not hard-coded text", () => {
+      const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
+
+      expect(wrapper.find(".trips-head p").text()).toBe(
+        "1 ongoing, 2 on the calendar, 3 in the books.",
+      );
+    });
+
+    it("shows a neutral line instead of counts when there are no trips", () => {
+      useTripsStore().tripList = [];
+
+      const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
+
+      expect(wrapper.find(".trips-head p").text()).toBe(
+        "Plan a route, log the journey, look back on it later.",
+      );
+    });
+  });
+
+  describe("empty state", () => {
+    function mountWithTripState(state: {
+      tripList?: Trip[];
+      hasLoadedList?: boolean;
+      isLoadingList?: boolean;
+      listError?: string | null;
+    }) {
+      const tripsStore = useTripsStore();
+      tripsStore.tripList = state.tripList ?? [];
+      tripsStore.hasLoadedList = state.hasLoadedList ?? false;
+      tripsStore.isLoadingList = state.isLoadingList ?? false;
+      tripsStore.listError = state.listError ?? null;
+      return mount(TripsPage, buildGlobalConfig(pinia));
+    }
+
+    it("tells the user to create a trip once loading finished with none", () => {
+      const wrapper = mountWithTripState({ hasLoadedList: true });
+
+      expect(wrapper.find(".empty-note").text()).toBe(
+        "No trips yet, plan your first route above.",
+      );
+    });
+
+    it("does not show before the first fetch has resolved", () => {
+      const wrapper = mountWithTripState({ hasLoadedList: false });
+
+      expect(wrapper.find(".empty-note").exists()).toBe(false);
+    });
+
+    it("does not show while a fetch is in flight", () => {
+      const wrapper = mountWithTripState({
+        hasLoadedList: true,
+        isLoadingList: true,
+      });
+
+      expect(wrapper.find(".empty-note").exists()).toBe(false);
+    });
+
+    it("does not show when the fetch failed", () => {
+      const wrapper = mountWithTripState({
+        hasLoadedList: true,
+        listError: "Something went wrong",
+      });
+
+      expect(wrapper.find(".empty-note").exists()).toBe(false);
+    });
+
+    it("does not show when there are trips", () => {
+      const wrapper = mountWithTripState({
+        tripList: [...SAMPLE_TRIPS],
+        hasLoadedList: true,
+      });
+
+      expect(wrapper.find(".empty-note").exists()).toBe(false);
+    });
+
+    it("shows a filter message, not a create prompt, for a tab with no matches", async () => {
+      const wrapper = mountWithTripState({
+        tripList: SAMPLE_TRIPS.filter((trip) => trip.status !== "past"),
+        hasLoadedList: true,
+      });
+
+      const pastTab = wrapper
+        .findAll(".seg-tabs button")
+        .find((button) => button.text() === "Past");
+      await pastTab?.trigger("click");
+
+      expect(wrapper.find(".empty-note").text()).toBe("No past trips yet.");
+    });
+  });
+
   it("calls fetchTrips on mount", async () => {
     const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
     const tripsStore = useTripsStore();

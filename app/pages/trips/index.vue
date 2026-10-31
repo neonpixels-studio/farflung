@@ -6,7 +6,7 @@
           // {{ tripsStore.tripList.length }} trips · {{ tripsHeaderStats }}
         </div>
         <h1>Your trips</h1>
-        <p>One ongoing, two on the calendar, six in the books.</p>
+        <p>{{ tripCountsSummary }}</p>
       </div>
       <button class="btn btn--outline" @click="openNewTripForm">
         <AppIcon name="route" :size="15" />
@@ -107,6 +107,8 @@
       </button>
     </div>
 
+    <div v-if="emptyMessage" class="empty-note">{{ emptyMessage }}</div>
+
     <!-- Grid -->
     <div class="trip-grid">
       <NuxtLink
@@ -145,6 +147,7 @@ import type { Trip } from "~/stores/trips";
 import { formatCompact } from "~/utils/formatNumber";
 import { useStats } from "~/composables/useStats";
 import { formatTripDateRange } from "~/utils/tripDates";
+import { summarizeTripCounts } from "~/utils/tripCounts";
 import type { TripStatus } from "~/utils/tripDates";
 import { extractErrorMessage } from "~/utils/extractErrorMessage";
 
@@ -167,6 +170,12 @@ const {
   loadError: statsError,
   fetchStats,
 } = useStats();
+
+const NO_TRIPS_MESSAGE = "No trips yet, plan your first route above.";
+
+const tripCountsSummary = computed(() =>
+  summarizeTripCounts(tripsStore.tripList),
+);
 
 const distanceUnitShort = computed(() =>
   stats.value.distanceUnit === "km" ? "km" : "miles",
@@ -234,6 +243,25 @@ const filteredTrips = computed<Trip[]>(() => {
   return tripsStore.tripList.filter((trip) => trip.status === statusFilter);
 });
 
+// Null until a fetch has succeeded: during loading or after a failure an empty
+// list does not mean "no trips".
+const emptyMessage = computed<string | null>(() => {
+  const hasFinishedLoading =
+    tripsStore.hasLoadedList &&
+    !tripsStore.isLoadingList &&
+    !tripsStore.listError;
+  if (!hasFinishedLoading || filteredTrips.value.length > 0) {
+    return null;
+  }
+
+  // A tab with no matches is a filter result, not an invitation to create.
+  if (activeTab.value !== "All") {
+    return `No ${activeTab.value.toLowerCase()} trips yet.`;
+  }
+
+  return NO_TRIPS_MESSAGE;
+});
+
 function tripStatusClass(status: TripStatus) {
   return STATUS_CLASSES[status];
 }
@@ -274,6 +302,12 @@ function formatDistance(distanceKm: number): string {
   margin: 6px 0 0;
   font-size: 12.5px;
   color: var(--muted);
+}
+
+.empty-note {
+  font-size: 12.5px;
+  color: var(--faint);
+  padding: 12px 0;
 }
 
 .new-trip-form {
