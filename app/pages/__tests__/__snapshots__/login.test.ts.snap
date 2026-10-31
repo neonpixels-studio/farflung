@@ -29,7 +29,7 @@ exports[`Login page (/login) > renders without crashing and matches snapshot 1`]
       <div data-v-43592d06="" class="auth-corner">
         <div data-v-43592d06="" class="theme-toggle"></div>
       </div>
-      <div data-v-43592d06="" class="clerk-sign-in" appearance="[object Object]"></div>
+      <div data-v-43592d06="" class="clerk-sign-in" sign-up-url="/sign-up" appearance="[object Object]"></div>
     </div>
   </div>
 </div>"

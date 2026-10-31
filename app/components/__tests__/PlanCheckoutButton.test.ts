@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import PlanCheckoutButton from "../PlanCheckoutButton.vue";
+
+const mockApiFetch = vi.fn();
+vi.mock("~/composables/useApiClient", () => ({
+  useApiClient: () => ({ apiFetch: mockApiFetch }),
+}));
 
 const mockFetchBillingConfig = vi.fn().mockResolvedValue(undefined);
 
@@ -75,27 +80,49 @@ describe("PlanCheckoutButton", () => {
     expect(mockFetchBillingConfig).toHaveBeenCalledTimes(1);
   });
 
-  it("navigates to /api/billing/checkout with tier + cycle on click", async () => {
+  it("requests checkout through the authenticated client, then navigates", async () => {
+    mockApiFetch.mockResolvedValue({ url: "https://checkout.stripe.test/s" });
     const wrapper = mount(PlanCheckoutButton, {
       props: { tier: "wanderer", cycle: "monthly" },
     });
 
     await wrapper.find("button").trigger("click");
+    await flushPromises();
 
-    expect(window.location.href).toBe(
+    expect(mockApiFetch).toHaveBeenCalledWith(
       "/api/billing/checkout?tier=wanderer&cycle=monthly",
     );
+    expect(window.location.href).toBe("https://checkout.stripe.test/s");
   });
 
   it("includes redirectTo as a query param when provided", async () => {
+    mockApiFetch.mockResolvedValue({ url: "https://checkout.stripe.test/s" });
     const wrapper = mount(PlanCheckoutButton, {
       props: { tier: "wanderer", cycle: "monthly", redirectTo: "/settings" },
     });
 
     await wrapper.find("button").trigger("click");
+    await flushPromises();
 
-    expect(window.location.href).toBe(
+    expect(mockApiFetch).toHaveBeenCalledWith(
       "/api/billing/checkout?tier=wanderer&cycle=monthly&redirectTo=%2Fsettings",
+    );
+  });
+
+  it("shows the server's message when checkout is refused", async () => {
+    mockApiFetch.mockRejectedValue({
+      data: { statusMessage: "You already have a subscription" },
+    });
+    const wrapper = mount(PlanCheckoutButton, {
+      props: { tier: "wanderer", cycle: "monthly" },
+    });
+
+    await wrapper.find("button").trigger("click");
+    await flushPromises();
+
+    expect(window.location.href).toBe("");
+    expect(wrapper.find('[role="alert"]').text()).toBe(
+      "You already have a subscription",
     );
   });
 

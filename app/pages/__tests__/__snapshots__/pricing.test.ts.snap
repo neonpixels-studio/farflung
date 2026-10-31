@@ -25,17 +25,17 @@ exports[`Pricing page (/pricing) > renders without crashing and matches snapshot
           <th data-v-330b0f26="" class="thd">
             <div data-v-330b0f26="" class="thd__name">Drifter</div>
             <div data-v-330b0f26="" class="thd__price"> $0<span data-v-330b0f26="" class="thd__per">/forever</span></div>
-            <div data-v-330b0f26="" class="thd__cta"><a data-v-330b0f26="" to="/login" class="btn btn--outline btn--sm btn--block">start</a></div>
+            <div data-v-330b0f26="" class="thd__cta"><a data-v-330b0f26="" to="/sign-up" external="true" class="btn btn--outline btn--sm btn--block">start</a></div>
           </th>
           <th data-v-330b0f26="" class="thd thd--pop">
             <div data-v-330b0f26="" class="thd__name accent-text">Wanderer</div>
             <div data-v-330b0f26="" class="thd__price">$8<span data-v-330b0f26="" class="thd__per">/mo</span></div>
-            <div data-v-330b0f26="" class="thd__cta"><a data-v-330b0f26="" to="/login" class="btn btn--primary btn--sm btn--block">free trial</a></div>
+            <div data-v-330b0f26="" class="thd__cta"><a data-v-330b0f26="" to="/sign-up" external="" class="btn btn--primary btn--sm btn--block">free trial</a></div>
           </th>
           <th data-v-330b0f26="" class="thd">
             <div data-v-330b0f26="" class="thd__name">Nomad</div>
             <div data-v-330b0f26="" class="thd__price">$16<span data-v-330b0f26="" class="thd__per">/mo</span></div>
-            <div data-v-330b0f26="" class="thd__cta"><a data-v-330b0f26="" to="/login" class="btn btn--outline btn--sm btn--block">free trial</a></div>
+            <div data-v-330b0f26="" class="thd__cta"><a data-v-330b0f26="" to="/sign-up" external="" class="btn btn--outline btn--sm btn--block">free trial</a></div>
           </th>
         </tr>
       </thead>
@@ -71,9 +71,7 @@ exports[`Pricing page (/pricing) > renders without crashing and matches snapshot
           <td data-v-330b0f26="">GPX route import / export</td>
           <td data-v-330b0f26=""><span data-v-330b0f26="" class="dash">—</span></td>
           <td data-v-330b0f26="" class="pop"><span data-v-330b0f26="" class="dash">—</span></td>
-          <td data-v-330b0f26=""><svg data-v-330b0f26="" class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg></td>
+          <td data-v-330b0f26=""><span data-v-330b0f26="" class="soon">coming soon</span></td>
         </tr>
         <tr data-v-330b0f26="" class="cat-row">
           <td data-v-330b0f26="" colspan="4">Photos &amp; media</td>
@@ -98,9 +96,7 @@ exports[`Pricing page (/pricing) > renders without crashing and matches snapshot
           <td data-v-330b0f26="">Original-resolution backup</td>
           <td data-v-330b0f26=""><span data-v-330b0f26="" class="dash">—</span></td>
           <td data-v-330b0f26="" class="pop"><span data-v-330b0f26="" class="dash">—</span></td>
-          <td data-v-330b0f26=""><svg data-v-330b0f26="" class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg></td>
+          <td data-v-330b0f26=""><span data-v-330b0f26="" class="soon">coming soon</span></td>
         </tr>
         <tr data-v-330b0f26="" class="cat-row">
           <td data-v-330b0f26="" colspan="4">Maps</td>
@@ -114,25 +110,17 @@ exports[`Pricing page (/pricing) > renders without crashing and matches snapshot
         <tr data-v-330b0f26="" class="feat-row">
           <td data-v-330b0f26="">Offline maps</td>
           <td data-v-330b0f26=""><span data-v-330b0f26="" class="dash">—</span></td>
-          <td data-v-330b0f26="" class="pop"><svg data-v-330b0f26="" class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg></td>
-          <td data-v-330b0f26=""><svg data-v-330b0f26="" class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg></td>
+          <td data-v-330b0f26="" class="pop"><span data-v-330b0f26="" class="soon">coming soon</span></td>
+          <td data-v-330b0f26=""><span data-v-330b0f26="" class="soon">coming soon</span></td>
         </tr>
         <tr data-v-330b0f26="" class="feat-row">
-          <td data-v-330b0f26="">Year-in-review &amp; stats</td>
+          <td data-v-330b0f26="">Year-in-review</td>
           <td data-v-330b0f26=""><span data-v-330b0f26="" class="dash">—</span></td>
-          <td data-v-330b0f26="" class="pop"><svg data-v-330b0f26="" class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg></td>
-          <td data-v-330b0f26=""><svg data-v-330b0f26="" class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg></td>
+          <td data-v-330b0f26="" class="pop"><span data-v-330b0f26="" class="soon">coming soon</span></td>
+          <td data-v-330b0f26=""><span data-v-330b0f26="" class="soon">coming soon</span></td>
         </tr>
         <tr data-v-330b0f26="" class="cat-row">
-          <td data-v-330b0f26="" colspan="4">Sharing &amp; support</td>
+          <td data-v-330b0f26="" colspan="4">Sharing</td>
         </tr>
         <tr data-v-330b0f26="" class="feat-row">
           <td data-v-330b0f26="">Public traveler profile</td>
@@ -146,23 +134,15 @@ exports[`Pricing page (/pricing) > renders without crashing and matches snapshot
           <td data-v-330b0f26="">Collaborative trips</td>
           <td data-v-330b0f26=""><span data-v-330b0f26="" class="dash">—</span></td>
           <td data-v-330b0f26="" class="pop"><span data-v-330b0f26="" class="dash">—</span></td>
-          <td data-v-330b0f26=""><svg data-v-330b0f26="" class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg></td>
-        </tr>
-        <tr data-v-330b0f26="" class="feat-row">
-          <td data-v-330b0f26="">Support</td>
-          <td data-v-330b0f26="">Community</td>
-          <td data-v-330b0f26="" class="pop">Email</td>
-          <td data-v-330b0f26="">Priority</td>
+          <td data-v-330b0f26=""><span data-v-330b0f26="" class="soon">coming soon</span></td>
         </tr>
       </tbody>
       <tfoot data-v-330b0f26="">
         <tr data-v-330b0f26="" class="tfoot-cta">
           <td data-v-330b0f26=""></td>
-          <td data-v-330b0f26=""><a data-v-330b0f26="" to="/login" class="btn btn--outline btn--sm">get started</a></td>
-          <td data-v-330b0f26="" class="pop"><a data-v-330b0f26="" to="/login" class="btn btn--primary btn--sm">start free trial</a></td>
-          <td data-v-330b0f26=""><a data-v-330b0f26="" to="/login" class="btn btn--outline btn--sm">start free trial</a></td>
+          <td data-v-330b0f26=""><a data-v-330b0f26="" to="/sign-up" class="btn btn--outline btn--sm">get started</a></td>
+          <td data-v-330b0f26="" class="pop"><a data-v-330b0f26="" to="/sign-up" external="" class="btn btn--primary btn--sm">start free trial</a></td>
+          <td data-v-330b0f26=""><a data-v-330b0f26="" to="/sign-up" external="" class="btn btn--outline btn--sm">start free trial</a></td>
         </tr>
       </tfoot>
     </table>
