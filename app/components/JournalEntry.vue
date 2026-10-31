@@ -34,15 +34,7 @@
       class="post__media"
     >
       <div v-for="(photo, index) in visiblePhotos" :key="photo.id" class="ph">
-        <img
-          v-if="photo.url"
-          class="post__photo"
-          :src="photo.url"
-          :alt="entry.title"
-          loading="lazy"
-          decoding="async"
-        />
-        <div v-else class="topo" style="opacity: 0.4" />
+        <AppImage :src="photo.url" :alt="entry.title" class="post__photo" />
         <span
           v-if="
             index === visiblePhotos.length - 1 &&
@@ -93,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import AppImage from "~/components/AppImage.vue";
 import { computed } from "vue";
 import type { Entry, EntryTag } from "~/stores/entries";
 
