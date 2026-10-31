@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import LoginPage from "../login.vue";
@@ -10,7 +12,12 @@ vi.stubGlobal("useRoute", () => ({ query: routeQuery }));
 
 const signInStub = {
   template: '<div class="clerk-sign-in" />',
-  props: ["fallbackRedirectUrl", "signUpFallbackRedirectUrl"],
+  props: [
+    "fallbackRedirectUrl",
+    "signUpFallbackRedirectUrl",
+    "routing",
+    "path",
+  ],
 };
 
 const globalConfig = {
@@ -89,6 +96,19 @@ describe("Login page (/login)", () => {
       expect(signIn.props("signUpFallbackRedirectUrl")).toBeUndefined();
     },
   );
+
+  it("routes Clerk's sign-in steps under /login", () => {
+    const signIn = mount(LoginPage, globalConfig).findComponent(signInStub);
+
+    expect(signIn.props("routing")).toBe("path");
+    expect(signIn.props("path")).toBe("/login");
+  });
+
+  it("matches Clerk's sub-paths with a catch-all route", () => {
+    const source = readFileSync(resolve(__dirname, "../login.vue"), "utf8");
+
+    expect(source).toContain('path: "/login/:clerkStep(.*)*"');
+  });
 
   it("omits both fallback redirect props when no return_to query param is present", () => {
     const wrapper = mount(LoginPage, globalConfig);

@@ -415,8 +415,10 @@ describe("PATCH /api/preferences", () => {
     mockEnsureUser.mockResolvedValue("user-1");
     mockReadBody.mockResolvedValue({ handle: "taken-handle" });
 
-    const uniqueError = Object.assign(new Error("duplicate key value"), {
-      code: "23505",
+    const uniqueError = Object.assign(new Error("Failed query"), {
+      cause: Object.assign(new Error("duplicate key value"), {
+        code: "23505",
+      }),
     });
     const onConflictMock = vi.fn().mockRejectedValue(uniqueError);
     const valuesMock = vi

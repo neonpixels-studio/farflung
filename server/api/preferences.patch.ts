@@ -172,12 +172,16 @@ export function rowToDto(row: Record<string, unknown>): PreferencesDto {
   };
 }
 
+// Drizzle wraps driver errors in DrizzleQueryError, leaving the code on `cause`.
 function isPostgresUniqueError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
   }
-  const errorObj = error as Record<string, unknown>;
-  return errorObj.code === "23505";
+  const { code, cause } = error as {
+    code?: string;
+    cause?: { code?: string };
+  };
+  return (cause?.code ?? code) === "23505";
 }
 
 export default defineEventHandler(async (event) => {

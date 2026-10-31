@@ -49,6 +49,8 @@
           <AppThemeToggle />
         </div>
         <SignIn
+          routing="path"
+          path="/login"
           :fallback-redirect-url="safeRedirectPath"
           :sign-up-fallback-redirect-url="safeRedirectPath"
           :appearance="{
@@ -77,7 +79,9 @@ import {
 } from "~/utils/authRedirect";
 
 useHead({ title: "FarFlung — Sign in" });
-definePageMeta({ layout: false });
+// Clerk's multi-step flow navigates to sub-paths (/login/factor-one,
+// /login/sso-callback, ...), which must render this same page, not a 404.
+definePageMeta({ layout: false, path: "/login/:clerkStep(.*)*" });
 
 // Every "sign in to ..." link across profile/trips carries the visitor's
 // origin path via return_to (see buildLoginPath in utils/authRedirect); this
