@@ -30,7 +30,7 @@
           >
             <div class="cmdk__glabel">{{ group.label }}</div>
             <component
-              :is="item.action ? 'button' : 'NuxtLink'"
+              :is="item.action ? 'button' : NuxtLink"
               v-for="(item, index) in group.items"
               :key="item.id"
               :type="item.action ? 'button' : undefined"
@@ -81,6 +81,10 @@
 import { ref, computed, watch, nextTick, inject } from "vue";
 import type { SearchItem } from "~/composables/useSearch";
 import { escapeHtml } from "~/utils/escapeHtml";
+
+// A string in :is only resolves native elements here, so "NuxtLink" rendered a
+// literal <nuxtlink> tag that didn't navigate.
+const NuxtLink = resolveComponent("NuxtLink");
 
 // PaletteItem extends SearchItem so search results (which always have href) fit
 // directly, while quick actions can supply either href or action (never both).

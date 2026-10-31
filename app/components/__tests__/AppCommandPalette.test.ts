@@ -543,4 +543,14 @@ describe("AppCommandPalette", () => {
       },
     );
   });
+
+  it("renders link items as real links, not a literal nuxtlink element", async () => {
+    const wrapper = mount(AppCommandPalette, {
+      props: { open: true },
+      ...globalConfig,
+    });
+    await flushPromises();
+    expect(wrapper.find("nuxtlink").exists()).toBe(false);
+    expect(wrapper.find("a.cmdk__item").exists()).toBe(true);
+  });
 });
