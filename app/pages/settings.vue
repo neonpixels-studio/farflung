@@ -1,10 +1,16 @@
 <template>
   <div>
     <AppTopbar title="Account" crumb="Settings">
-      <button class="btn btn--ghost btn--sm">discard</button>
+      <button
+        v-if="hasUnsavedChanges"
+        class="btn btn--ghost btn--sm"
+        @click="discardChanges"
+      >
+        discard
+      </button>
       <button
         class="btn btn--primary btn--sm"
-        :disabled="!!loadError"
+        :disabled="!!loadError || !hasUnsavedChanges"
         @click="saveChanges"
       >
         <AppIcon name="check" :size="14" />
@@ -1197,6 +1203,18 @@ function nameChanged(): boolean {
   );
 }
 
+const hasUnsavedChanges = computed(
+  () => nameChanged() || Object.keys(changedPreferenceFields()).length > 0,
+);
+
+function discardChanges(): void {
+  populateFromPreferences();
+  profile.firstName = user.value?.firstName ?? "";
+  profile.lastName = user.value?.lastName ?? "";
+  nameValidationError.value = null;
+  localSaveError.value = null;
+}
+
 // Returns the reason the form can't be saved yet, or null when it can.
 function findBlockingProblem(changed: Partial<UserPreferences>): string | null {
   nameValidationError.value = null;
@@ -1224,11 +1242,6 @@ async function saveChanges(): Promise<void> {
   localSaveError.value = findBlockingProblem(changed);
   if (localSaveError.value) {
     showToast(showErrorBar, errorTimer);
-    return;
-  }
-
-  if (!hasPreferenceChanges && !hasNameChange) {
-    showToast(showSaved, savedTimer);
     return;
   }
 
