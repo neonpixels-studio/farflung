@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
+import { FAVICON_HEAD_LINKS, FAVICON_HEAD_META } from "./favicon-head.config";
 import { buildPublicRuntimeConfig } from "./public-runtime-config";
 import {
   renderScheduledFunctionEnvModule,
@@ -20,6 +21,12 @@ export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   future: { compatibilityVersion: 4 },
   modules: ["@clerk/nuxt", "@sentry/nuxt/module", "@pinia/nuxt"],
+  app: {
+    head: {
+      link: FAVICON_HEAD_LINKS,
+      meta: FAVICON_HEAD_META,
+    },
+  },
   sourcemap: { client: "hidden" },
   // See security-headers.config.ts for the full rationale (issue #253).
   routeRules: buildSecurityRouteRules(process.env.NODE_ENV),
