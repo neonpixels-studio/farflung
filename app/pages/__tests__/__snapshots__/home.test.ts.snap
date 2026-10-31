@@ -12,7 +12,7 @@ exports[`Home / Dashboard page (/home) > renders without crashing and matches sn
   </div><!-- Import alert: only show when Instagram is connected -->
   <div data-v-10844834="" class="alert alert--info" style="margin-bottom: 22px;"><svg data-v-10844834="" data-icon="" name="instagram" size="18" class="alert__ico"></svg>
     <div data-v-10844834="" class="alert__body">
-      <p data-v-10844834="" class="alert__title">Geotagged photos from Instagram are ready</p>
+      <p data-v-10844834="" class="alert__title">Photos from Instagram are ready to import</p>
       <p data-v-10844834="" class="alert__msg"> Import them straight into your journal entries. </p>
     </div>
     <div data-v-10844834="" class="hstack gap-8" style="margin-left: auto;"><a data-v-10844834="" class="btn btn--ghost btn--sm">manage</a><button data-v-10844834="" class="btn btn--primary btn--sm">import all</button><button data-v-10844834="" class="icon-btn" aria-label="Dismiss import alert"><svg data-v-10844834="" data-icon="" name="x" size="14"></svg></button></div>

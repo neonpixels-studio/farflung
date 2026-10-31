@@ -26,7 +26,7 @@ export const INSTAGRAM_REFRESH_TOKEN_URL =
 export const INSTAGRAM_SCOPES = "instagram_business_basic";
 
 export const INSTAGRAM_MEDIA_FIELDS =
-  "id,caption,media_type,timestamp,permalink,media_url,location";
+  "id,caption,media_type,timestamp,permalink,media_url";
 
 export const INSTAGRAM_MEDIA_LIMIT = 50;
 
@@ -38,7 +38,7 @@ export const INSTAGRAM_MAX_MEDIA_PAGES = 10;
 // Upper bound on how many *new* photos a single import run downloads,
 // processes, and commits. Each item does a CDN image fetch, a sharp probe +
 // thumbnail, a DB transaction, and two blob writes — on the order of ~1s each,
-// so an unbounded run over a first-time account's ~500 geotagged items overruns
+// so an unbounded run over a first-time account's ~500 photos overruns
 // the Netlify function timeout and commits partial work.
 //
 // Budget: this repo sets no maxDuration, so functions run on Netlify's default
@@ -51,7 +51,7 @@ export const INSTAGRAM_MAX_MEDIA_PAGES = 10;
 //
 // This is a secondary ceiling on top of the wall-time budget below: raise it
 // only alongside a raised function timeout, and prefer a background/scheduled
-// function over a large cap for accounts with hundreds of geotagged photos.
+// function over a large cap for accounts with hundreds of photos.
 export const INSTAGRAM_IMPORT_MAX_ITEMS_PER_RUN = 8;
 
 // Wall-time budget for the whole import invocation (anchored at handler entry).
@@ -71,8 +71,8 @@ export const INSTAGRAM_IMPORT_MAX_ITEMS_PER_RUN = 8;
 // worthwhile follow-up.
 export const INSTAGRAM_IMPORT_TIME_BUDGET_MS = 7000;
 
-// Only image types can carry location metadata.
-export const INSTAGRAM_GEOTAGGED_MEDIA_TYPES = new Set([
+// Only image types are imported; videos and reels have no photo to store.
+export const INSTAGRAM_IMPORTABLE_MEDIA_TYPES = new Set([
   "IMAGE",
   "CAROUSEL_ALBUM",
 ]);
@@ -200,14 +200,6 @@ export interface InstagramUserResponse {
   username?: string;
 }
 
-export interface InstagramMediaLocation {
-  name: string;
-  // Coordinates are required — items without both are excluded by
-  // filterGeotaggedMedia before import.
-  latitude: number;
-  longitude: number;
-}
-
 export interface InstagramMediaItem {
   id: string;
   caption?: string;
@@ -215,7 +207,6 @@ export interface InstagramMediaItem {
   media_url: string;
   timestamp: string;
   permalink: string;
-  location?: InstagramMediaLocation;
 }
 
 export interface InstagramMediaResponse {
@@ -462,7 +453,7 @@ function dedupeById(items: InstagramMediaItem[]): InstagramMediaItem[] {
 
 /**
  * Fetches the authenticated user's media, following paging.next up to
- * INSTAGRAM_MAX_MEDIA_PAGES so imports reach geotagged photos older than the
+ * INSTAGRAM_MAX_MEDIA_PAGES so imports reach photos older than the
  * most recent batch. Returns one response whose `data` concatenates every
  * fetched page, deduplicated by id.
  *
@@ -531,19 +522,12 @@ export async function fetchInstagramImage(mediaUrl: string): Promise<Buffer> {
 }
 
 /**
- * Filters a list of media items to only those with complete geotag data:
- * a non-empty location name, both latitude and longitude present as numbers.
+ * Filters a list of media items to the image types the import can store.
  */
-export function filterGeotaggedMedia(
+export function filterImportableMedia(
   items: InstagramMediaItem[],
 ): InstagramMediaItem[] {
-  return items.filter(
-    (item) =>
-      INSTAGRAM_GEOTAGGED_MEDIA_TYPES.has(item.media_type) &&
-      item.location !== undefined &&
-      typeof item.location.name === "string" &&
-      item.location.name.length > 0 &&
-      typeof item.location.latitude === "number" &&
-      typeof item.location.longitude === "number",
+  return items.filter((item) =>
+    INSTAGRAM_IMPORTABLE_MEDIA_TYPES.has(item.media_type),
   );
 }

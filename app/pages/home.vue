@@ -62,7 +62,7 @@
               >, {{ importResult.skipped }} skipped</template
             >
           </template>
-          <template v-else>Geotagged photos from Instagram are ready</template>
+          <template v-else>Photos from Instagram are ready to import</template>
         </p>
         <p class="alert__msg">
           Import them straight into your journal entries.

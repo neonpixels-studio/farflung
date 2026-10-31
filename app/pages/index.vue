@@ -129,8 +129,8 @@
             <div class="feat__ico"><AppIcon name="instagram" :size="21" /></div>
             <h3>Auto-import photos</h3>
             <p>
-              Connect your camera roll and Instagram — geotagged shots flow
-              straight onto the right place on the map.
+              Connect your camera roll and Instagram. Photos import to your
+              journal, then you place them on the map.
             </p>
           </div>
         </div>
@@ -204,8 +204,8 @@
             <div class="step__ico"><AppIcon name="pin" :size="22" /></div>
             <h3>Pin it</h3>
             <p>
-              Tap the map or import a geotagged photo. The place is saved with
-              its exact coordinates and date.
+              Tap the map to drop a pin. The place is saved with its exact
+              coordinates and date.
             </p>
           </div>
           <div class="step">

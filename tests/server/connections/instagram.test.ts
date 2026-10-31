@@ -5,7 +5,7 @@
  * are mocked so no network or database access occurs.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { entries, media } from "../../../server/db/schema";
+import { entries, media, places } from "../../../server/db/schema";
 
 // The connected-account row the import handler's connection lookup returns.
 const CONNECTED_ACCOUNT_ROW = {
@@ -40,7 +40,7 @@ const {
   mockFetchInstagramUser,
   mockFetchInstagramMedia,
   mockFetchInstagramImage,
-  mockFilterGeotaggedMedia,
+  mockFilterImportableMedia,
   mockEncryptToken,
   mockDecryptToken,
   mockEnsureFreshInstagramToken,
@@ -62,7 +62,7 @@ const {
   const mockDbInsertOnConflict = vi.fn().mockResolvedValue(undefined);
   const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: "new-id" }]);
   // The value returned by insert().values(): awaitable (entryPhotos inserts
-  // without .returning()) and also exposing .returning() (places/entries/media)
+  // without .returning()) and also exposing .returning() (entries/media)
   // and .onConflictDoUpdate() (token upserts) — the neon-http import path writes
   // sequentially on the base client instead of inside database.transaction().
   // Defined once and reused wherever the insert-values implementation is (re)set.
@@ -143,7 +143,7 @@ const {
     mockFetchInstagramImage: vi
       .fn()
       .mockResolvedValue(Buffer.from("fake-image-bytes")),
-    mockFilterGeotaggedMedia: vi.fn().mockReturnValue([]),
+    mockFilterImportableMedia: vi.fn().mockReturnValue([]),
     mockEncryptToken: vi.fn().mockReturnValue("encrypted-token"),
     mockDecryptToken: vi.fn().mockReturnValue("long-token"),
     mockEnsureFreshInstagramToken: vi.fn().mockResolvedValue("long-token"),
@@ -194,12 +194,11 @@ vi.mock("../../../server/utils/instagramClient", () => ({
   fetchInstagramUser: mockFetchInstagramUser,
   fetchInstagramMedia: mockFetchInstagramMedia,
   fetchInstagramImage: mockFetchInstagramImage,
-  filterGeotaggedMedia: mockFilterGeotaggedMedia,
+  filterImportableMedia: mockFilterImportableMedia,
   INSTAGRAM_SCOPES: "instagram_business_basic",
-  INSTAGRAM_MEDIA_FIELDS:
-    "id,caption,media_type,timestamp,permalink,media_url,location",
+  INSTAGRAM_MEDIA_FIELDS: "id,caption,media_type,timestamp,permalink,media_url",
   INSTAGRAM_MEDIA_LIMIT: 50,
-  INSTAGRAM_GEOTAGGED_MEDIA_TYPES: new Set(["IMAGE", "CAROUSEL_ALBUM"]),
+  INSTAGRAM_IMPORTABLE_MEDIA_TYPES: new Set(["IMAGE", "CAROUSEL_ALBUM"]),
   // Lowered from the production cap so the per-run bound is exercised with a
   // small fixture: three new items overflow a cap of two.
   INSTAGRAM_IMPORT_MAX_ITEMS_PER_RUN: 2,
@@ -744,8 +743,7 @@ describe("POST /api/connections/instagram/import", () => {
         Promise.all(statements),
       );
     // The connection lookup (.where().limit()) resolves first and returns the
-    // connected account row; every later .limit() (resolveOrCreatePlace) resolves
-    // to [] so the import path always inserts a fresh place.
+    // connected account row; every later .limit() resolves to [].
     mockDbSelectLimit.mockReset();
     mockDbSelectLimit
       .mockResolvedValue([])
@@ -773,7 +771,7 @@ describe("POST /api/connections/instagram/import", () => {
     mockProbeImageDimensions.mockResolvedValue({ width: 1200, height: 800 });
     mockGenerateThumbnail.mockResolvedValue(Buffer.from("thumb"));
     mockFetchInstagramMedia.mockResolvedValue({ data: [] });
-    mockFilterGeotaggedMedia.mockReturnValue([]);
+    mockFilterImportableMedia.mockReturnValue([]);
     mockAssertInstagramSyncAllowed.mockResolvedValue(undefined);
   });
 
@@ -789,7 +787,7 @@ describe("POST /api/connections/instagram/import", () => {
     expect(mockFetchInstagramMedia).not.toHaveBeenCalled();
   });
 
-  it("returns { imported: 0, skipped: 0, errors: [], hasMore: false } when no geotagged photos exist", async () => {
+  it("returns { imported: 0, skipped: 0, errors: [], hasMore: false } when no importable photos exist", async () => {
     const result = await call(importHandler, makeEvent());
 
     expect(result).toEqual({
@@ -839,16 +837,15 @@ describe("POST /api/connections/instagram/import", () => {
     expect(mockFetchInstagramMedia).not.toHaveBeenCalled();
   });
 
-  it("calls fetchInstagramImage for each new geotagged item", async () => {
-    const geotaggedItem = {
+  it("calls fetchInstagramImage for each new importable item", async () => {
+    const importableItem = {
       id: "ig-media-1",
       media_type: "IMAGE",
       media_url: "https://cdn.instagram.com/photo.jpg",
       timestamp: "2024-01-01T00:00:00Z",
       permalink: "https://www.instagram.com/p/abc/",
-      location: { name: "Paris", latitude: 48.8566, longitude: 2.3522 },
     };
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedItem]);
+    mockFilterImportableMedia.mockReturnValue([importableItem]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockGetDb.mockReturnValue(makeImportDb());
 
@@ -859,19 +856,47 @@ describe("POST /api/connections/instagram/import", () => {
     );
   });
 
-  const geotaggedPhoto = {
+  const importablePhoto = {
     id: "ig-media-thumb",
     media_type: "IMAGE",
     media_url: "https://cdn.instagram.com/photo.jpg",
     timestamp: "2024-01-01T00:00:00Z",
     permalink: "https://www.instagram.com/p/abc/",
-    location: { name: "Paris", latitude: 48.8566, longitude: 2.3522 },
   };
+
+  it("imports an item with no location as an entry with no place and a neutral title", async () => {
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
+    const capturedInserts: Record<string, unknown>[] = [];
+    mockGetDb.mockReturnValue(makeImportDb(capturedInserts));
+
+    const result = await call(importHandler, makeEvent());
+
+    expect(result).toMatchObject({ imported: 1, errors: [] });
+    const entryInsert = capturedInserts.find((row) => "occurredAt" in row);
+    expect(entryInsert).toBeDefined();
+    expect(entryInsert!.placeId ?? null).toBeNull();
+    expect(entryInsert!.title).toBe("Instagram photo");
+    expect(mockDbInsert).not.toHaveBeenCalledWith(places);
+  });
+
+  it("uses the caption as the entry title and body when present", async () => {
+    mockFilterImportableMedia.mockReturnValue([
+      { ...importablePhoto, caption: "Sunset over the harbour" },
+    ]);
+    const capturedInserts: Record<string, unknown>[] = [];
+    mockGetDb.mockReturnValue(makeImportDb(capturedInserts));
+
+    await call(importHandler, makeEvent());
+
+    const entryInsert = capturedInserts.find((row) => "occurredAt" in row);
+    expect(entryInsert!.title).toBe("Sunset over the harbour");
+    expect(entryInsert!.body).toBe("Sunset over the harbour");
+  });
 
   it("probes dimensions and stores original + thumbnail blobs for each imported photo", async () => {
     const imageBuffer = Buffer.from("real-image-bytes");
     const thumbnailBuffer = Buffer.from("thumb");
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(imageBuffer);
     mockGenerateThumbnail.mockResolvedValue(thumbnailBuffer);
     mockGetDb.mockReturnValue(makeImportDb());
@@ -900,7 +925,7 @@ describe("POST /api/connections/instagram/import", () => {
 
   it("records the probed width/height on the imported media row", async () => {
     const capturedInserts: Record<string, unknown>[] = [];
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockGetDb.mockReturnValue(makeImportDb(capturedInserts));
 
@@ -925,7 +950,7 @@ describe("POST /api/connections/instagram/import", () => {
     // Rows are committed before storeMediaBlobs runs, so a thumbnail store
     // rejection must degrade to a missing thumbnail — never a miscounted
     // import for a photo that is already in the DB and visible in the UI.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockPutMediaBlob
       .mockResolvedValueOnce(undefined)
@@ -945,7 +970,7 @@ describe("POST /api/connections/instagram/import", () => {
     // and (because source_id is in the table) the item would be skipped forever.
     // So the rows are rolled back — freeing source_id for a retry — and the
     // failure surfaces as a per-item error rather than a silent success.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockPutMediaBlob.mockRejectedValueOnce(new Error("blob store down"));
     const importDb = makeImportDb();
@@ -973,7 +998,7 @@ describe("POST /api/connections/instagram/import", () => {
 
   it("still imports the original with null dimensions when the image can't be processed", async () => {
     const capturedInserts: Record<string, unknown>[] = [];
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockProbeImageDimensions.mockResolvedValue(null);
     mockGenerateThumbnail.mockResolvedValue(null);
@@ -995,7 +1020,6 @@ describe("POST /api/connections/instagram/import", () => {
       media_url: "https://cdn.instagram.com/old.jpg",
       timestamp: "2024-01-01T00:00:00Z",
       permalink: "https://www.instagram.com/p/old/",
-      location: { name: "Rome", latitude: 41.9028, longitude: 12.4964 },
     };
     const newItem = {
       id: "ig-media-new",
@@ -1003,10 +1027,9 @@ describe("POST /api/connections/instagram/import", () => {
       media_url: "https://cdn.instagram.com/new.jpg",
       timestamp: "2024-06-01T00:00:00Z",
       permalink: "https://www.instagram.com/p/new/",
-      location: { name: "Madrid", latitude: 40.4168, longitude: -3.7038 },
     };
 
-    mockFilterGeotaggedMedia.mockReturnValue([alreadyImportedItem, newItem]);
+    mockFilterImportableMedia.mockReturnValue([alreadyImportedItem, newItem]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
 
     // Dedupe query returns the already-imported source_id.
@@ -1038,9 +1061,8 @@ describe("POST /api/connections/instagram/import", () => {
       media_url: "https://cdn.instagram.com/photo.jpg",
       timestamp: "2024-01-01T00:00:00Z",
       permalink: "https://www.instagram.com/p/abc/",
-      location: { name: "Paris", latitude: 48.8566, longitude: 2.3522 },
     };
-    mockFilterGeotaggedMedia.mockReturnValue([item]);
+    mockFilterImportableMedia.mockReturnValue([item]);
 
     mockDbSelectWhere.mockImplementationOnce(() => {
       const thenable = Promise.resolve([] as unknown[]);
@@ -1073,7 +1095,7 @@ describe("POST /api/connections/instagram/import", () => {
   });
 
   it("scopes the connection lookup and dedupe query to the authenticated user", async () => {
-    // Provide a geotagged item so the dedupe query runs (it is skipped when
+    // Provide an importable item so the dedupe query runs (it is skipped when
     // the media list is empty).
     const item = {
       id: "ig-media-scope-test",
@@ -1081,36 +1103,34 @@ describe("POST /api/connections/instagram/import", () => {
       media_url: "https://cdn.instagram.com/photo.jpg",
       timestamp: "2024-01-01T00:00:00Z",
       permalink: "https://www.instagram.com/p/abc/",
-      location: { name: "Paris", latitude: 48.8566, longitude: 2.3522 },
     };
-    mockFilterGeotaggedMedia.mockReturnValue([item]);
+    mockFilterImportableMedia.mockReturnValue([item]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockGetDb.mockReturnValue(makeImportDb());
 
     await call(importHandler, makeEvent());
 
-    // Three select chains pass through where(): the user-scoped connection
-    // lookup, the user-scoped dedupe query, and the per-photo place lookup.
-    expect(mockDbSelectWhere).toHaveBeenCalledTimes(3);
+    // Two select chains pass through where(): the user-scoped connection
+    // lookup and the user-scoped dedupe query.
+    expect(mockDbSelectWhere).toHaveBeenCalledTimes(2);
   });
 
-  function makeGeotaggedItem(id: string): Record<string, unknown> {
+  function makeImportableItem(id: string): Record<string, unknown> {
     return {
       id,
       media_type: "IMAGE",
       media_url: `https://cdn.instagram.com/${id}.jpg`,
       timestamp: "2024-01-01T00:00:00Z",
       permalink: `https://www.instagram.com/p/${id}/`,
-      location: { name: "Paris", latitude: 48.8566, longitude: 2.3522 },
     };
   }
 
   it("imports at most INSTAGRAM_IMPORT_MAX_ITEMS_PER_RUN new photos and reports hasMore", async () => {
-    // Cap is mocked to 2; three new geotagged items overflow it.
-    mockFilterGeotaggedMedia.mockReturnValue([
-      makeGeotaggedItem("ig-a"),
-      makeGeotaggedItem("ig-b"),
-      makeGeotaggedItem("ig-c"),
+    // Cap is mocked to 2; three new importable items overflow it.
+    mockFilterImportableMedia.mockReturnValue([
+      makeImportableItem("ig-a"),
+      makeImportableItem("ig-b"),
+      makeImportableItem("ig-c"),
     ]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockGetDb.mockReturnValue(makeImportDb());
@@ -1129,9 +1149,9 @@ describe("POST /api/connections/instagram/import", () => {
   });
 
   it("reports hasMore false when the pending items fit within one run", async () => {
-    mockFilterGeotaggedMedia.mockReturnValue([
-      makeGeotaggedItem("ig-a"),
-      makeGeotaggedItem("ig-b"),
+    mockFilterImportableMedia.mockReturnValue([
+      makeImportableItem("ig-a"),
+      makeImportableItem("ig-b"),
     ]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockGetDb.mockReturnValue(makeImportDb());
@@ -1150,13 +1170,13 @@ describe("POST /api/connections/instagram/import", () => {
 
   it("excludes already-imported items before applying the per-run cap", async () => {
     // 2 already-imported + 3 new; the cap of 2 must slice the *pending* items,
-    // not the raw geotagged list — so 2 import, 2 are skipped, 1 remains.
-    mockFilterGeotaggedMedia.mockReturnValue([
-      makeGeotaggedItem("ig-old-1"),
-      makeGeotaggedItem("ig-old-2"),
-      makeGeotaggedItem("ig-new-1"),
-      makeGeotaggedItem("ig-new-2"),
-      makeGeotaggedItem("ig-new-3"),
+    // not the raw importable list, so 2 import, 2 are skipped, 1 remains.
+    mockFilterImportableMedia.mockReturnValue([
+      makeImportableItem("ig-old-1"),
+      makeImportableItem("ig-old-2"),
+      makeImportableItem("ig-new-1"),
+      makeImportableItem("ig-new-2"),
+      makeImportableItem("ig-new-3"),
     ]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockGetDb.mockReturnValue(makeImportDb());
@@ -1187,10 +1207,10 @@ describe("POST /api/connections/instagram/import", () => {
     // Three new items overflow the cap of 2, but every import fails, so no
     // source_id is written; re-running would re-slice the same stuck items.
     // hasMore must be false to avoid an endless retry loop.
-    mockFilterGeotaggedMedia.mockReturnValue([
-      makeGeotaggedItem("ig-a"),
-      makeGeotaggedItem("ig-b"),
-      makeGeotaggedItem("ig-c"),
+    mockFilterImportableMedia.mockReturnValue([
+      makeImportableItem("ig-a"),
+      makeImportableItem("ig-b"),
+      makeImportableItem("ig-c"),
     ]);
     mockFetchInstagramImage.mockRejectedValue(new Error("CDN 404"));
     mockGetDb.mockReturnValue(makeImportDb());
@@ -1212,10 +1232,10 @@ describe("POST /api/connections/instagram/import", () => {
   it("still advertises a resume when part of the batch fails but one succeeds", async () => {
     // Cap 2; batch is [ig-a, ig-b]. ig-a's image fetch fails, ig-b succeeds, so
     // progress was made and a third item still waits — hasMore stays true.
-    mockFilterGeotaggedMedia.mockReturnValue([
-      makeGeotaggedItem("ig-a"),
-      makeGeotaggedItem("ig-b"),
-      makeGeotaggedItem("ig-c"),
+    mockFilterImportableMedia.mockReturnValue([
+      makeImportableItem("ig-a"),
+      makeImportableItem("ig-b"),
+      makeImportableItem("ig-c"),
     ]);
     mockFetchInstagramImage
       .mockRejectedValueOnce(new Error("CDN 404"))
@@ -1239,9 +1259,9 @@ describe("POST /api/connections/instagram/import", () => {
   it("stops mid-batch when the wall-time budget is spent", async () => {
     vi.useFakeTimers();
     try {
-      mockFilterGeotaggedMedia.mockReturnValue([
-        makeGeotaggedItem("ig-a"),
-        makeGeotaggedItem("ig-b"),
+      mockFilterImportableMedia.mockReturnValue([
+        makeImportableItem("ig-a"),
+        makeImportableItem("ig-b"),
       ]);
       // The first import overruns the (mocked 60s) budget, so the loop must
       // break before starting the second item — proving the time budget, not
@@ -1270,9 +1290,9 @@ describe("POST /api/connections/instagram/import", () => {
   it("still attempts one item when the budget was spent before the loop began", async () => {
     vi.useFakeTimers();
     try {
-      mockFilterGeotaggedMedia.mockReturnValue([
-        makeGeotaggedItem("ig-a"),
-        makeGeotaggedItem("ig-b"),
+      mockFilterImportableMedia.mockReturnValue([
+        makeImportableItem("ig-a"),
+        makeImportableItem("ig-b"),
       ]);
       // The page walk itself consumes the whole budget, so the loop enters
       // already past the deadline. The forward-progress guard must still attempt
@@ -1304,7 +1324,7 @@ describe("POST /api/connections/instagram/import", () => {
     // The app's drizzle client uses the neon-http driver, which throws on
     // database.transaction(). Every import row must be written sequentially on
     // the base client instead; a stray transaction() call 500s the whole run.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     const importDb = makeImportDb();
     mockGetDb.mockReturnValue(importDb);
@@ -1320,7 +1340,7 @@ describe("POST /api/connections/instagram/import", () => {
   });
 
   it("writes the entry and entryPhotos as one atomic batch call after the media row commits (issue #226)", async () => {
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     const importDb = makeImportDb();
     mockGetDb.mockReturnValue(importDb);
@@ -1347,7 +1367,7 @@ describe("POST /api/connections/instagram/import", () => {
     // persistImportedPhotoRows. Either way the already-committed media row
     // must not be left behind, since its source_id would block every future
     // retry of this item.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockDbBatch.mockRejectedValueOnce(new Error("constraint violation"));
     const importDb = makeImportDb();
@@ -1369,13 +1389,13 @@ describe("POST /api/connections/instagram/import", () => {
   });
 
   it("rolls back defensively with id-scoped deletes when the standalone media insert fails", async () => {
-    // The media insert runs alone, first — before resolveOrCreatePlace and
-    // before the entries/entryPhotos batch — specifically so a concurrent
+    // The media insert runs alone, first, before the entries/entryPhotos
+    // batch, specifically so a concurrent
     // import racing the same Instagram item loses here (see the comment on
     // persistImportedPhotoRows). This is the only test that drives a failure
     // through that standalone insert rather than through the later batch or
     // the post-commit blob write.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     // The media insert is the first values() call in the flow and is no
     // longer awaited via .returning(), so reject the values() call itself.
@@ -1393,37 +1413,7 @@ describe("POST /api/connections/instagram/import", () => {
     expect(result.imported).toBe(0);
     expect(result.errors[0]).toContain("ig-media-thumb");
     expect(result.errors[0]).not.toContain("leaked");
-    // resolveOrCreatePlace and the entries/entryPhotos batch never ran.
-    expect(mockDbBatch).not.toHaveBeenCalled();
-    expect(mockDbDelete).toHaveBeenNthCalledWith(1, entries);
-    expect(mockDbDelete).toHaveBeenNthCalledWith(2, media);
-    expect(mockPutMediaBlob).not.toHaveBeenCalled();
-  });
-
-  it("rolls back defensively with id-scoped deletes when resolveOrCreatePlace fails", async () => {
-    // The other in-guard path between the media insert and the batch: a place
-    // lookup/insert failure must roll back the media row that already
-    // committed, the same as any other failure in this sequence.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
-    mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
-    // First .limit() call is the connection lookup (resolves the connected
-    // account); the second is resolveOrCreatePlace's existing-place select,
-    // which here rejects instead of resolving.
-    mockDbSelectLimit
-      .mockReset()
-      .mockResolvedValueOnce([CONNECTED_ACCOUNT_ROW])
-      .mockRejectedValueOnce(new Error("place lookup failed"));
-    const importDb = makeImportDb();
-    mockGetDb.mockReturnValue(importDb);
-
-    const result = (await call(importHandler, makeEvent())) as {
-      imported: number;
-      errors: string[];
-    };
-
-    expect(result.imported).toBe(0);
-    expect(result.errors[0]).toContain("ig-media-thumb");
-    expect(result.errors[0]).not.toContain("leaked");
+    // The entries/entryPhotos batch never ran.
     expect(mockDbBatch).not.toHaveBeenCalled();
     expect(mockDbDelete).toHaveBeenNthCalledWith(1, entries);
     expect(mockDbDelete).toHaveBeenNthCalledWith(2, media);
@@ -1434,7 +1424,7 @@ describe("POST /api/connections/instagram/import", () => {
     // The blob store runs after the DB batch commits and is not part of that
     // transaction, so a failure there still needs the hand-rolled rollback
     // (unlike a DB-only failure, which the atomic batch now handles itself).
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockPutMediaBlob.mockRejectedValueOnce(new Error("blob store down"));
     const importDb = makeImportDb();
@@ -1460,7 +1450,7 @@ describe("POST /api/connections/instagram/import", () => {
     // Entry delete fails, media delete succeeds: the media guard is gone so the
     // item can re-import, but the leaked entry would then be duplicated — the
     // per-item error must say so rather than read as a clean retry.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockPutMediaBlob.mockRejectedValueOnce(new Error("blob store down"));
     const importDb = makeImportDb();
@@ -1488,7 +1478,7 @@ describe("POST /api/connections/instagram/import", () => {
     // not suppress the media delete. And when a rollback delete does fail, the
     // per-item error must say so loudly — a leaked media row makes the item skip
     // forever, which the plain error message would otherwise hide as retryable.
-    mockFilterGeotaggedMedia.mockReturnValue([geotaggedPhoto]);
+    mockFilterImportableMedia.mockReturnValue([importablePhoto]);
     mockFetchInstagramImage.mockResolvedValue(Buffer.from("img"));
     mockPutMediaBlob.mockRejectedValueOnce(new Error("blob store down"));
     const importDb = makeImportDb();
