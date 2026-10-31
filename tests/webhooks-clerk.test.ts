@@ -329,6 +329,42 @@ describe("clerk webhook handler", () => {
     expect(result).toEqual({ ok: true });
   });
 
+  it("acknowledges an email conflict wrapped by Drizzle so Svix does not retry", async () => {
+    process.env.NUXT_CLERK_WEBHOOK_SECRET = TEST_SECRET;
+    mockReadRawBody.mockResolvedValue(JSON.stringify(SAMPLE_PAYLOAD));
+    mockVerifySvixSignature.mockReturnValue(SAMPLE_PAYLOAD);
+    mockOnConflictDoUpdate.mockRejectedValueOnce(
+      Object.assign(new Error("Failed query"), {
+        cause: Object.assign(new Error("duplicate key value"), {
+          code: "23505",
+        }),
+      }),
+    );
+
+    await expect(
+      (clerkWebhookHandler as (event: object) => Promise<unknown>)(
+        buildMockEvent(),
+      ),
+    ).resolves.toEqual({ ok: true });
+  });
+
+  it("throws 500 on any other database failure so Svix redelivers", async () => {
+    process.env.NUXT_CLERK_WEBHOOK_SECRET = TEST_SECRET;
+    mockReadRawBody.mockResolvedValue(JSON.stringify(SAMPLE_PAYLOAD));
+    mockVerifySvixSignature.mockReturnValue(SAMPLE_PAYLOAD);
+    mockOnConflictDoUpdate.mockRejectedValueOnce(
+      Object.assign(new Error("Failed query"), {
+        cause: new Error("connection terminated"),
+      }),
+    );
+
+    await expect(
+      (clerkWebhookHandler as (event: object) => Promise<unknown>)(
+        buildMockEvent(),
+      ),
+    ).rejects.toMatchObject({ statusCode: 500 });
+  });
+
   it("skips provisioning a brand-new user when sign-ups are disabled", async () => {
     mockUseRuntimeConfig.mockReturnValue({ disableSignups: "true" });
     mockLimit.mockResolvedValue([]); // no existing row for this user

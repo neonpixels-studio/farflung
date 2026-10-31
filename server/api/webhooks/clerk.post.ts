@@ -16,6 +16,8 @@ const EVENT_USER_CREATED = "user.created";
 const EVENT_USER_UPDATED = "user.updated";
 const EVENT_USER_DELETED = "user.deleted";
 
+const POSTGRES_UNIQUE_VIOLATION = "23505";
+
 interface ClerkEmailAddress {
   id: string;
   email_address: string;
@@ -67,6 +69,15 @@ function extractPrimaryEmail(
   )?.email_address;
 }
 
+// Drizzle wraps driver errors in DrizzleQueryError, leaving the code on `cause`.
+function isUniqueViolation(error: unknown): boolean {
+  const { code, cause } = error as {
+    code?: string;
+    cause?: { code?: string };
+  };
+  return (cause?.code ?? code) === POSTGRES_UNIQUE_VIOLATION;
+}
+
 async function handleUserUpsert(
   payload: ClerkUserUpsertPayload,
 ): Promise<void> {
@@ -108,13 +119,18 @@ async function handleUserUpsert(
         set: { email },
       });
   } catch (error) {
-    // The email column has a UNIQUE constraint. A unique-violation here means
-    // the email is already owned by a different users row (e.g. a delete/re-signup
-    // race). Log and acknowledge so Clerk does not retry indefinitely.
-    console.error(
-      `Clerk webhook: could not upsert user ${payload.id} — email conflict or other DB error`,
-      error,
-    );
+    console.error(`Clerk webhook: could not upsert user ${payload.id}`, error);
+
+    // The email already belongs to a different users row (e.g. a delete/re-signup
+    // race). Retrying can't fix that, so acknowledge it. Anything else may be
+    // transient, so fail and let Svix redeliver rather than lose the user.
+    if (isUniqueViolation(error)) {
+      return;
+    }
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Could not save Clerk user",
+    });
   }
 }
 
