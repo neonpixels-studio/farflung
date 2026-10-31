@@ -709,12 +709,65 @@ describe("Settings page (/settings)", () => {
     expect(modalText).not.toContain("1 trips");
   });
 
+  it("disables save and hides discard until something changes", async () => {
+    const wrapper = mount(SettingsPage, globalConfig);
+    await flushPromises();
+    const saveButton = wrapper.find(".btn--primary");
+    expect(saveButton.attributes("disabled")).toBeDefined();
+    expect(wrapper.findAll("button").map((b) => b.text())).not.toContain(
+      "discard",
+    );
+
+    await wrapper.findAll(".segmented button")[1].trigger("click");
+    await flushPromises();
+
+    expect(saveButton.attributes("disabled")).toBeUndefined();
+    expect(wrapper.findAll("button").map((b) => b.text())).toContain("discard");
+  });
+
+  it("goes back to no changes when an edit is undone by hand", async () => {
+    const wrapper = mount(SettingsPage, globalConfig);
+    await flushPromises();
+    const unitButtons = wrapper.findAll(".segmented button");
+    await unitButtons[1].trigger("click");
+    await unitButtons[0].trigger("click");
+    await flushPromises();
+    expect(wrapper.find(".btn--primary").attributes("disabled")).toBeDefined();
+  });
+
+  it("discard restores saved values, including names", async () => {
+    clerkUserRef.value = buildClerkUser();
+    const wrapper = mount(SettingsPage, globalConfig);
+    await flushPromises();
+    const profile = (
+      wrapper.vm as unknown as {
+        profile: { bio: string; firstName: string };
+      }
+    ).profile;
+    const savedFirstName = profile.firstName;
+    const savedBio = profile.bio;
+    profile.bio = "Edited bio";
+    profile.firstName = "Edited";
+    await flushPromises();
+
+    const discardButton = wrapper
+      .findAll("button")
+      .find((button) => button.text() === "discard");
+    await discardButton?.trigger("click");
+    await flushPromises();
+
+    expect(profile.bio).toBe(savedBio);
+    expect(profile.firstName).toBe(savedFirstName);
+    expect(wrapper.find(".btn--primary").attributes("disabled")).toBeDefined();
+  });
+
   it("shows saved toast after a successful save", async () => {
     const wrapper = mount(SettingsPage, globalConfig);
     expect(wrapper.find(".saved-bar").classes()).not.toContain("show");
+    await wrapper.findAll(".segmented button")[1].trigger("click");
+    await wrapper.vm.$nextTick();
     await wrapper.find(".btn--primary").trigger("click");
-    await wrapper.vm.$nextTick();
-    await wrapper.vm.$nextTick();
+    await flushPromises();
     expect(wrapper.find(".saved-bar").classes()).toContain("show");
   });
 
@@ -767,6 +820,7 @@ describe("Settings page (/settings)", () => {
     await flushPromises();
     (wrapper.vm as unknown as { profile: { bio: string } }).profile.bio =
       "New bio";
+    await flushPromises();
     await wrapper.find(".btn--primary").trigger("click");
     await flushPromises();
 
@@ -821,6 +875,7 @@ describe("Settings page (/settings)", () => {
       await flushPromises();
 
       setForm(wrapper, { firstName: "Daniel", lastName: "Holloran" });
+      await flushPromises();
       await wrapper.find(".btn--primary").trigger("click");
       await flushPromises();
 
@@ -834,6 +889,7 @@ describe("Settings page (/settings)", () => {
       await flushPromises();
 
       setForm(wrapper, { lastName: "" });
+      await flushPromises();
       await wrapper.find(".btn--primary").trigger("click");
       await flushPromises();
 
@@ -846,6 +902,7 @@ describe("Settings page (/settings)", () => {
       await flushPromises();
 
       setForm(wrapper, { firstName: "   " });
+      await flushPromises();
       await wrapper.find(".btn--primary").trigger("click");
       await flushPromises();
 
@@ -862,6 +919,7 @@ describe("Settings page (/settings)", () => {
       await flushPromises();
 
       setForm(wrapper, { firstName: "Daniel" });
+      await flushPromises();
       await wrapper.find(".btn--primary").trigger("click");
       await flushPromises();
 

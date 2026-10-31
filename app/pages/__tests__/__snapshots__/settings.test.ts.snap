@@ -2,7 +2,9 @@
 
 exports[`Settings page (/settings) > renders without crashing and matches snapshot 1`] = `
 "<div data-v-a376170b="">
-  <header data-v-a376170b="" class="topbar"><button data-v-a376170b="" class="btn btn--ghost btn--sm">discard</button><button data-v-a376170b="" class="btn btn--primary btn--sm"><svg data-v-a376170b="" data-icon="" name="check" size="14"></svg> save changes </button></header>
+  <header data-v-a376170b="" class="topbar">
+    <!--v-if--><button data-v-a376170b="" class="btn btn--primary btn--sm" disabled=""><svg data-v-a376170b="" data-icon="" name="check" size="14"></svg> save changes </button>
+  </header>
   <div data-v-a376170b="" class="content content--wide">
     <!--v-if-->
     <div data-v-a376170b="" class="set-layout">
