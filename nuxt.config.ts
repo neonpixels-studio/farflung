@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
+import { addHandleProfileRoute } from "./handle-route.config";
 import { FAVICON_HEAD_LINKS, FAVICON_HEAD_META } from "./favicon-head.config";
 import { buildPublicRuntimeConfig } from "./public-runtime-config";
 import {
@@ -8,6 +9,7 @@ import {
   SCHEDULED_FUNCTION_ENV_MODULE_PATH,
 } from "./scheduled-function-env";
 import { buildSecurityRouteRules } from "./security-headers.config";
+import { THEME_INIT_SCRIPT } from "./theme-head.config";
 
 function writeScheduledFunctionEnvModule() {
   mkdirSync(dirname(SCHEDULED_FUNCTION_ENV_MODULE_PATH), { recursive: true });
@@ -25,6 +27,7 @@ export default defineNuxtConfig({
     head: {
       link: FAVICON_HEAD_LINKS,
       meta: FAVICON_HEAD_META,
+      script: [{ innerHTML: THEME_INIT_SCRIPT, tagPosition: "head" }],
     },
   },
   sourcemap: { client: "hidden" },
@@ -79,6 +82,7 @@ export default defineNuxtConfig({
   },
   hooks: {
     "modules:done": writeScheduledFunctionEnvModule,
+    "pages:extend": (pages) => addHandleProfileRoute(pages),
   },
   css: ["~/assets/css/main.css", "mapbox-gl/dist/mapbox-gl.css"],
   devtools: { enabled: true },

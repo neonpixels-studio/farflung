@@ -36,9 +36,13 @@ describe("resolveMapboxStyleUrl", () => {
     );
   });
 
-  it("returns a mapbox style URL for the custom key (falls back to outdoors base)", () => {
-    const url = resolveMapboxStyleUrl("custom");
-    expect(url).toMatch(/^mapbox:\/\/styles\//);
+  it("builds the brand (custom) style on the light base, which is recoloured at runtime", () => {
+    expect(resolveMapboxStyleUrl("custom")).toBe(
+      "mapbox://styles/mapbox/light-v11",
+    );
+    expect(resolveMapboxStyleUrl("custom")).not.toBe(
+      resolveMapboxStyleUrl("outdoors"),
+    );
   });
 
   it("falls back to the outdoors URL for an unknown key", () => {

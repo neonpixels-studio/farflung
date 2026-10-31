@@ -2,9 +2,8 @@
  * GET /api/billing/portal
  *
  * Creates a Stripe Billing Portal session for the authenticated user's
- * existing Stripe customer and redirects the browser there so they can view
- * invoices, update their payment method, or cancel. Navigated to via a
- * full-page redirect from <PlanManageButton>, the same convention as
+ * existing Stripe customer and returns its URL so they can view invoices,
+ * update their payment method, or cancel. Same convention as
  * server/api/billing/checkout.get.ts.
  */
 
@@ -49,5 +48,5 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  return sendRedirect(event, session.url, 302);
+  return { url: session.url };
 });

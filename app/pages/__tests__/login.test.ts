@@ -42,6 +42,11 @@ describe("Login page (/login)", () => {
     expect(wrapper.html()).toMatchSnapshot();
   });
 
+  it("has no theme switcher, so the page follows the system theme", () => {
+    const wrapper = mount(LoginPage, globalConfig);
+    expect(wrapper.find(".theme-toggle").exists()).toBe(false);
+  });
+
   it("renders the brand panel on the left", () => {
     const wrapper = mount(LoginPage, globalConfig);
     expect(wrapper.find(".auth__brand").exists()).toBe(true);

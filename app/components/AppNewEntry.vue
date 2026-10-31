@@ -67,7 +67,7 @@
             />
           </div>
           <p class="dropzone__hint">
-            Drag photos here, or import geotagged shots from
+            Drag photos here, or import photos from
             <AppIcon name="instagram" :size="13" style="vertical-align: -2px" />
             Instagram.
           </p>

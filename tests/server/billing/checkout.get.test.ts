@@ -69,8 +69,8 @@ describe("GET /api/billing/checkout", () => {
     process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://farflung.io";
   });
 
-  it("creates a checkout session and redirects to its URL", async () => {
-    await call();
+  it("creates a checkout session and returns its URL", async () => {
+    const response = await call();
 
     expect(mockCreateCheckoutSession).toHaveBeenCalledWith({
       userId: "user-1",
@@ -79,11 +79,9 @@ describe("GET /api/billing/checkout", () => {
       successUrl: "https://farflung.io/settings#billing",
       cancelUrl: "https://farflung.io/pricing",
     });
-    expect(mockSendRedirect).toHaveBeenCalledWith(
-      expect.anything(),
-      "https://checkout.stripe.com/session_123",
-      302,
-    );
+    expect(response).toEqual({
+      url: "https://checkout.stripe.com/session_123",
+    });
   });
 
   it("reuses an existing Stripe customer ID", async () => {

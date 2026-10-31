@@ -146,6 +146,7 @@ import { useTripsStore } from "~/stores/trips";
 import type { Trip } from "~/stores/trips";
 import { formatCompact } from "~/utils/formatNumber";
 import { useStats } from "~/composables/useStats";
+import { useDistanceUnit } from "~/composables/useDistanceUnit";
 import { formatTripDateRange } from "~/utils/tripDates";
 import { summarizeTripCounts } from "~/utils/tripCounts";
 import type { TripStatus } from "~/utils/tripDates";
@@ -176,6 +177,8 @@ const NO_TRIPS_MESSAGE = "No trips yet, plan your first route above.";
 const tripCountsSummary = computed(() =>
   summarizeTripCounts(tripsStore.tripList),
 );
+
+const { formatDistance } = useDistanceUnit();
 
 const distanceUnitShort = computed(() =>
   stats.value.distanceUnit === "km" ? "km" : "miles",
@@ -276,10 +279,6 @@ function tripStatusLabel(trip: Trip) {
 
 function formatTripDates(trip: Trip): string {
   return formatTripDateRange(trip.startDate, trip.endDate);
-}
-
-function formatDistance(distanceKm: number): string {
-  return `${distanceKm.toFixed(0)} km`;
 }
 </script>
 

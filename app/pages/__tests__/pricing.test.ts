@@ -62,6 +62,24 @@ describe("Pricing page (/pricing)", () => {
     expect(wrapper.html()).toContain("Nomad");
   });
 
+  it("labels unbuilt features coming soon and drops tiered support", () => {
+    const wrapper = mount(PricingPage, globalConfig);
+    const rowFor = (name: string) =>
+      wrapper
+        .findAll(".feat-row")
+        .find((row) => row.find("td").text() === name);
+    for (const feature of [
+      "GPX route import / export",
+      "Original-resolution backup",
+      "Offline maps",
+      "Year-in-review",
+      "Collaborative trips",
+    ]) {
+      expect(rowFor(feature)?.text()).toContain("coming soon");
+    }
+    expect(rowFor("Support")).toBeUndefined();
+  });
+
   it("renders category rows", () => {
     const wrapper = mount(PricingPage, globalConfig);
     expect(wrapper.findAll(".cat-row").length).toBeGreaterThan(0);
@@ -72,10 +90,10 @@ describe("Pricing page (/pricing)", () => {
     expect(wrapper.find(".thd--pop").text()).toContain("Wanderer");
   });
 
-  it("shows /login CTAs for the paid tiers when signed out", () => {
+  it("sends signed-out visitors to /sign-up from the paid tiers", () => {
     const wrapper = mount(PricingPage, globalConfig);
     expect(wrapper.findAll(".plan-checkout-btn")).toHaveLength(0);
-    expect(wrapper.find(".thd--pop a").attributes("to")).toBe("/login");
+    expect(wrapper.find(".thd--pop a").attributes("to")).toBe("/sign-up");
   });
 
   it("shows real checkout buttons for the paid tiers when signed in", () => {

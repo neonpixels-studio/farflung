@@ -33,6 +33,25 @@ vi.mock("~/composables/useStats", () => ({
   })),
 }));
 
+// The saved distance-unit preference useDistanceUnit reads. Each test sets it
+// (and the signed-in flag) explicitly through these.
+const mockPreferences = ref({ distanceUnit: "mi" });
+const clerkSignedIn = ref(true);
+
+vi.mock("~/composables/usePreferences", () => ({
+  usePreferences: () => ({
+    preferences: mockPreferences,
+    hasLoaded: ref(true),
+    fetchPreferences: vi.fn(),
+  }),
+}));
+
+vi.stubGlobal("useClerkAuth", () => ({
+  isSignedIn: clerkSignedIn,
+  isLoaded: ref(true),
+  getToken: vi.fn().mockResolvedValue(null),
+}));
+
 const SAMPLE_TRIPS: Trip[] = [
   {
     id: "1",
@@ -135,6 +154,8 @@ describe("Trips page (/trips)", () => {
   beforeEach(() => {
     pinia = createPinia();
     setActivePinia(pinia);
+    mockPreferences.value = { distanceUnit: "mi" };
+    clerkSignedIn.value = true;
 
     const tripsStore = useTripsStore();
     tripsStore.tripList = [...SAMPLE_TRIPS];
@@ -186,6 +207,23 @@ describe("Trips page (/trips)", () => {
   it("shows ongoing status badge on active trip card", () => {
     const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
     expect(wrapper.find(".tag--ongoing").exists()).toBe(true);
+  });
+
+  describe("trip distances follow the saved unit preference", () => {
+    // SAMPLE_TRIPS[0] is 892 km, which is 554 mi.
+    it("shows miles when the preference is miles", () => {
+      mockPreferences.value = { distanceUnit: "mi" };
+      const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
+      expect(wrapper.find(".feature").text()).toContain("554 mi");
+      expect(wrapper.find(".feature").text()).not.toContain("892 km");
+    });
+
+    it("shows kilometres when the preference is kilometres", () => {
+      mockPreferences.value = { distanceUnit: "km" };
+      const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
+      expect(wrapper.find(".feature").text()).toContain("892 km");
+      expect(wrapper.find(".feature").text()).not.toContain("554 mi");
+    });
   });
 
   it("shows the featured ongoing trip by name", () => {

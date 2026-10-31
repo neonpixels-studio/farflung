@@ -56,6 +56,7 @@
               <div class="thd__cta">
                 <NuxtLink
                   :to="freeTierCtaTarget"
+                  :external="!isSignedIn"
                   class="btn btn--outline btn--sm btn--block"
                   >start</NuxtLink
                 >
@@ -76,7 +77,8 @@
                 >
                 <NuxtLink
                   v-else
-                  to="/login"
+                  to="/sign-up"
+                  external
                   class="btn btn--primary btn--sm btn--block"
                   >free trial</NuxtLink
                 >
@@ -97,7 +99,8 @@
                 >
                 <NuxtLink
                   v-else
-                  to="/login"
+                  to="/sign-up"
+                  external
                   class="btn btn--outline btn--sm btn--block"
                   >free trial</NuxtLink
                 >
@@ -131,7 +134,7 @@
             <td>GPX route import / export</td>
             <td><DashCell /></td>
             <td class="pop"><DashCell /></td>
-            <td><CheckIcon /></td>
+            <td><ComingSoonCell /></td>
           </tr>
 
           <tr class="cat-row">
@@ -153,7 +156,7 @@
             <td>Original-resolution backup</td>
             <td><DashCell /></td>
             <td class="pop"><DashCell /></td>
-            <td><CheckIcon /></td>
+            <td><ComingSoonCell /></td>
           </tr>
 
           <tr class="cat-row">
@@ -168,18 +171,18 @@
           <tr class="feat-row">
             <td>Offline maps</td>
             <td><DashCell /></td>
-            <td class="pop"><CheckIcon /></td>
-            <td><CheckIcon /></td>
+            <td class="pop"><ComingSoonCell /></td>
+            <td><ComingSoonCell /></td>
           </tr>
           <tr class="feat-row">
-            <td>Year-in-review &amp; stats</td>
+            <td>Year-in-review</td>
             <td><DashCell /></td>
-            <td class="pop"><CheckIcon /></td>
-            <td><CheckIcon /></td>
+            <td class="pop"><ComingSoonCell /></td>
+            <td><ComingSoonCell /></td>
           </tr>
 
           <tr class="cat-row">
-            <td colspan="4">Sharing &amp; support</td>
+            <td colspan="4">Sharing</td>
           </tr>
           <tr class="feat-row">
             <td>Public traveler profile</td>
@@ -191,13 +194,7 @@
             <td>Collaborative trips</td>
             <td><DashCell /></td>
             <td class="pop"><DashCell /></td>
-            <td><CheckIcon /></td>
-          </tr>
-          <tr class="feat-row">
-            <td>Support</td>
-            <td>Community</td>
-            <td class="pop">Email</td>
-            <td>Priority</td>
+            <td><ComingSoonCell /></td>
           </tr>
         </tbody>
         <tfoot>
@@ -216,7 +213,11 @@
                 class="btn btn--primary btn--sm"
                 >start free trial</PlanCheckoutButton
               >
-              <NuxtLink v-else to="/login" class="btn btn--primary btn--sm"
+              <NuxtLink
+                v-else
+                to="/sign-up"
+                external
+                class="btn btn--primary btn--sm"
                 >start free trial</NuxtLink
               >
             </td>
@@ -228,7 +229,11 @@
                 class="btn btn--outline btn--sm"
                 >start free trial</PlanCheckoutButton
               >
-              <NuxtLink v-else to="/login" class="btn btn--outline btn--sm"
+              <NuxtLink
+                v-else
+                to="/sign-up"
+                external
+                class="btn btn--outline btn--sm"
                 >start free trial</NuxtLink
               >
             </td>
@@ -249,7 +254,7 @@ const { isSignedIn } = useClerkAuth();
 // Signed-in visitors already have an account — "start"/"get started" on the
 // free Drifter tier sends them straight into the app rather than back to login.
 const freeTierCtaTarget = computed(() =>
-  isSignedIn.value ? "/home" : "/login",
+  isSignedIn.value ? "/home" : "/sign-up",
 );
 
 const cycle = ref<"monthly" | "yearly">("monthly");
@@ -283,9 +288,20 @@ const DashCell = defineComponent({
     return () => h("span", { class: "dash" }, "—");
   },
 });
+
+const ComingSoonCell = defineComponent({
+  setup() {
+    return () => h("span", { class: "soon" }, "coming soon");
+  },
+});
 </script>
 
 <style scoped>
+.soon {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
 .mk-nav {
   position: sticky;
   top: 0;

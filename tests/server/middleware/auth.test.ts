@@ -305,4 +305,99 @@ describe("auth middleware", () => {
     expect(event.context.userId).toBeUndefined();
     expect(mockVerifyClerkToken).not.toHaveBeenCalled();
   });
+
+  describe("handle lookup (/api/handles/<handle>)", () => {
+    it("lets an anonymous GET on a handle through without verifying a token", async () => {
+      const event = makeEvent({ path: "/api/handles/grimicorn", headers: {} });
+
+      await runMiddleware(event);
+
+      expect(event.context.userId).toBeUndefined();
+      expect(mockVerifyClerkToken).not.toHaveBeenCalled();
+    });
+
+    it("identifies the viewer on a handle GET when a valid token is present", async () => {
+      mockVerifyClerkToken.mockResolvedValue(RESOLVED_USER);
+      const event = makeEvent({
+        path: "/api/handles/grimicorn",
+        headers: { authorization: "Bearer good" },
+      });
+
+      await runMiddleware(event);
+
+      expect(event.context.userId).toBe(RESOLVED_USER);
+    });
+
+    it("rejects a present-but-invalid token on a handle GET with 401", async () => {
+      mockVerifyClerkToken.mockRejectedValue(new Error("bad token"));
+      const event = makeEvent({
+        path: "/api/handles/grimicorn",
+        headers: { authorization: "Bearer bad" },
+      });
+
+      await expect(runMiddleware(event)).rejects.toMatchObject({
+        statusCode: 401,
+      });
+    });
+
+    it("keeps the availability check behind a bearer token", async () => {
+      const event = makeEvent({
+        path: "/api/handles/grimicorn/availability",
+        headers: {},
+      });
+
+      await expect(runMiddleware(event)).rejects.toMatchObject({
+        statusCode: 401,
+      });
+    });
+
+    it("requires a token for a non-GET method on a handle", async () => {
+      const event = makeEvent({
+        path: "/api/handles/grimicorn",
+        method: "DELETE",
+        headers: {},
+      });
+
+      await expect(runMiddleware(event)).rejects.toMatchObject({
+        statusCode: 401,
+      });
+    });
+  });
+
+  describe("Instagram OAuth callback", () => {
+    it("lets the browser redirect from Instagram through with no bearer token, and sets no user", async () => {
+      const event = makeEvent({
+        path: "/api/connections/instagram/callback?code=abc&state=xyz",
+        headers: {},
+      });
+
+      await runMiddleware(event);
+
+      expect(event.context.userId).toBeUndefined();
+      expect(mockVerifyClerkToken).not.toHaveBeenCalled();
+    });
+
+    it("does not open any other connections route", async () => {
+      const event = makeEvent({
+        path: "/api/connections/instagram/start",
+        headers: {},
+      });
+
+      await expect(runMiddleware(event)).rejects.toMatchObject({
+        statusCode: 401,
+      });
+    });
+
+    it("only opens the callback for GET", async () => {
+      const event = makeEvent({
+        path: "/api/connections/instagram/callback",
+        method: "POST",
+        headers: {},
+      });
+
+      await expect(runMiddleware(event)).rejects.toMatchObject({
+        statusCode: 401,
+      });
+    });
+  });
 });

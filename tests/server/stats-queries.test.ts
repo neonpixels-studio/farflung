@@ -6,7 +6,6 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
-  kmToMi,
   countPlaces,
   countDistinctCountries,
   sumTripStopDistanceKm,
@@ -17,6 +16,7 @@ import {
   aggregateUserStats,
 } from "../../server/utils/stats-queries";
 import type { Database } from "../../server/utils/stats-queries";
+import { kmToMi } from "../../server/utils/distance";
 
 // ---------------------------------------------------------------------------
 // Helpers for building chainable Drizzle-like mock query builders

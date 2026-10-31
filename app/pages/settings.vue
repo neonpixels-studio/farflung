@@ -1,10 +1,16 @@
 <template>
   <div>
     <AppTopbar title="Account" crumb="Settings">
-      <button class="btn btn--ghost btn--sm">discard</button>
+      <button
+        v-if="hasUnsavedChanges"
+        class="btn btn--ghost btn--sm"
+        @click="discardChanges"
+      >
+        discard
+      </button>
       <button
         class="btn btn--primary btn--sm"
-        :disabled="!!loadError"
+        :disabled="!!loadError || !hasUnsavedChanges"
         @click="saveChanges"
       >
         <AppIcon name="check" :size="14" />
@@ -98,13 +104,28 @@
               </div>
             </div>
             <div class="row">
-              <InputText v-model="profile.name" label="Display name" required />
               <InputText
-                v-model="profile.handle"
-                label="Public handle"
-                state="success"
+                v-model="profile.firstName"
+                label="First name"
+                required
+                autocomplete="given-name"
+                :state="firstNameState"
+                :hint="nameValidationError ?? undefined"
+              />
+              <InputText
+                v-model="profile.lastName"
+                label="Last name"
+                autocomplete="family-name"
               />
             </div>
+            <InputText
+              v-model="profile.handle"
+              label="Public handle"
+              autocomplete="off"
+              autocapitalize="none"
+              :state="handleState"
+              :hint="handleHint"
+            />
             <InputText
               v-model="profile.homeBase"
               label="Home base"
@@ -222,7 +243,7 @@
               <h3 class="display" style="margin-top: 8px">
                 Connected accounts
               </h3>
-              <p>Pull in geotagged photos and sign in faster.</p>
+              <p>Pull in your Instagram photos and sign in faster.</p>
             </div>
 
             <div v-if="connectionsLoadError" style="margin-bottom: 12px">
@@ -230,6 +251,9 @@
             </div>
             <div v-if="instagramConnectionSuccess" style="margin-bottom: 12px">
               <AppAlert intent="success" title="Instagram connected" />
+            </div>
+            <div v-if="googleConnectionSuccess" style="margin-bottom: 12px">
+              <AppAlert intent="success" title="Google connected" />
             </div>
             <div v-if="instagramConnectionError" style="margin-bottom: 12px">
               <AppAlert
@@ -267,7 +291,10 @@
               </div>
               <div class="conn__meta">
                 <b>Instagram</b>
-                <p>Auto-import geotagged photos into your entries.</p>
+                <p>
+                  Import your Instagram photos into your journal, then place
+                  them yourself.
+                </p>
               </div>
               <div class="right">
                 <template v-if="connections.instagram.connected">
@@ -287,7 +314,8 @@
                     disconnect
                   </button>
                 </template>
-                <template v-else>
+                <template v-else-if="!billingResolved" />
+                <template v-else-if="instagramAllowed">
                   <button
                     class="btn btn--primary btn--sm"
                     :disabled="connectionsLoading"
@@ -296,6 +324,17 @@
                     <AppIcon name="plus" :size="14" />
                     connect
                   </button>
+                </template>
+                <template v-else>
+                  <span class="muted" style="font-size: 12px"
+                    >Wanderer and Nomad plans</span
+                  >
+                  <NuxtLink
+                    class="btn btn--outline btn--sm"
+                    to="/pricing"
+                    data-testid="instagram-upgrade"
+                    >upgrade</NuxtLink
+                  >
                 </template>
               </div>
             </div>
@@ -322,9 +361,15 @@
                   </button>
                 </template>
                 <template v-else>
-                  <span class="muted" style="font-size: 12px"
-                    >not connected</span
+                  <button
+                    class="btn btn--primary btn--sm"
+                    :disabled="connectionsLoading"
+                    data-testid="google-connect"
+                    @click="handleConnectGoogle"
                   >
+                    <AppIcon name="plus" :size="14" />
+                    connect
+                  </button>
                 </template>
               </div>
             </div>
@@ -398,13 +443,22 @@
                   v-for="style in mapStyles"
                   :key="style.value"
                   class="map-style"
-                  :class="{ 'is-active': mapStyle === style.value }"
-                  @click="mapStyle = style.value"
+                  :class="{
+                    'is-active': mapStyle === style.value,
+                    'is-locked': !isStyleSelectable(style.value),
+                  }"
+                  :title="
+                    isStyleSelectable(style.value)
+                      ? undefined
+                      : PAID_MAP_STYLE_HINT
+                  "
+                  @click="selectMapStyle(style.value)"
                 >
                   <input
                     type="radio"
                     name="mapstyle"
                     :checked="mapStyle === style.value"
+                    :disabled="!isStyleSelectable(style.value)"
                   />
                   <div class="map-style__pv" :class="`pv-${style.value}`" />
                   <div class="map-style__l">
@@ -418,6 +472,14 @@
                   </div>
                 </label>
               </div>
+              <p
+                v-if="billingResolved && !mapStylesUnlocked"
+                class="upgrade-hint"
+                data-testid="map-style-upgrade"
+              >
+                {{ PAID_MAP_STYLE_HINT }}.
+                <NuxtLink to="/pricing">View plans</NuxtLink>
+              </p>
             </div>
           </section>
 
@@ -431,12 +493,24 @@
             <div class="opt-row">
               <div class="lbl">
                 <b>Public traveler profile</b>
-                <p>
-                  Let anyone view your published trips at farflung.io/@danh.
+                <p data-testid="public-profile-url">
+                  Let anyone view your published trips at
+                  {{ publicProfileUrl }}.
+                </p>
+                <p
+                  v-if="billingResolved && !publicProfileUnlocked"
+                  class="upgrade-hint"
+                  data-testid="public-profile-upgrade"
+                >
+                  Available on the Nomad plan.
+                  <NuxtLink to="/pricing">View plans</NuxtLink>
                 </p>
               </div>
               <label class="switch"
-                ><input v-model="privacy.publicProfile" type="checkbox" /><span
+                ><input
+                  v-model="privacy.publicProfile"
+                  type="checkbox"
+                  :disabled="publicProfileToggleLocked" /><span
               /></label>
             </div>
             <div class="opt-row">
@@ -504,7 +578,7 @@
 
     <!-- Error toast -->
     <div v-if="showErrorBar" class="saved-bar show">
-      <AppAlert intent="error" :title="saveError ?? 'Failed to save'" />
+      <AppAlert intent="error" :title="toastError ?? 'Failed to save'" />
     </div>
 
     <!-- Saved toast -->
@@ -575,7 +649,21 @@ import { useAccountActions } from "~/composables/useAccountActions";
 import { useBilling } from "~/composables/useBilling";
 import { DELETION_GRACE_PERIOD_DAYS } from "~/utils/accountDeletion";
 import { useStats } from "~/composables/useStats";
+import { useHandleAvailability } from "~/composables/useHandleAvailability";
 import { useTripsStore } from "~/stores/trips";
+import { pickChangedFields } from "~/utils/changedFields";
+import {
+  MAP_STYLE_OPTIONS,
+  PAID_MAP_STYLE_HINT,
+  isMapStyleAllowed,
+} from "~/utils/mapStyles";
+import {
+  canSyncInstagram,
+  canUsePublicProfile,
+  entitledPlan,
+} from "~/utils/planFeatures";
+import { isValidHandle } from "../../server/utils/handle";
+import type { UserPreferences } from "~/composables/usePreferences";
 
 definePageMeta({ layout: "app", middleware: "auth" });
 useHead({ title: "FarFlung — Settings" });
@@ -602,6 +690,7 @@ const {
   importResult,
   fetchConnections,
   startInstagramConnect,
+  startGoogleConnect,
   disconnectInstagram,
   disconnectGoogle,
   importInstagramPhotos,
@@ -620,6 +709,16 @@ const {
   loadError: billingLoadError,
   fetchSubscription,
 } = useBilling();
+
+// Plan-gated controls render nothing until the subscription has loaded, so a
+// paying user never sees a flash of "upgrade" while it is still in flight.
+const billingResolved = ref(false);
+const currentPlan = computed(() => entitledPlan(subscription.value));
+const instagramAllowed = computed(() => canSyncInstagram(currentPlan.value));
+const publicProfileUnlocked = computed(() =>
+  canUsePublicProfile(currentPlan.value),
+);
+const mapStylesUnlocked = computed(() => currentPlan.value !== "drifter");
 
 const { stats, loadError: statsLoadError, fetchStats } = useStats();
 const tripsStore = useTripsStore();
@@ -727,7 +826,8 @@ const billingStatusMessage = computed<string>(() => {
 
 // Local editable copies — populated once preferences load.
 const profile = reactive({
-  name: "",
+  firstName: "",
+  lastName: "",
   handle: "",
   homeBase: "",
   bio: "",
@@ -743,17 +843,26 @@ const privacy = reactive({
 const units = ref<"mi" | "km">("mi");
 const mapStyle = ref("outdoors");
 
-const mapStyles = [
-  { value: "outdoors", label: "Outdoors" },
-  { value: "streets", label: "Streets" },
-  { value: "satellite", label: "Satellite" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "custom", label: "FarFlung violet" },
-];
+const mapStyles = MAP_STYLE_OPTIONS;
+
+function isStyleSelectable(style: string): boolean {
+  return isMapStyleAllowed(currentPlan.value, style);
+}
+
+function selectMapStyle(style: string): void {
+  if (!isStyleSelectable(style)) {
+    return;
+  }
+  mapStyle.value = style;
+}
+
+// Turning the profile off is always allowed, so a lapsed subscriber whose
+// stored flag is still on can switch it off; only turning it on is locked.
+const publicProfileToggleLocked = computed(
+  () => !publicProfileUnlocked.value && !privacy.publicProfile,
+);
 
 function populateFromPreferences(): void {
-  profile.name = preferences.value.displayName ?? "";
   profile.handle = preferences.value.handle ?? "";
   profile.homeBase = preferences.value.homeBase ?? "";
   profile.bio = preferences.value.bio ?? "";
@@ -772,10 +881,24 @@ function populateFromPreferences(): void {
 // script has been initialized.
 const avatarUrl = ref<string | null>(null);
 
+// Names are filled from Clerk once, the first time the user resolves, so a
+// later Clerk refresh (e.g. after saving) can't overwrite what is being typed.
+let hasPopulatedNames = false;
+
+function populateNamesFromClerk(): void {
+  if (!user.value || hasPopulatedNames) {
+    return;
+  }
+  hasPopulatedNames = true;
+  profile.firstName = user.value.firstName ?? "";
+  profile.lastName = user.value.lastName ?? "";
+}
+
 function populateEmailFromClerk(): void {
   if (!user.value) {
     return;
   }
+  populateNamesFromClerk();
   const primaryEmail = user.value.emailAddresses.find(
     (address) => address.id === user.value!.primaryEmailAddressId,
   );
@@ -847,6 +970,12 @@ const instagramConnectionSuccess = computed(
   () => useRoute().query.connection === "instagram_success",
 );
 
+const googleConnectionSuccess = computed(
+  () =>
+    useRoute().query.connection === "google_success" &&
+    connections.value.google.connected,
+);
+
 const instagramConnectionError = computed(
   () => useRoute().query.connection_error === "instagram",
 );
@@ -870,12 +999,22 @@ onMounted(async () => {
     () => true,
     () => false,
   );
-  await Promise.all([fetchConnections(), fetchSubscription(), fetchStats()]);
+  await Promise.all([
+    fetchConnections(),
+    fetchSubscription().then(() => {
+      billingResolved.value = true;
+    }),
+    fetchStats(),
+  ]);
   tripsCountLoaded.value = await tripsFetchSucceeded;
 });
 
-function handleConnectInstagram(): void {
-  startInstagramConnect();
+async function handleConnectInstagram(): Promise<void> {
+  await startInstagramConnect();
+}
+
+async function handleConnectGoogle(): Promise<void> {
+  await startGoogleConnect();
 }
 
 async function handleDisconnectInstagram(): Promise<void> {
@@ -921,7 +1060,9 @@ const {
   avatarError,
   deleteError,
   signOutError,
+  nameError,
   changePassword,
+  updateName,
   uploadAvatar,
   removeAvatar,
   deleteAccount,
@@ -955,13 +1096,74 @@ function nullableString(value: string): string | null {
   return trimmed === "" ? null : trimmed;
 }
 
-async function saveChanges(): Promise<void> {
-  if (loadError.value) {
-    return;
-  }
+const savedHandle = computed(() => preferences.value.handle);
+const { status: handleStatus, message: handleMessage } = useHandleAvailability(
+  toRef(profile, "handle"),
+  savedHandle,
+);
 
-  const succeeded = await savePreferences({
-    displayName: nullableString(profile.name),
+const handleState = computed(() => {
+  if (handleStatus.value === "available") {
+    return "success";
+  }
+  if (handleStatus.value === "unavailable" || handleStatus.value === "error") {
+    return "error";
+  }
+  return "default";
+});
+
+// Where the public profile actually lives: the saved handle's /@handle URL
+// when it is well formed, otherwise the id URL that always works. Based on the
+// saved value, not the draft, so it never advertises an unsaved or taken link.
+const requestUrl = useRequestURL();
+const publicProfileUrl = computed(() => {
+  const handle = savedHandle.value;
+  if (handle && isValidHandle(handle)) {
+    return `${requestUrl.origin}/@${handle}`;
+  }
+  return `${requestUrl.origin}/u/${user.value?.id ?? ""}`;
+});
+
+const handleHint = computed(() => {
+  if (handleStatus.value === "checking") {
+    return "Checking availability...";
+  }
+  if (handleMessage.value) {
+    return handleMessage.value;
+  }
+  const draft = nullableString(profile.handle);
+  if (handleStatus.value === "available" && draft) {
+    return `Available. Your link will be ${requestUrl.origin}/@${draft}`;
+  }
+  return "Letters, numbers, hyphens and underscores. Not case sensitive.";
+});
+
+const nameValidationError = ref<string | null>(null);
+const firstNameState = computed(() =>
+  nameValidationError.value ? "error" : "default",
+);
+
+const localSaveError = ref<string | null>(null);
+const toastError = computed(
+  () => localSaveError.value ?? nameError.value ?? saveError.value,
+);
+
+function preferenceFields(source: UserPreferences) {
+  return {
+    handle: source.handle,
+    homeBase: source.homeBase,
+    bio: source.bio,
+    publicProfile: source.publicProfile,
+    preciseLocation: source.preciseLocation,
+    showOnExplore: source.showOnExplore,
+    distanceUnit: source.distanceUnit,
+    defaultMapStyle: source.defaultMapStyle ?? "outdoors",
+  };
+}
+
+function formPreferenceFields() {
+  return preferenceFields({
+    ...preferences.value,
     handle: nullableString(profile.handle),
     homeBase: nullableString(profile.homeBase),
     bio: nullableString(profile.bio),
@@ -971,8 +1173,72 @@ async function saveChanges(): Promise<void> {
     distanceUnit: units.value,
     defaultMapStyle: mapStyle.value,
   });
+}
 
-  if (!succeeded) {
+function changedPreferenceFields(): Partial<UserPreferences> {
+  return pickChangedFields(
+    formPreferenceFields(),
+    preferenceFields(preferences.value),
+  );
+}
+
+function nameChanged(): boolean {
+  return (
+    profile.firstName.trim() !== (user.value?.firstName ?? "") ||
+    profile.lastName.trim() !== (user.value?.lastName ?? "")
+  );
+}
+
+const hasUnsavedChanges = computed(
+  () => nameChanged() || Object.keys(changedPreferenceFields()).length > 0,
+);
+
+function discardChanges(): void {
+  populateFromPreferences();
+  profile.firstName = user.value?.firstName ?? "";
+  profile.lastName = user.value?.lastName ?? "";
+  nameValidationError.value = null;
+  localSaveError.value = null;
+}
+
+// Returns the reason the form can't be saved yet, or null when it can.
+function findBlockingProblem(changed: Partial<UserPreferences>): string | null {
+  nameValidationError.value = null;
+  if (nameChanged() && profile.firstName.trim() === "") {
+    nameValidationError.value = "First name is required";
+    return nameValidationError.value;
+  }
+  if (changed.handle && handleStatus.value === "unavailable") {
+    return handleMessage.value ?? "That handle can't be used";
+  }
+  return null;
+}
+
+async function saveChanges(): Promise<void> {
+  if (loadError.value) {
+    return;
+  }
+
+  // Only what changed is sent, so one paid-only or otherwise rejected field
+  // can't fail an unrelated edit (e.g. a Drifter fixing their bio).
+  const changed = changedPreferenceFields();
+  const hasPreferenceChanges = Object.keys(changed).length > 0;
+  const hasNameChange = nameChanged();
+
+  localSaveError.value = findBlockingProblem(changed);
+  if (localSaveError.value) {
+    showToast(showErrorBar, errorTimer);
+    return;
+  }
+
+  const nameSaved = hasNameChange
+    ? await updateName(profile.firstName.trim(), profile.lastName.trim())
+    : true;
+  const preferencesSaved = hasPreferenceChanges
+    ? await savePreferences(changed)
+    : true;
+
+  if (!nameSaved || !preferencesSaved) {
     showToast(showErrorBar, errorTimer);
     return;
   }
@@ -1106,6 +1372,18 @@ if (import.meta.client) {
 <style scoped>
 .load-error {
   margin-bottom: 16px;
+}
+.upgrade-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.upgrade-hint a {
+  color: var(--accent-ink);
+}
+.map-style.is-locked {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .set-layout {
   display: grid;

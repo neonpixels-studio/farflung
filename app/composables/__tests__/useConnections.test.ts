@@ -1,7 +1,7 @@
 /**
  * Unit tests for the useConnections composable.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
 
 // ---------------------------------------------------------------------------
@@ -21,6 +21,30 @@ vi.stubGlobal("useState", <T>(key: string, init: () => T) => {
 
 vi.stubGlobal("readonly", (value: unknown) => value);
 
+const mockCreateExternalAccount = vi.fn();
+const clerkUser = ref<{
+  createExternalAccount: typeof mockCreateExternalAccount;
+} | null>(null);
+vi.stubGlobal("useClerkUser", () => ({ user: clerkUser }));
+
+const originalLocation = window.location;
+function stubLocation(): { href: string } {
+  const location = { href: "", origin: "https://farflung.io" };
+  Object.defineProperty(window, "location", {
+    value: location,
+    writable: true,
+    configurable: true,
+  });
+  return location;
+}
+function restoreLocation(): void {
+  Object.defineProperty(window, "location", {
+    value: originalLocation,
+    writable: true,
+    configurable: true,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Import composable after mocks
 // ---------------------------------------------------------------------------
@@ -35,6 +59,116 @@ const { useConnections, describeInstagramImportResult } =
 describe("useConnections", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clerkUser.value = { createExternalAccount: mockCreateExternalAccount };
+  });
+
+  describe("startInstagramConnect", () => {
+    afterEach(restoreLocation);
+
+    it("fetches the authorization URL with auth, then navigates to it", async () => {
+      const location = stubLocation();
+      mockApiFetch.mockResolvedValue({
+        url: "https://api.instagram.com/oauth/authorize?x=1",
+      });
+      const { startInstagramConnect, actionError } = useConnections();
+
+      await startInstagramConnect();
+
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/connections/instagram/start",
+      );
+      expect(location.href).toBe(
+        "https://api.instagram.com/oauth/authorize?x=1",
+      );
+      expect(actionError.value).toBeNull();
+    });
+
+    it("does not navigate to the API route itself (a navigation can't send the bearer token)", async () => {
+      const location = stubLocation();
+      mockApiFetch.mockResolvedValue({ url: "https://example.test/ig" });
+      const { startInstagramConnect } = useConnections();
+
+      await startInstagramConnect();
+
+      expect(location.href).not.toContain("/api/connections/instagram/start");
+    });
+
+    it("shows the server's message and stays put when the plan blocks it (402)", async () => {
+      const location = stubLocation();
+      mockApiFetch.mockRejectedValue({
+        data: {
+          statusMessage:
+            "Instagram sync is not available on the Drifter plan. Upgrade to unlock it.",
+        },
+      });
+      const { startInstagramConnect, actionError } = useConnections();
+
+      await startInstagramConnect();
+
+      expect(actionError.value).toContain("Upgrade to unlock");
+      expect(location.href).toBe("");
+    });
+  });
+
+  describe("startGoogleConnect", () => {
+    afterEach(restoreLocation);
+
+    it("links Google through Clerk and navigates to the provider URL", async () => {
+      const location = stubLocation();
+      mockCreateExternalAccount.mockResolvedValue({
+        verification: {
+          externalVerificationRedirectURL: new URL(
+            "https://accounts.google.com/o/oauth2/auth?x=1",
+          ),
+        },
+      });
+      const { startGoogleConnect, actionError } = useConnections();
+
+      await startGoogleConnect();
+
+      expect(mockCreateExternalAccount).toHaveBeenCalledWith({
+        strategy: "oauth_google",
+        redirectUrl:
+          "https://farflung.io/settings?connection=google_success#connections",
+      });
+      expect(location.href).toBe(
+        "https://accounts.google.com/o/oauth2/auth?x=1",
+      );
+      expect(actionError.value).toBeNull();
+    });
+
+    it("reports an error when Clerk returns no provider URL", async () => {
+      const location = stubLocation();
+      mockCreateExternalAccount.mockResolvedValue({ verification: null });
+      const { startGoogleConnect, actionError } = useConnections();
+
+      await startGoogleConnect();
+
+      expect(actionError.value).toContain("Couldn't start the Google");
+      expect(location.href).toBe("");
+    });
+
+    it("reports an error when Clerk rejects (e.g. Google not enabled)", async () => {
+      const location = stubLocation();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      mockCreateExternalAccount.mockRejectedValue(new Error("provider off"));
+      const { startGoogleConnect, actionError } = useConnections();
+
+      await startGoogleConnect();
+
+      expect(actionError.value).toContain("Couldn't start the Google");
+      expect(location.href).toBe("");
+    });
+
+    it("reports an error when there is no signed-in Clerk user", async () => {
+      clerkUser.value = null;
+      const { startGoogleConnect, actionError } = useConnections();
+
+      await startGoogleConnect();
+
+      expect(mockCreateExternalAccount).not.toHaveBeenCalled();
+      expect(actionError.value).toContain("Couldn't start the Google");
+    });
   });
 
   describe("fetchConnections", () => {

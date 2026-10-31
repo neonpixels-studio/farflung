@@ -21,7 +21,7 @@ exports[`Trips page (/trips) > renders without crashing and matches snapshot 1`]
       <h2 data-v-f103826c="" style="margin-top: 8px;">Iceland, the ring road</h2>
       <div data-v-f103826c="" class="feature__stats">
         <div data-v-f103826c="">
-          <div data-v-f103826c="" class="n">892 km</div>
+          <div data-v-f103826c="" class="n">554 mi</div>
           <div data-v-f103826c="" class="l">distance</div>
         </div>
         <div data-v-f103826c="" style="margin-left: auto; align-self: center;"><a data-v-f103826c="" href="/trips/1" class="btn btn--primary btn--sm"> open trip <svg data-v-f103826c="" data-icon="" name="arrow-right" size="14"></svg></a></div>
@@ -40,7 +40,7 @@ exports[`Trips page (/trips) > renders without crashing and matches snapshot 1`]
       <div data-v-f103826c="" class="tcard__body">
         <div data-v-f103826c="" class="tcard__name">Iceland, the ring road</div>
         <div data-v-f103826c="" class="tcard__dates">Jun 20, 2026 – Jun 29, 2026 · 9 days</div>
-        <div data-v-f103826c="" class="tcard__foot"><span data-v-f103826c="" class="m"><svg data-v-f103826c="" data-icon="" name="pin" size="13"></svg> 892 km</span></div>
+        <div data-v-f103826c="" class="tcard__foot"><span data-v-f103826c="" class="m"><svg data-v-f103826c="" data-icon="" name="pin" size="13"></svg> 554 mi</span></div>
       </div>
     </a><a data-v-f103826c="" href="/trips/2" class="tcard">
       <div data-v-f103826c="" class="tcard__cover ph">

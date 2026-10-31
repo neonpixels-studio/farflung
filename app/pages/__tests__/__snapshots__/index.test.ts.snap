@@ -5,7 +5,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
   <!-- ============ NAV ============ -->
   <nav data-v-16d9afef="" id="mk-nav" class="mk-nav"><a data-v-16d9afef="" class="brand"><svg data-v-16d9afef="" data-icon="" name="compass" size="26" class="brand__mark"></svg><span data-v-16d9afef="" class="brand__name">far<b data-v-16d9afef="">flung</b></span></a>
     <div data-v-16d9afef="" class="mk-nav__links"><a data-v-16d9afef="" class="nl" href="#features">Features</a><a data-v-16d9afef="" class="nl" href="#how">How it works</a><a data-v-16d9afef="" class="nl" href="#plans">Plans</a><a data-v-16d9afef="" class="nl">Sign in</a>
-      <div data-v-16d9afef="" class="theme-toggle"></div><a data-v-16d9afef="" class="btn btn--primary btn--sm">start free</a>
+      <div data-v-16d9afef="" class="theme-toggle"></div><a data-v-16d9afef="" class="btn btn--primary btn--sm" external="">start free</a>
     </div>
   </nav><!-- ============ HERO A ============ -->
   <header data-v-16d9afef="" class="lp-hero lp-hero--a">
@@ -48,7 +48,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
         <div data-v-16d9afef="" class="feat">
           <div data-v-16d9afef="" class="feat__ico"><svg data-v-16d9afef="" data-icon="" name="instagram" size="21"></svg></div>
           <h3 data-v-16d9afef="">Auto-import photos</h3>
-          <p data-v-16d9afef=""> Connect your camera roll and Instagram — geotagged shots flow straight onto the right place on the map. </p>
+          <p data-v-16d9afef=""> Connect your camera roll and Instagram. Photos import to your journal, then you place them on the map. </p>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
           <div data-v-16d9afef="" class="step__n">STEP 01</div>
           <div data-v-16d9afef="" class="step__ico"><svg data-v-16d9afef="" data-icon="" name="pin" size="22"></svg></div>
           <h3 data-v-16d9afef="">Pin it</h3>
-          <p data-v-16d9afef=""> Tap the map or import a geotagged photo. The place is saved with its exact coordinates and date. </p>
+          <p data-v-16d9afef=""> Tap the map to drop a pin. The place is saved with its exact coordinates and date. </p>
         </div>
         <div data-v-16d9afef="" class="step">
           <div data-v-16d9afef="" class="step__n">STEP 02</div>
@@ -101,28 +101,19 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
         <h2 data-v-16d9afef="">Find the spots <b data-v-16d9afef="">locals actually love.</b></h2>
         <p data-v-16d9afef=""> FarFlung surfaces hidden places near you — pulled from the journals of travelers who've been there, not from a sponsored list. The detour-worthy stuff. </p><a data-v-16d9afef="" class="btn btn--outline btn--lg" style="margin-top: 24px;"><svg data-v-16d9afef="" data-icon="" name="compass" size="17"></svg> explore nearby </a>
       </div>
-      <div data-v-16d9afef="" class="place-list" data-reveal-stagger="" data-reveal-step="80"><a data-v-16d9afef="" class="place">
-          <div data-v-16d9afef="" class="place__img ph">
-            <div data-v-16d9afef="" class="topo" style="opacity: 0.4;"></div>
-          </div>
+      <div data-v-16d9afef="" class="place-list" data-reveal-stagger="" data-reveal-step="80"><a data-v-16d9afef="" class="place"><img data-v-16d9afef="" class="place__img" src="/images/landing/place-chiang-mai.webp" alt="Coffee beans turning in a roaster" loading="lazy" decoding="async">
           <div data-v-16d9afef="" class="place__b">
             <div data-v-16d9afef="" class="place__loc">Chiang Mai, TH</div>
             <div data-v-16d9afef="" class="place__n">A coffee roaster down a side soi</div>
           </div>
           <div data-v-16d9afef="" class="place__rate"><svg data-v-16d9afef="" data-icon="" name="star" size="13"></svg> 4.9 </div>
-        </a><a data-v-16d9afef="" class="place">
-          <div data-v-16d9afef="" class="place__img ph">
-            <div data-v-16d9afef="" class="topo" style="opacity: 0.4;"></div>
-          </div>
+        </a><a data-v-16d9afef="" class="place"><img data-v-16d9afef="" class="place__img" src="/images/landing/place-lisbon.webp" alt="Lisbon rooftops and the Tagus from a viewpoint" loading="lazy" decoding="async">
           <div data-v-16d9afef="" class="place__b">
             <div data-v-16d9afef="" class="place__loc">Lisbon, PT</div>
             <div data-v-16d9afef="" class="place__n">Miradouro with no tour buses</div>
           </div>
           <div data-v-16d9afef="" class="place__rate"><svg data-v-16d9afef="" data-icon="" name="star" size="13"></svg> 4.8 </div>
-        </a><a data-v-16d9afef="" class="place">
-          <div data-v-16d9afef="" class="place__img ph">
-            <div data-v-16d9afef="" class="topo" style="opacity: 0.4;"></div>
-          </div>
+        </a><a data-v-16d9afef="" class="place"><img data-v-16d9afef="" class="place__img" src="/images/landing/place-mexico-city.webp" alt="A colorful taquería storefront in Mexico City" loading="lazy" decoding="async">
           <div data-v-16d9afef="" class="place__b">
             <div data-v-16d9afef="" class="place__loc">Mexico City, MX</div>
             <div data-v-16d9afef="" class="place__n">Late-night taquería, locals only</div>
@@ -139,10 +130,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
         <p data-v-16d9afef=""> Every entry is a small, lovely record — location, photos, the words you wrote that day. The opposite of a thousand un-labelled photos in a camera roll. </p>
       </div>
       <div data-v-16d9afef="" class="entries3" data-reveal-stagger="" data-reveal-step="100">
-        <article data-v-16d9afef="" class="e3">
-          <div data-v-16d9afef="" class="e3__img ph">
-            <div data-v-16d9afef="" class="topo" style="opacity: 0.4;"></div>
-          </div>
+        <article data-v-16d9afef="" class="e3"><img data-v-16d9afef="" class="e3__img" src="/images/landing/entry-reykjavik.webp" alt="A boat moored in Reykjavík harbor below snowy mountains" loading="lazy" decoding="async">
           <div data-v-16d9afef="" class="e3__b">
             <div data-v-16d9afef="" class="e3__loc"><svg data-v-16d9afef="" data-icon="" name="pin" size="11"></svg> Reykjavík, IS </div>
             <div data-v-16d9afef="" class="e3__t">Harbor at 4am</div>
@@ -150,10 +138,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
             <div data-v-16d9afef="" class="e3__f"><span data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="calendar" size="13"></svg> Jun 12</span><span data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="image" size="13"></svg> 6 photos</span><span data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="heart" size="13"></svg> 24</span></div>
           </div>
         </article>
-        <article data-v-16d9afef="" class="e3">
-          <div data-v-16d9afef="" class="e3__img ph">
-            <div data-v-16d9afef="" class="topo" style="opacity: 0.4;"></div>
-          </div>
+        <article data-v-16d9afef="" class="e3"><img data-v-16d9afef="" class="e3__img" src="/images/landing/entry-lisbon.webp" alt="A yellow Lisbon tram on a street of historic buildings" loading="lazy" decoding="async">
           <div data-v-16d9afef="" class="e3__b">
             <div data-v-16d9afef="" class="e3__loc"><svg data-v-16d9afef="" data-icon="" name="pin" size="11"></svg> Lisbon, PT </div>
             <div data-v-16d9afef="" class="e3__t">Tram 28, again</div>
@@ -161,10 +146,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
             <div data-v-16d9afef="" class="e3__f"><span data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="calendar" size="13"></svg> Jun 8</span><span data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="image" size="13"></svg> 12 photos</span><span data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="heart" size="13"></svg> 41</span></div>
           </div>
         </article>
-        <article data-v-16d9afef="" class="e3">
-          <div data-v-16d9afef="" class="e3__img ph">
-            <div data-v-16d9afef="" class="topo" style="opacity: 0.4;"></div>
-          </div>
+        <article data-v-16d9afef="" class="e3"><img data-v-16d9afef="" class="e3__img" src="/images/landing/entry-tokyo.webp" alt="Neon signs over a rainy Tokyo street at night" loading="lazy" decoding="async">
           <div data-v-16d9afef="" class="e3__b">
             <div data-v-16d9afef="" class="e3__loc"><svg data-v-16d9afef="" data-icon="" name="pin" size="11"></svg> Tokyo, JP </div>
             <div data-v-16d9afef="" class="e3__t">Last train from Shinjuku</div>
@@ -174,36 +156,11 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
         </article>
       </div>
     </div>
-  </section><!-- ============ TESTIMONIALS ============ -->
-  <section data-v-16d9afef="" id="loved" class="lp-sec lp-sec--tint">
-    <div data-v-16d9afef="" class="lp">
-      <div data-v-16d9afef="" class="sec-head center" data-reveal="">
-        <div data-v-16d9afef="" class="label">// 06 — loved by travelers</div>
-        <h2 data-v-16d9afef="">The home base for <b data-v-16d9afef="">people without one.</b></h2>
-      </div>
-      <div data-v-16d9afef="" class="quotes" data-reveal-stagger="" data-reveal-step="100">
-        <figure data-v-16d9afef="" class="quote">
-          <div data-v-16d9afef="" class="quote__stars"><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg></div>
-          <p data-v-16d9afef=""> "I've lived out of a backpack for two years across eleven countries. FarFlung is the only record of it that I actually trust — and the only one I reread." </p>
-          <figcaption data-v-16d9afef="" class="quote__who"><span data-v-16d9afef="" class="quote__av"><svg data-v-16d9afef="" data-icon="" name="user" size="18"></svg></span><span data-v-16d9afef=""><span data-v-16d9afef="" class="quote__name">Maya R.</span><br data-v-16d9afef=""><span data-v-16d9afef="" class="quote__role">Product designer · remote</span></span></figcaption>
-        </figure>
-        <figure data-v-16d9afef="" class="quote">
-          <div data-v-16d9afef="" class="quote__stars"><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg></div>
-          <p data-v-16d9afef=""> "The photo import is magic. I land somewhere new and by the evening my whole day is already pinned and dated. No more mystery camera rolls." </p>
-          <figcaption data-v-16d9afef="" class="quote__who"><span data-v-16d9afef="" class="quote__av"><svg data-v-16d9afef="" data-icon="" name="user" size="18"></svg></span><span data-v-16d9afef=""><span data-v-16d9afef="" class="quote__name">Diego S.</span><br data-v-16d9afef=""><span data-v-16d9afef="" class="quote__role">Software engineer · digital nomad</span></span></figcaption>
-        </figure>
-        <figure data-v-16d9afef="" class="quote">
-          <div data-v-16d9afef="" class="quote__stars"><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg><svg data-v-16d9afef="" data-icon="" name="star" size="15"></svg></div>
-          <p data-v-16d9afef=""> "Discover sends me to the places friends-of-friends loved, not the top ten lists. I've found my favorite cafés in three cities this way." </p>
-          <figcaption data-v-16d9afef="" class="quote__who"><span data-v-16d9afef="" class="quote__av"><svg data-v-16d9afef="" data-icon="" name="user" size="18"></svg></span><span data-v-16d9afef=""><span data-v-16d9afef="" class="quote__name">Priya K.</span><br data-v-16d9afef=""><span data-v-16d9afef="" class="quote__role">Writer · slow traveler</span></span></figcaption>
-        </figure>
-      </div>
-    </div>
   </section><!-- ============ PRICING TEASER ============ -->
   <section data-v-16d9afef="" id="plans" class="lp-sec">
     <div data-v-16d9afef="" class="lp">
       <div data-v-16d9afef="" class="sec-head center" data-reveal="">
-        <div data-v-16d9afef="" class="label">// 07 — plans</div>
+        <div data-v-16d9afef="" class="label">// 06 — plans</div>
         <h2 data-v-16d9afef="">Start free. <b data-v-16d9afef="">Go further when you do.</b></h2>
         <p data-v-16d9afef=""> Every plan keeps your map and journal forever. Upgrade only when you're traveling enough to need more. </p>
       </div>
@@ -213,10 +170,10 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
           <div data-v-16d9afef="" class="tier__price">$0<span data-v-16d9afef="">/forever</span></div>
           <p data-v-16d9afef="" class="tier__desc">For the occasional trip.</p>
           <ul data-v-16d9afef="">
-            <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Up to 50 pins &amp; entries </li>
+            <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> 25 pins, unlimited entries </li>
             <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Personal world map</li>
             <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Manual photo upload</li>
-          </ul><a data-v-16d9afef="" class="btn btn--outline btn--block">start free</a>
+          </ul><a data-v-16d9afef="" class="btn btn--outline btn--block" external="true">start free</a>
         </div>
         <div data-v-16d9afef="" class="tier tier--pop"><span data-v-16d9afef="" class="tier__pop">most popular</span>
           <div data-v-16d9afef="" class="tier__name accent-text">Wanderer</div>
@@ -227,7 +184,7 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
             <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Auto photo &amp; Instagram import </li>
             <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Multi-stop trip planning </li>
             <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Discover hidden spots</li>
-          </ul><a data-v-16d9afef="" class="btn btn--primary btn--block">start free trial</a>
+          </ul><a data-v-16d9afef="" class="btn btn--primary btn--block" external="">start free trial</a>
         </div>
         <div data-v-16d9afef="" class="tier">
           <div data-v-16d9afef="" class="tier__name">Nomad</div>
@@ -235,10 +192,9 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
           <p data-v-16d9afef="" class="tier__desc">For the location-independent.</p>
           <ul data-v-16d9afef="">
             <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Everything in Wanderer </li>
-            <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Collaborative trips</li>
+            <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Collaborative trips (coming soon) </li>
             <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Public traveler profile </li>
-            <li data-v-16d9afef=""><svg data-v-16d9afef="" data-icon="" name="check" size="15"></svg> Priority support</li>
-          </ul><a data-v-16d9afef="" class="btn btn--outline btn--block">start free trial</a>
+          </ul><a data-v-16d9afef="" class="btn btn--outline btn--block" external="">start free trial</a>
         </div>
       </div>
       <div data-v-16d9afef="" class="tiers-foot" data-reveal=""> Need the full breakdown? <a data-v-16d9afef="">Compare every feature →</a></div>
@@ -268,14 +224,14 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
           <h4 data-v-16d9afef="">Product</h4><a data-v-16d9afef="" href="#features">Features</a><a data-v-16d9afef="" href="#map">The map</a><a data-v-16d9afef="" href="#journal">Journal</a><a data-v-16d9afef="">Plans</a>
         </div>
         <div data-v-16d9afef="" class="ftr__col">
-          <h4 data-v-16d9afef="">Explore</h4><a data-v-16d9afef="" href="#how">How it works</a><a data-v-16d9afef="" href="#discover">Discover</a><a data-v-16d9afef="">Product tour</a><a data-v-16d9afef="">Sign in</a>
+          <h4 data-v-16d9afef="">Explore</h4><a data-v-16d9afef="" href="#how">How it works</a><a data-v-16d9afef="" href="#discover">Discover</a><a data-v-16d9afef="">Sign in</a>
         </div>
         <div data-v-16d9afef="" class="ftr__col">
-          <h4 data-v-16d9afef="">Company</h4><a data-v-16d9afef="" href="#">About</a><a data-v-16d9afef="">Contact</a><a data-v-16d9afef="" href="#">Journal blog</a><a data-v-16d9afef="">Privacy</a><a data-v-16d9afef="">Terms</a>
+          <h4 data-v-16d9afef="">Company</h4><a data-v-16d9afef="" href="#">About</a><a data-v-16d9afef="">Contact</a><a data-v-16d9afef="">Privacy</a><a data-v-16d9afef="">Terms</a>
         </div>
       </div>
-      <div data-v-16d9afef="" class="ftr__base"><span data-v-16d9afef="">© 2026 FarFlung · made for the perpetually elsewhere</span><span data-v-16d9afef="" class="hstack gap-12"><span data-v-16d9afef="">Space Grotesk · JetBrains Mono</span>
-        <div data-v-16d9afef="" class="theme-toggle"></div></span>
+      <div data-v-16d9afef="" class="ftr__base"><span data-v-16d9afef="">© 2026 FarFlung · made for the perpetually elsewhere</span>
+        <div data-v-16d9afef="" class="theme-toggle"></div>
       </div>
     </div>
   </footer>

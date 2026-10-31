@@ -34,3 +34,11 @@ export async function clerkDeleteUser(userId: string): Promise<void> {
   const clerkClient = getClerkClient();
   await clerkClient.users.deleteUser(userId);
 }
+
+export async function clerkUpdateName(
+  userId: string,
+  name: { firstName: string; lastName: string | null },
+): Promise<void> {
+  const clerkClient = getClerkClient();
+  await clerkClient.users.updateUser(userId, name);
+}

@@ -210,7 +210,12 @@
           v-for="style in mapStyles"
           :key="style.value"
           class="lstyle"
-          :class="{ 'is-active': mapStyle === style.value }"
+          :class="{
+            'is-active': mapStyle === style.value,
+            'is-locked': !isStyleAllowed(style.value),
+          }"
+          :aria-disabled="!isStyleAllowed(style.value)"
+          :title="isStyleAllowed(style.value) ? undefined : paidStyleTitle"
           @click="setMapStyle(style.value)"
         >
           <span class="lstyle__sw" :class="`sw-${style.value}`" />
@@ -256,6 +261,16 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { usePlacesStore } from "~/stores/places";
 import type { Place, UpdatePlaceInput } from "~/stores/places";
 import { useMapbox } from "~/composables/useMapbox";
+import { usePreferences } from "~/composables/usePreferences";
+import { entitledPlan } from "~/utils/planFeatures";
+import {
+  DEFAULT_MAP_STYLE,
+  MAP_STYLE_OPTIONS,
+  PAID_MAP_STYLE_HINT,
+  isMapStyleAllowed,
+  resolveDefaultMapStyle,
+} from "~/utils/mapStyles";
+import { useBilling } from "~/composables/useBilling";
 import { resolveMapboxStyleLabel } from "~/composables/useMapboxStyles";
 import type { DropPinResult, MapInstance } from "~/composables/useMapbox";
 import { useStats } from "~/composables/useStats";
@@ -282,18 +297,19 @@ const mapboxReady = ref(false);
 const isUnmounted = ref(false);
 
 const filters = ["All", "2026", "Journaled", "Wishlist"];
-const mapStyles = [
-  { value: "outdoors", label: "Outdoors" },
-  { value: "streets", label: "Streets" },
-  { value: "satellite", label: "Satellite" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "custom", label: "FarFlung violet" },
-];
+const mapStyles = MAP_STYLE_OPTIONS;
+
+const paidStyleTitle = PAID_MAP_STYLE_HINT;
+const { subscription, fetchSubscription } = useBilling();
+const { preferences, fetchPreferences } = usePreferences();
+
+function isStyleAllowed(style: string): boolean {
+  return isMapStyleAllowed(entitledPlan(subscription.value), style);
+}
 
 const selectedPlace = ref<Place | null>(null);
 const activeFilter = ref("All");
-const mapStyle = ref("outdoors");
+const mapStyle = ref(DEFAULT_MAP_STYLE);
 
 const searchQuery = ref("");
 const layersPopOpen = ref(false);
@@ -508,6 +524,10 @@ async function submitEditPlace(input: UpdatePlaceInput): Promise<void> {
 }
 
 function setMapStyle(style: string): void {
+  if (!isStyleAllowed(style)) {
+    return;
+  }
+
   mapStyle.value = style;
   layersPopOpen.value = false;
 
@@ -674,9 +694,22 @@ watch(
   },
 );
 
+// The saved default only seeds the style the map opens with. Picking a style
+// in the layers popover (setMapStyle) stays session-only and never writes back.
+// Both fetches swallow their own errors, so a failure falls back to outdoors.
+async function loadDefaultMapStyle(): Promise<void> {
+  await Promise.all([fetchSubscription(), fetchPreferences()]);
+  mapStyle.value = resolveDefaultMapStyle(
+    preferences.value.defaultMapStyle,
+    entitledPlan(subscription.value),
+  );
+}
+
 onMounted(async () => {
+  const defaultStyleLoaded = loadDefaultMapStyle();
   await placesStore.fetchPlaces().catch(() => undefined);
   focusPlaceFromQuery();
+  await defaultStyleLoaded;
   await initializeMap();
   fetchMapStats();
 });
@@ -884,6 +917,10 @@ onBeforeUnmount(() => {
   padding: 7px 9px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+.lstyle.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 .lstyle:hover {
   background: var(--accent-weak);
