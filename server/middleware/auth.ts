@@ -38,6 +38,11 @@ const PUBLIC_READ_PROFILE_PATH = /^\/api\/users\/[^/]+$/;
 const PUBLIC_READ_PROFILE_SUB_PATH =
   /^\/api\/users\/[^/]+\/(followers|following|trips|guides)$/;
 
+// GET /api/media/<id> serves photos to plain <img> tags and social crawlers,
+// neither of which can send a token. The handler treats the unguessable id as
+// the access control.
+const PUBLIC_READ_MEDIA_PATH = /^\/api\/media\/[^/]+$/;
+
 // Every GET path pattern a request may match without a bearer token. A list
 // (not one growing `||` chain) so a fourth/fifth public route is a one-line
 // addition to isOptionalAuthRoute below, not another branch to thread through
@@ -47,6 +52,7 @@ const OPTIONAL_AUTH_GET_PATTERNS = [
   PUBLIC_READ_TRIP_PATH,
   PUBLIC_READ_PROFILE_PATH,
   PUBLIC_READ_PROFILE_SUB_PATH,
+  PUBLIC_READ_MEDIA_PATH,
 ];
 
 function isApiPath(path: string): boolean {

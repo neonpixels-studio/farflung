@@ -23,13 +23,8 @@ export interface OgMetaInput {
 // Site-wide title prefix.
 export const SITE_NAME = "FarFlung";
 
-// No page currently ships a designed social-preview asset, so the favicon is
-// the only real image on the site to fall back to. See the "default OG image
-// asset" follow-up suggestion on this PR. It's paired with the "summary"
-// (small-image) Twitter card below rather than "summary_large_image" — most
-// platforms reject or badly upscale a favicon-sized/.ico image for a large
-// card.
-const DEFAULT_OG_IMAGE_PATH = "/favicon.ico";
+// Used by every page without an image of its own.
+const DEFAULT_OG_IMAGE_PATH = "/og-default.png";
 
 // Most platforms truncate well before this anyway, but a guide body or
 // profile bio can run to thousands of characters — cap it here so every page
@@ -118,13 +113,6 @@ export function useOgMeta(getMeta: () => OgMetaInput): void {
     return toAbsoluteUrl(meta.value.imagePath || DEFAULT_OG_IMAGE_PATH);
   }
 
-  // "summary_large_image" needs a real, sizeable image or the card renders
-  // broken/blank on most platforms; a page with no real image (favicon
-  // fallback) gets the small "summary" card instead.
-  function currentTwitterCard(): "summary" | "summary_large_image" {
-    return meta.value.imagePath ? "summary_large_image" : "summary";
-  }
-
   useSeoMeta({
     title: currentTitle,
     description: currentDescription,
@@ -133,7 +121,7 @@ export function useOgMeta(getMeta: () => OgMetaInput): void {
     ogImage: currentImageUrl,
     ogUrl: () => toAbsoluteUrl(route.path),
     ogType: "website",
-    twitterCard: currentTwitterCard,
+    twitterCard: "summary_large_image",
     twitterTitle: currentTitle,
     twitterDescription: currentDescription,
     twitterImage: currentImageUrl,

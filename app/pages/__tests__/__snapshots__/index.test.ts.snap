@@ -2,12 +2,7 @@
 
 exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = `
 "<div data-v-16d9afef="">
-  <!-- ============ NAV ============ -->
-  <nav data-v-16d9afef="" id="mk-nav" class="mk-nav"><a data-v-16d9afef="" class="brand"><svg data-v-16d9afef="" data-icon="" name="compass" size="26" class="brand__mark"></svg><span data-v-16d9afef="" class="brand__name">far<b data-v-16d9afef="">flung</b></span></a>
-    <div data-v-16d9afef="" class="mk-nav__links"><a data-v-16d9afef="" class="nl" href="#features">Features</a><a data-v-16d9afef="" class="nl" href="#how">How it works</a><a data-v-16d9afef="" class="nl" href="#plans">Plans</a><a data-v-16d9afef="" class="nl">Sign in</a>
-      <div data-v-16d9afef="" class="theme-toggle"></div><a data-v-16d9afef="" class="btn btn--primary btn--sm" external="">start free</a>
-    </div>
-  </nav><!-- ============ HERO A ============ -->
+  <nav data-v-16d9afef=""></nav><!-- ============ HERO A ============ -->
   <header data-v-16d9afef="" class="lp-hero lp-hero--a">
     <div data-v-16d9afef="" class="lp in">
       <div data-v-16d9afef="" class="lp-hero__copy" data-reveal-stagger="" data-reveal-step="70">
@@ -214,26 +209,6 @@ exports[`Landing page (/) > renders without crashing and matches snapshot 1`] = 
       </div>
     </div>
   </section><!-- ============ FOOTER ============ -->
-  <footer data-v-16d9afef="" class="ftr">
-    <div data-v-16d9afef="" class="lp">
-      <div data-v-16d9afef="" class="ftr__grid">
-        <div data-v-16d9afef="" class="ftr__brand"><a data-v-16d9afef="" class="brand"><svg data-v-16d9afef="" data-icon="" name="compass" size="26" class="brand__mark"></svg><span data-v-16d9afef="" class="brand__name">far<b data-v-16d9afef="">flung</b></span></a>
-          <p data-v-16d9afef=""> The travel journal &amp; map for people who never quite stop moving. Pin it, write it, remember it. </p>
-        </div>
-        <div data-v-16d9afef="" class="ftr__col">
-          <h4 data-v-16d9afef="">Product</h4><a data-v-16d9afef="" href="#features">Features</a><a data-v-16d9afef="" href="#map">The map</a><a data-v-16d9afef="" href="#journal">Journal</a><a data-v-16d9afef="">Plans</a>
-        </div>
-        <div data-v-16d9afef="" class="ftr__col">
-          <h4 data-v-16d9afef="">Explore</h4><a data-v-16d9afef="" href="#how">How it works</a><a data-v-16d9afef="" href="#discover">Discover</a><a data-v-16d9afef="">Sign in</a>
-        </div>
-        <div data-v-16d9afef="" class="ftr__col">
-          <h4 data-v-16d9afef="">Company</h4><a data-v-16d9afef="" href="#">About</a><a data-v-16d9afef="">Contact</a><a data-v-16d9afef="">Privacy</a><a data-v-16d9afef="">Terms</a>
-        </div>
-      </div>
-      <div data-v-16d9afef="" class="ftr__base"><span data-v-16d9afef="">© 2026 FarFlung · made for the perpetually elsewhere</span>
-        <div data-v-16d9afef="" class="theme-toggle"></div>
-      </div>
-    </div>
-  </footer>
+  <footer data-v-16d9afef=""></footer>
 </div>"
 `;

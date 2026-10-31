@@ -41,16 +41,13 @@ describe("useOgMeta", () => {
     expect(meta.ogType).toBe("website");
   });
 
-  it("falls back to the site favicon, as an absolute URL, with the small summary card when no image path is given", () => {
+  it("falls back to the default social image, as an absolute URL, when no image path is given", () => {
     useOgMeta(() => ({ pageTitle: "t", description: "d" }));
 
     const meta = lastSeoMetaCall(useSeoMetaMock);
     const ogImage = meta.ogImage as () => string;
-    // No real image to show, so the small "summary" card is used rather than
-    // "summary_large_image", which renders broken/blank on most platforms
-    // for a favicon-sized image.
-    expect(ogImage()).toBe("https://farflung.test/favicon.ico");
-    expect((meta.twitterCard as () => string)()).toBe("summary");
+    expect(ogImage()).toBe("https://farflung.test/og-default.png");
+    expect(meta.twitterCard).toBe("summary_large_image");
   });
 
   it("builds an absolute image URL from a site-relative image path and uses the large-image card", () => {
@@ -66,7 +63,7 @@ describe("useOgMeta", () => {
 
     expect(ogImage()).toBe("https://farflung.test/api/media/media-1");
     expect(twitterImage()).toBe(ogImage());
-    expect((meta.twitterCard as () => string)()).toBe("summary_large_image");
+    expect(meta.twitterCard).toBe("summary_large_image");
   });
 
   it("collapses whitespace (including newlines) before truncating", () => {
@@ -175,7 +172,7 @@ describe("useOgMeta — origin fallback", () => {
     useOgMeta(() => ({ pageTitle: "t", description: "d" }));
 
     const ogImage = lastSeoMetaCall(useSeoMetaMock).ogImage as () => string;
-    expect(ogImage()).toBe("https://fallback.example/favicon.ico");
+    expect(ogImage()).toBe("https://fallback.example/og-default.png");
     // import.meta.dev is falsy under plain vitest (no Nuxt build step), so
     // this exercises the same "unexpectedly missing in production" branch
     // that would fire on a real prod build with a blank siteOrigin.

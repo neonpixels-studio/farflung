@@ -109,6 +109,26 @@ describe("auth middleware", () => {
     });
   });
 
+  it("lets an anonymous GET on a media item through, so <img> tags can load it", async () => {
+    const event = makeEvent({ path: "/api/media/abc-123" });
+
+    await runMiddleware(event);
+
+    expect(event.context.userId).toBeUndefined();
+    expect(mockVerifyClerkToken).not.toHaveBeenCalled();
+  });
+
+  it("does not open writes or other paths under /api/media", async () => {
+    await expect(
+      runMiddleware(
+        makeEvent({ path: "/api/media/abc-123", method: "DELETE" }),
+      ),
+    ).rejects.toMatchObject({ statusCode: 401 });
+    await expect(
+      runMiddleware(makeEvent({ path: "/api/media" })),
+    ).rejects.toMatchObject({ statusCode: 401 });
+  });
+
   it("lets an anonymous GET on a single trip through without verifying a token", async () => {
     const event = makeEvent({ path: "/api/trips/trip-1", headers: {} });
 

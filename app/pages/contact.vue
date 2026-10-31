@@ -1,18 +1,6 @@
 <template>
   <div>
-    <!-- NAV -->
-    <nav class="mk-nav">
-      <NuxtLink class="brand" to="/">
-        <AppIcon name="compass" :size="26" class="brand__mark" />
-        <span class="brand__name">far<b>flung</b></span>
-      </NuxtLink>
-      <div class="links">
-        <NuxtLink to="/home">Product</NuxtLink>
-        <NuxtLink to="/pricing">Plans</NuxtLink>
-        <NuxtLink to="/login">Sign in</NuxtLink>
-        <AppThemeToggle />
-      </div>
-    </nav>
+    <MarketingNav />
 
     <!-- HEADER -->
     <header class="contact-head">
@@ -91,10 +79,12 @@
         </button>
       </form>
     </section>
+    <MarketingFooter />
   </div>
 </template>
 
 <script setup lang="ts">
+import { useOgMeta } from "~/composables/useOgMeta";
 import {
   CONTACT_FORM_NAME,
   submitContactForm,
@@ -103,7 +93,10 @@ import {
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
-useHead({ title: "FarFlung — Contact" });
+useOgMeta(() => ({
+  pageTitle: "Contact",
+  description: "Get in touch with the FarFlung team.",
+}));
 
 const fields = reactive<ContactFormFields>({
   name: "",
@@ -128,30 +121,6 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.mk-nav {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 16px clamp(20px, 5vw, 56px);
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--bg) 84%, transparent);
-  backdrop-filter: blur(10px);
-}
-.links {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  font-size: 12.5px;
-  color: var(--ink-2);
-}
-.links a:hover {
-  color: var(--accent-ink);
-}
-
 .contact-head {
   text-align: center;
   padding: 48px 20px 26px;

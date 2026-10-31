@@ -1122,11 +1122,11 @@ describe("Trip Detail page (/trips/[id])", () => {
       );
       expect((meta.ogDescription as () => string)()).toBe(description());
       expect((meta.twitterDescription as () => string)()).toBe(description());
-      expect(ogImage()).toBe("https://farflung.test/favicon.ico");
+      expect(ogImage()).toBe("https://farflung.test/og-default.png");
       expect((meta.twitterImage as () => string)()).toBe(ogImage());
       expect(ogUrl()).toBe("https://farflung.test/trips/trip-1");
       expect(meta.ogType).toBe("website");
-      expect((meta.twitterCard as () => string)()).toBe("summary");
+      expect(meta.twitterCard).toBe("summary_large_image");
     });
 
     it("builds an absolute og:image from the trip's real cover, not the optimistic upload preview, and uses the large-image card", () => {
@@ -1141,7 +1141,7 @@ describe("Trip Detail page (/trips/[id])", () => {
       const meta = lastSeoMetaCall(useSeoMetaMock);
       const ogImage = meta.ogImage as () => string;
       expect(ogImage()).toBe("https://farflung.test/api/media/media-abc123");
-      expect((meta.twitterCard as () => string)()).toBe("summary_large_image");
+      expect(meta.twitterCard).toBe("summary_large_image");
     });
 
     it("falls back to a placeholder title/description before a trip has loaded", () => {

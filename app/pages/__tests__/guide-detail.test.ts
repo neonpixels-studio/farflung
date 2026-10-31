@@ -553,14 +553,12 @@ describe("Guide Detail page (/guides/[id])", () => {
       );
       expect((meta.ogDescription as () => string)()).toBe(description());
       expect((meta.twitterDescription as () => string)()).toBe(description());
-      // No cover image exists on a guide, so the fallback favicon is used —
-      // still an absolute URL built from the configured site origin — paired
-      // with the small "summary" card rather than "summary_large_image".
-      expect(ogImage()).toBe("https://farflung.test/favicon.ico");
+      // No cover image exists on a guide, so the default social image is used.
+      expect(ogImage()).toBe("https://farflung.test/og-default.png");
       expect((meta.twitterImage as () => string)()).toBe(ogImage());
       expect(ogUrl()).toBe("https://farflung.test/guides/guide-1");
       expect(meta.ogType).toBe("website");
-      expect((meta.twitterCard as () => string)()).toBe("summary");
+      expect(meta.twitterCard).toBe("summary_large_image");
     });
 
     it("falls back to a byline/read-time description when the guide has no body", () => {

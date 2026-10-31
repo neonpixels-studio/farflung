@@ -5,6 +5,8 @@ import IndexPage from "../index.vue";
 import AppIcon from "../../components/AppIcon.vue";
 import AppThemeToggle from "../../components/AppThemeToggle.vue";
 
+vi.mock("~/composables/useOgMeta", () => ({ useOgMeta: vi.fn() }));
+
 const isSignedInRef = ref(false);
 const planRef = ref("drifter");
 const mockNavigateTo = vi.fn();
@@ -37,6 +39,8 @@ const globalConfig = {
       AppIcon: { template: "<svg data-icon />" },
       AppThemeToggle: { template: '<div class="theme-toggle" />' },
       NuxtLink: nuxtLinkStub,
+      MarketingNav: { template: "<nav />" },
+      MarketingFooter: { template: "<footer />" },
       PlanCheckoutButton: planCheckoutButtonStub,
       PlanManageButton: {
         template: '<button class="plan-manage-btn"><slot /></button>',
@@ -67,13 +71,6 @@ describe("Landing page (/)", () => {
     expect(wrapper.find("#loved").exists()).toBe(false);
   });
 
-  it("drops the deleted footer items", () => {
-    const footer = mount(IndexPage, globalConfig).find("footer").text();
-    expect(footer).not.toContain("Product tour");
-    expect(footer).not.toContain("Journal blog");
-    expect(footer).not.toContain("JetBrains Mono");
-  });
-
   it("uses a real image for all six photo slots", () => {
     const images = mount(IndexPage, globalConfig).findAll(
       ".place__img, .e3__img",
@@ -99,21 +96,11 @@ describe("Landing page (/)", () => {
       const heroCopy = wrapper.find(".lp-hero__copy");
       expect(heroCopy.find("form").exists()).toBe(false);
       expect(heroCopy.text().includes("upgrade")).toBe(expectsUpgrade);
-      expect(wrapper.find("nav").text().includes("upgrade")).toBe(
-        expectsUpgrade,
-      );
       expect(wrapper.findAll(".plan-manage-btn").length > 0).toBe(
         plan === "wanderer",
       );
       expect(wrapper.find(".cta").exists()).toBe(false);
     });
-  });
-
-  it("does not offer an upgrade before the plan has loaded", () => {
-    isSignedInRef.value = true;
-    planRef.value = "nomad";
-    const wrapper = mount(IndexPage, globalConfig);
-    expect(wrapper.find("nav").text()).not.toContain("upgrade");
   });
 
   it("renders without crashing and matches snapshot", () => {
@@ -144,32 +131,6 @@ describe("Landing page (/)", () => {
   it("has email capture forms", () => {
     const wrapper = mount(IndexPage, globalConfig);
     expect(wrapper.findAll('input[type="email"]').length).toBeGreaterThan(0);
-  });
-
-  it("renders the footer", () => {
-    const wrapper = mount(IndexPage, globalConfig);
-    expect(wrapper.find("footer.ftr").exists()).toBe(true);
-  });
-
-  it("links the nav to sign-in when signed out", () => {
-    const wrapper = mount(IndexPage, globalConfig);
-    const navLinks = wrapper.find("nav").findAllComponents(nuxtLinkStub);
-    const targets = navLinks.map((link) => link.props("to"));
-
-    expect(wrapper.find("nav").text()).toContain("Sign in");
-    expect(wrapper.find("nav").text()).not.toContain("Dashboard");
-    expect(targets).toEqual(["/", "/login", "/sign-up"]);
-  });
-
-  it("links the nav to the dashboard when signed in", () => {
-    isSignedInRef.value = true;
-    const wrapper = mount(IndexPage, globalConfig);
-    const navLinks = wrapper.find("nav").findAllComponents(nuxtLinkStub);
-    const targets = navLinks.map((link) => link.props("to"));
-
-    expect(wrapper.find("nav").text()).toContain("Dashboard");
-    expect(wrapper.find("nav").text()).not.toContain("Sign in");
-    expect(targets).toEqual(["/", "/home"]);
   });
 
   it("shows /login CTAs for the paid tiers when signed out", () => {

@@ -35,5 +35,9 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: "FarFlung — Terms of Service" });
+import { useOgMeta } from "~/composables/useOgMeta";
+useOgMeta(() => ({
+  pageTitle: "Terms of Service",
+  description: "The terms that apply when you use FarFlung.",
+}));
 </script>
