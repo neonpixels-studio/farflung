@@ -10,6 +10,7 @@
  * because there is only ever one active map at a time. Call destroyMap before
  * unmounting the page to fully clean up.
  */
+import { toRaw } from "vue";
 import type mapboxgl from "mapbox-gl";
 import type { Place } from "~/stores/places";
 import { applyFarflungVioletTheme } from "./mapboxBrandStyle";
@@ -110,7 +111,9 @@ export function useMapbox() {
   }
 
   function setStyle(map: MapInstance, styleKey: string): void {
-    activeStyleKeys.set(map, styleKey);
+    // Callers may hold the map in a Vue ref, which hands us a reactive proxy, but
+    // the style.load listener looks the key up on the raw map.
+    activeStyleKeys.set(toRaw(map), styleKey);
     map.setStyle(resolveMapboxStyleUrl(styleKey));
   }
 

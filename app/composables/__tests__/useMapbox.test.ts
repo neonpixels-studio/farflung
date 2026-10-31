@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { ref } from "vue";
 
 // Stub useRuntimeConfig before importing the composable
 vi.stubGlobal("useRuntimeConfig", () => ({
@@ -236,6 +237,24 @@ describe("useMapbox", () => {
       )) as mapboxgl.Map;
 
       setStyle(map, "custom");
+      expect(mockMapSetStyle).toHaveBeenCalledWith(
+        "mapbox://styles/mapbox/light-v11",
+      );
+      // setStyle discards runtime paint changes; the recolour happens on load.
+      expect(mockMapSetPaintProperty).not.toHaveBeenCalled();
+      fireStyleLoad();
+
+      expect(mockMapSetPaintProperty).toHaveBeenCalledTimes(3);
+    });
+
+    it("re-applies the recolour when the map is passed through a Vue ref", async () => {
+      const { initMap, setStyle } = useMapbox();
+      const map = (await initMap(
+        document.createElement("div"),
+        "outdoors",
+      )) as mapboxgl.Map;
+
+      setStyle(ref(map).value, "custom");
       expect(mockMapSetStyle).toHaveBeenCalledWith(
         "mapbox://styles/mapbox/light-v11",
       );
