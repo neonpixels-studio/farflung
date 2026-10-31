@@ -639,6 +639,12 @@ textarea.field__input {
 }
 
 /* ---------- theme toggle ---------- */
+.plan-action-error {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--error-ink);
+  white-space: normal;
+}
 .theme-toggle {
   display: inline-flex;
   align-items: center;

@@ -54,18 +54,16 @@ describe("GET /api/billing/portal", () => {
     process.env.NUXT_PUBLIC_SITE_ORIGIN = "https://farflung.io";
   });
 
-  it("creates a portal session for the user's Stripe customer and redirects there", async () => {
-    await call();
+  it("creates a portal session for the user's Stripe customer and returns its URL", async () => {
+    const response = await call();
 
     expect(mockCreateBillingPortalSession).toHaveBeenCalledWith({
       customerId: "cus_123",
       returnUrl: "https://farflung.io/settings#billing",
     });
-    expect(mockSendRedirect).toHaveBeenCalledWith(
-      expect.anything(),
-      "https://billing.stripe.com/session_123",
-      302,
-    );
+    expect(response).toEqual({
+      url: "https://billing.stripe.com/session_123",
+    });
   });
 
   it("throws 404 when the user has no Stripe customer on record", async () => {

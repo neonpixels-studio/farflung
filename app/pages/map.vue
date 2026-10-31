@@ -210,7 +210,12 @@
           v-for="style in mapStyles"
           :key="style.value"
           class="lstyle"
-          :class="{ 'is-active': mapStyle === style.value }"
+          :class="{
+            'is-active': mapStyle === style.value,
+            'is-locked': !isStyleAllowed(style.value),
+          }"
+          :aria-disabled="!isStyleAllowed(style.value)"
+          :title="isStyleAllowed(style.value) ? undefined : paidStyleTitle"
           @click="setMapStyle(style.value)"
         >
           <span class="lstyle__sw" :class="`sw-${style.value}`" />
@@ -256,6 +261,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import { usePlacesStore } from "~/stores/places";
 import type { Place, UpdatePlaceInput } from "~/stores/places";
 import { useMapbox } from "~/composables/useMapbox";
+import { useBilling } from "~/composables/useBilling";
 import { resolveMapboxStyleLabel } from "~/composables/useMapboxStyles";
 import type { DropPinResult, MapInstance } from "~/composables/useMapbox";
 import { useStats } from "~/composables/useStats";
@@ -290,6 +296,17 @@ const mapStyles = [
   { value: "dark", label: "Dark" },
   { value: "custom", label: "FarFlung violet" },
 ];
+
+// Mirrors PLAN_LIMITS[drifter].mapStyles on the server.
+const DRIFTER_MAP_STYLES = ["outdoors"];
+const paidStyleTitle = "Available on Wanderer and Nomad";
+const { subscription, fetchSubscription } = useBilling();
+
+function isStyleAllowed(style: string): boolean {
+  return (
+    subscription.value.plan !== "drifter" || DRIFTER_MAP_STYLES.includes(style)
+  );
+}
 
 const selectedPlace = ref<Place | null>(null);
 const activeFilter = ref("All");
@@ -508,6 +525,10 @@ async function submitEditPlace(input: UpdatePlaceInput): Promise<void> {
 }
 
 function setMapStyle(style: string): void {
+  if (!isStyleAllowed(style)) {
+    return;
+  }
+
   mapStyle.value = style;
   layersPopOpen.value = false;
 
@@ -675,6 +696,7 @@ watch(
 );
 
 onMounted(async () => {
+  fetchSubscription();
   await placesStore.fetchPlaces().catch(() => undefined);
   focusPlaceFromQuery();
   await initializeMap();
@@ -884,6 +906,10 @@ onBeforeUnmount(() => {
   padding: 7px 9px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+.lstyle.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 .lstyle:hover {
   background: var(--accent-weak);

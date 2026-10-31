@@ -48,6 +48,14 @@ vi.mock("~/composables/useStats", () => ({
 const mockApiFetch = vi.fn();
 vi.stubGlobal("useApiClient", () => ({ apiFetch: mockApiFetch }));
 
+const mockPlan = { value: "wanderer" };
+vi.mock("~/composables/useBilling", () => ({
+  useBilling: () => ({
+    subscription: { value: { plan: mockPlan.value } },
+    fetchSubscription: vi.fn(),
+  }),
+}));
+
 function stubPaginatedPlacesResponse(places: unknown[]) {
   mockApiFetch.mockImplementation(async (url: string) => {
     const page = Number(
@@ -282,6 +290,20 @@ describe("Map page (/map)", () => {
     await styles[2].trigger("click");
     expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
       "satellite",
+    );
+  });
+
+  it("limits a Drifter to the free map style", async () => {
+    mockPlan.value = "drifter";
+    const wrapper = await mountWithPlaces();
+    mockPlan.value = "wanderer";
+    const styles = wrapper.findAll(".lstyle");
+    const unlocked = styles.filter((style) => !style.classes("is-locked"));
+    expect(unlocked.map((style) => style.text())).toEqual(["Outdoors"]);
+
+    await styles[2].trigger("click");
+    expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
+      "outdoors",
     );
   });
 

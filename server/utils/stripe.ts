@@ -105,6 +105,8 @@ export function mapPriceIdToPlan(
   return match ? { plan: match.tier, cycle: match.cycle } : null;
 }
 
+export const TRIAL_PERIOD_DAYS = 14;
+
 export interface CreateCheckoutSessionParams {
   userId: string;
   priceId: string;
@@ -122,6 +124,12 @@ export interface CreateCheckoutSessionParams {
  * Reuses `existingCustomerId` when the user already has a Stripe customer
  * (e.g. a past subscriber resubscribing) instead of creating a duplicate one.
  */
+// Only first-time customers get a trial, so a past subscriber can't restart one
+// by cancelling and resubscribing.
+function trialDaysFor(existingCustomerId: string | null | undefined) {
+  return existingCustomerId ? undefined : TRIAL_PERIOD_DAYS;
+}
+
 export async function createCheckoutSession(
   params: CreateCheckoutSessionParams,
 ): Promise<Stripe.Checkout.Session> {
@@ -133,7 +141,10 @@ export async function createCheckoutSession(
     customer: params.existingCustomerId ?? undefined,
     success_url: params.successUrl,
     cancel_url: params.cancelUrl,
-    subscription_data: { metadata: { userId: params.userId } },
+    subscription_data: {
+      metadata: { userId: params.userId },
+      trial_period_days: trialDaysFor(params.existingCustomerId),
+    },
   });
 }
 

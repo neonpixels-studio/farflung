@@ -1,23 +1,30 @@
 <template>
-  <button type="button" v-bind="$attrs" @click="openBillingPortal">
+  <button
+    type="button"
+    :disabled="isRedirecting"
+    v-bind="$attrs"
+    @click="redirectToBilling('/api/billing/portal')"
+  >
     <slot />
   </button>
+  <p v-if="redirectError" class="plan-action-error" role="alert">
+    {{ redirectError }}
+  </p>
 </template>
 
 <script setup lang="ts">
 /**
- * Redirects the browser to GET /api/billing/portal, which creates a Stripe
- * Billing Portal session server-side and 302s the user there to view
- * invoices, update their payment method, or cancel — mirrors
- * PlanCheckoutButton's redirect-to-a-server-route convention.
+ * Sends the browser to a Stripe Billing Portal session to view invoices,
+ * update their payment method, or cancel.
  *
  * Only rendered by callers once the user already has a paid-tier
  * subscription row (see app/pages/settings.vue), so there is no
  * "unconfigured" state to handle here the way PlanCheckoutButton has to.
  */
+import { useBillingRedirect } from "~/composables/useBillingRedirect";
+
 defineOptions({ inheritAttrs: false });
 
-function openBillingPortal(): void {
-  window.location.href = "/api/billing/portal";
-}
+const { isRedirecting, redirectError, redirectToBilling } =
+  useBillingRedirect();
 </script>
