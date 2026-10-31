@@ -1,4 +1,5 @@
 import { eq, and, asc, desc, inArray, sql } from "drizzle-orm";
+import { buildSignedMediaPath } from "../../utils/mediaUrl";
 import type { SQL } from "drizzle-orm";
 import { requireUser } from "../../utils/auth";
 import { getDb } from "../../db/index";
@@ -126,6 +127,10 @@ async function fetchEntriesPage(
     .offset(pageToOffset(page, PAGE_SIZE));
 }
 
+function withSignedUrl<Photo extends { mediaId: string }>(photo: Photo) {
+  return { ...photo, url: buildSignedMediaPath(photo.mediaId) };
+}
+
 export default defineEventHandler(async (event) => {
   const userId = requireUser(event);
   const database = getDb();
@@ -159,7 +164,7 @@ export default defineEventHandler(async (event) => {
 
   const result = rows.map((row) => ({
     ...row,
-    photos: photosByEntry[row.id] ?? [],
+    photos: (photosByEntry[row.id] ?? []).map(withSignedUrl),
     tags: (tagsByEntry[row.id] ?? []).map((tagRow) => ({
       id: tagRow.tagId,
       name: tagRow.tagName,

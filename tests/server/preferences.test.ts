@@ -120,6 +120,8 @@ describe("GET /api/preferences", () => {
       userId: "user-1",
       distanceUnit: "km",
       defaultMapStyle: "dark",
+      theme: null,
+      accentColor: null,
       publicProfile: true,
       preciseLocation: false,
       showOnExplore: true,
@@ -131,6 +133,8 @@ describe("GET /api/preferences", () => {
     const expectedDto = {
       distanceUnit: "km",
       defaultMapStyle: "dark",
+      theme: null,
+      accentColor: null,
       publicProfile: true,
       preciseLocation: false,
       showOnExplore: true,
@@ -214,6 +218,8 @@ const patchPreferences =
 const updatedRow = {
   distanceUnit: "km",
   defaultMapStyle: "dark",
+  theme: null,
+  accentColor: null,
   publicProfile: true,
   preciseLocation: true,
   showOnExplore: false,
@@ -297,6 +303,26 @@ describe("PATCH /api/preferences", () => {
       makeFullDb([]) as unknown as ReturnType<typeof getDb>,
     );
 
+    await expect(
+      (patchPreferences as (e: unknown) => unknown)({}),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it("rejects an unknown theme with 400", async () => {
+    mockReadBody.mockResolvedValue({ theme: "sepia" });
+    mockGetDb.mockReturnValue(
+      makeFullDb([]) as unknown as ReturnType<typeof getDb>,
+    );
+    await expect(
+      (patchPreferences as (e: unknown) => unknown)({}),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it("rejects an unknown accent colour with 400", async () => {
+    mockReadBody.mockResolvedValue({ accentColor: "chartreuse" });
+    mockGetDb.mockReturnValue(
+      makeFullDb([]) as unknown as ReturnType<typeof getDb>,
+    );
     await expect(
       (patchPreferences as (e: unknown) => unknown)({}),
     ).rejects.toMatchObject({ statusCode: 400 });

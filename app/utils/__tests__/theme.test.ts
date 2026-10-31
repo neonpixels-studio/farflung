@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
+  applyAccent,
   applyTheme,
+  ACCENT_ATTR,
+  ACCENT_STORAGE_KEY,
+  readStoredAccent,
   DEFAULT_THEME,
   resolveTheme,
   readStoredTheme,
@@ -99,5 +103,27 @@ describe("resolveTheme", () => {
   it("follows the OS setting for system", () => {
     expect(resolveTheme("system", true)).toBe("dark");
     expect(resolveTheme("system", false)).toBe("light");
+  });
+});
+
+describe("accent", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("defaults to violet", () => {
+    expect(readStoredAccent()).toBe("violet");
+  });
+
+  it("ignores an unknown stored accent", () => {
+    localStorage.setItem(ACCENT_STORAGE_KEY, "chartreuse");
+    expect(readStoredAccent()).toBe("violet");
+  });
+
+  it("sets the attribute and remembers the choice", () => {
+    const root = document.createElement("html");
+    applyAccent("rose", root);
+    expect(root.getAttribute(ACCENT_ATTR)).toBe("rose");
+    expect(readStoredAccent()).toBe("rose");
   });
 });

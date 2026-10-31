@@ -1,38 +1,6 @@
 <template>
   <div>
-    <!-- ============ NAV ============ -->
-    <nav id="mk-nav" class="mk-nav" :class="{ 'is-stuck': navStuck }">
-      <NuxtLink class="brand" to="/">
-        <AppIcon name="compass" :size="26" class="brand__mark" />
-        <span class="brand__name">far<b>flung</b></span>
-      </NuxtLink>
-      <div class="mk-nav__links">
-        <a class="nl" href="#features">Features</a>
-        <a class="nl" href="#how">How it works</a>
-        <a class="nl" href="#plans">Plans</a>
-        <NuxtLink v-if="isSignedIn" class="nl" to="/home">Dashboard</NuxtLink>
-        <NuxtLink v-else class="nl" to="/login">Sign in</NuxtLink>
-        <AppThemeToggle />
-        <NuxtLink
-          v-if="!isSignedIn"
-          class="btn btn--primary btn--sm"
-          to="/sign-up"
-          external
-          >start free</NuxtLink
-        >
-        <NuxtLink
-          v-else-if="upgradeAction === 'pricing'"
-          class="btn btn--primary btn--sm"
-          to="/pricing"
-          >upgrade</NuxtLink
-        >
-        <PlanManageButton
-          v-else-if="upgradeAction === 'portal'"
-          class="btn btn--primary btn--sm"
-          >upgrade</PlanManageButton
-        >
-      </div>
-    </nav>
+    <MarketingNav />
 
     <!-- ============ HERO A ============ -->
     <header class="lp-hero lp-hero--a">
@@ -569,52 +537,18 @@
     </section>
 
     <!-- ============ FOOTER ============ -->
-    <footer class="ftr">
-      <div class="lp">
-        <div class="ftr__grid">
-          <div class="ftr__brand">
-            <NuxtLink class="brand" to="/">
-              <AppIcon name="compass" :size="26" class="brand__mark" />
-              <span class="brand__name">far<b>flung</b></span>
-            </NuxtLink>
-            <p>
-              The travel journal &amp; map for people who never quite stop
-              moving. Pin it, write it, remember it.
-            </p>
-          </div>
-          <div class="ftr__col">
-            <h4>Product</h4>
-            <a href="#features">Features</a>
-            <a href="#map">The map</a>
-            <a href="#journal">Journal</a>
-            <NuxtLink to="/pricing">Plans</NuxtLink>
-          </div>
-          <div class="ftr__col">
-            <h4>Explore</h4>
-            <a href="#how">How it works</a>
-            <a href="#discover">Discover</a>
-            <NuxtLink to="/login">Sign in</NuxtLink>
-          </div>
-          <div class="ftr__col">
-            <h4>Company</h4>
-            <a href="#">About</a>
-            <NuxtLink to="/contact">Contact</NuxtLink>
-            <NuxtLink to="/privacy">Privacy</NuxtLink>
-            <NuxtLink to="/terms">Terms</NuxtLink>
-          </div>
-        </div>
-        <div class="ftr__base">
-          <span>© 2026 FarFlung · made for the perpetually elsewhere</span>
-          <AppThemeToggle />
-        </div>
-      </div>
-    </footer>
+    <MarketingFooter />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useBilling } from "~/composables/useBilling";
-useHead({ title: "FarFlung — Track every place you wander" });
+import { useOgMeta } from "~/composables/useOgMeta";
+import { useUpgradeAction } from "~/composables/useUpgradeAction";
+useOgMeta(() => ({
+  pageTitle: "Track every place you wander",
+  description:
+    "The travel journal and map for people who never quite stop moving. Pin it, write it, remember it.",
+}));
 useScrollReveal();
 
 const { isSignedIn } = useClerkAuth();
@@ -625,34 +559,9 @@ const freeTierCtaTarget = computed(() =>
   isSignedIn.value ? "/home" : "/sign-up",
 );
 
-const { subscription, fetchSubscription } = useBilling();
-const hasLoadedPlan = ref(false);
-
-async function loadPlan(signedIn: boolean): Promise<void> {
-  if (!signedIn) {
-    return;
-  }
-  await fetchSubscription();
-  hasLoadedPlan.value = true;
-}
-
-onMounted(() => {
-  watch(isSignedIn, loadPlan, { immediate: true });
-});
-
-// Waits for the real plan so a Nomad never sees "upgrade" flash from the
-// Drifter default. Wanderers already subscribe, so checkout would refuse them
-// and plan changes go through the Stripe portal instead.
-const upgradeAction = computed(() => {
-  if (!hasLoadedPlan.value) {
-    return null;
-  }
-  const actionByPlan = { drifter: "pricing", wanderer: "portal", nomad: null };
-  return actionByPlan[subscription.value.plan];
-});
+const { upgradeAction } = useUpgradeAction();
 
 const email = ref("");
-const navStuck = ref(false);
 
 function handleCapture() {
   if (!email.value) {
@@ -660,16 +569,6 @@ function handleCapture() {
   }
   navigateTo(`/sign-up?email=${encodeURIComponent(email.value)}`, {
     external: true,
-  });
-}
-
-if (import.meta.client) {
-  onMounted(() => {
-    const onScroll = () => {
-      navStuck.value = window.scrollY > 8;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onUnmounted(() => window.removeEventListener("scroll", onScroll));
   });
 }
 </script>
@@ -686,45 +585,6 @@ html {
 }
 section[id] {
   scroll-margin-top: 84px;
-}
-
-/* nav */
-.mk-nav {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 14px clamp(20px, 5vw, 56px);
-  border-bottom: 1px solid transparent;
-  transition:
-    border-color 0.2s,
-    background 0.2s;
-}
-.mk-nav.is-stuck {
-  border-color: var(--line);
-  background: color-mix(in srgb, var(--bg) 84%, transparent);
-  backdrop-filter: blur(12px);
-}
-.mk-nav__links {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 26px;
-  font-size: 12.5px;
-  color: var(--ink-2);
-}
-.mk-nav__links .nl {
-  transition: color 0.14s;
-}
-.mk-nav__links .nl:hover {
-  color: var(--accent-ink);
-}
-@media (max-width: 760px) {
-  .mk-nav__links .nl {
-    display: none;
-  }
 }
 
 /* hero shared */
@@ -1316,55 +1176,6 @@ section[id] {
   justify-content: center;
 }
 
-/* footer */
-.ftr {
-  padding: 56px 0 40px;
-  border-top: 1px solid var(--line);
-}
-.ftr__grid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1fr;
-  gap: 32px;
-}
-.ftr__brand p {
-  max-width: 280px;
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.6;
-  margin: 14px 0 0;
-}
-.ftr__col h4 {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
-  margin: 0 0 14px;
-  font-family: var(--font-mono);
-  font-weight: 500;
-}
-.ftr__col a {
-  display: block;
-  font-size: 13px;
-  color: var(--ink-2);
-  padding: 5px 0;
-  transition: color 0.14s;
-}
-.ftr__col a:hover {
-  color: var(--accent-ink);
-}
-.ftr__base {
-  margin-top: 44px;
-  padding-top: 22px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
 @media (max-width: 980px) {
   .feat-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1381,18 +1192,9 @@ section[id] {
   .hero-map {
     display: none;
   }
-  .ftr__grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .ftr__brand {
-    grid-column: 1 / -1;
-  }
 }
 @media (max-width: 560px) {
   .feat-grid {
-    grid-template-columns: 1fr;
-  }
-  .ftr__grid {
     grid-template-columns: 1fr;
   }
 }

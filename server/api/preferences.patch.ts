@@ -4,6 +4,7 @@ import { getDb } from "../db/index";
 import { userPreferences, DISTANCE_UNIT } from "../db/schema";
 import { optionalString } from "../utils/db-helpers";
 import { describeHandleProblem, findHandleProblem } from "../utils/handle";
+import { ACCENT_COLORS } from "../../app/utils/theme";
 import {
   MAP_STYLES,
   assertMapStyleAllowed,
@@ -13,6 +14,9 @@ import {
 const VALID_MAP_STYLES = MAP_STYLES;
 
 type ValidMapStyle = (typeof VALID_MAP_STYLES)[number];
+
+const VALID_THEMES: readonly string[] = ["light", "dark", "system"];
+const VALID_ACCENT_COLORS: readonly string[] = ACCENT_COLORS;
 
 // displayName is not writable here: it is derived from Clerk's first + last
 // name by PATCH /api/account/name so every reader stays in step with Clerk.
@@ -25,6 +29,8 @@ const STRING_FIELD_MAX_LENGTHS: Record<string, number> = {
 export type PreferencesDto = {
   distanceUnit: string;
   defaultMapStyle: string | null;
+  theme: string | null;
+  accentColor: string | null;
   publicProfile: boolean;
   preciseLocation: boolean;
   showOnExplore: boolean;
@@ -54,6 +60,8 @@ function isOptionalBoolean(value: unknown): value is boolean | undefined {
 type PatchResult = {
   distanceUnit?: (typeof DISTANCE_UNIT)[keyof typeof DISTANCE_UNIT];
   defaultMapStyle?: ValidMapStyle;
+  theme?: string;
+  accentColor?: string;
   publicProfile?: boolean;
   preciseLocation?: boolean;
   showOnExplore?: boolean;
@@ -92,6 +100,31 @@ function validateMapStyle(
     });
   }
   patch.defaultMapStyle = body.defaultMapStyle;
+}
+
+function validateAppearance(
+  body: Record<string, unknown>,
+  patch: PatchResult,
+): void {
+  if (body.theme !== undefined) {
+    if (!VALID_THEMES.includes(body.theme as string)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `theme must be one of: ${VALID_THEMES.join(", ")}`,
+      });
+    }
+    patch.theme = body.theme as string;
+  }
+  if (body.accentColor === undefined) {
+    return;
+  }
+  if (!VALID_ACCENT_COLORS.includes(body.accentColor as string)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `accentColor must be one of: ${VALID_ACCENT_COLORS.join(", ")}`,
+    });
+  }
+  patch.accentColor = body.accentColor as string;
 }
 
 function validateBooleanFields(
@@ -180,6 +213,7 @@ function validatePatch(body: Record<string, unknown>): PatchResult {
   const patch: PatchResult = {};
   validateDistanceUnit(body, patch);
   validateMapStyle(body, patch);
+  validateAppearance(body, patch);
   validateBooleanFields(body, patch);
   validateStringFields(body, patch);
   validateHandle(body, patch);
@@ -190,6 +224,8 @@ export function rowToDto(row: Record<string, unknown>): PreferencesDto {
   return {
     distanceUnit: row.distanceUnit as string,
     defaultMapStyle: (row.defaultMapStyle as string | null) ?? null,
+    theme: (row.theme as string | null) ?? null,
+    accentColor: (row.accentColor as string | null) ?? null,
     publicProfile: row.publicProfile as boolean,
     preciseLocation: row.preciseLocation as boolean,
     showOnExplore: row.showOnExplore as boolean,
@@ -266,6 +302,8 @@ export default defineEventHandler(async (event) => {
     .select({
       distanceUnit: userPreferences.distanceUnit,
       defaultMapStyle: userPreferences.defaultMapStyle,
+      theme: userPreferences.theme,
+      accentColor: userPreferences.accentColor,
       publicProfile: userPreferences.publicProfile,
       preciseLocation: userPreferences.preciseLocation,
       showOnExplore: userPreferences.showOnExplore,

@@ -1,17 +1,6 @@
 <template>
   <div>
-    <nav class="mk-nav">
-      <NuxtLink class="brand" to="/">
-        <AppIcon name="compass" :size="26" class="brand__mark" />
-        <span class="brand__name">far<b>flung</b></span>
-      </NuxtLink>
-      <div class="links">
-        <NuxtLink to="/pricing">Plans</NuxtLink>
-        <NuxtLink to="/contact">Contact</NuxtLink>
-        <NuxtLink to="/login">Sign in</NuxtLink>
-        <AppThemeToggle />
-      </div>
-    </nav>
+    <MarketingNav />
 
     <main class="legal">
       <h1>{{ title }}</h1>
@@ -21,6 +10,7 @@
       </p>
       <slot />
     </main>
+    <MarketingFooter />
   </div>
 </template>
 
@@ -29,21 +19,6 @@ defineProps<{ title: string }>();
 </script>
 
 <style scoped>
-.mk-nav {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 16px clamp(20px, 5vw, 56px);
-  border-bottom: 1px solid var(--line);
-}
-.links {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  font-size: 12.5px;
-  color: var(--ink-2);
-}
 .legal {
   max-width: 680px;
   margin: 0 auto;

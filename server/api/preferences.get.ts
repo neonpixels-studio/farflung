@@ -7,6 +7,8 @@ import { type PreferencesDto, rowToDto } from "./preferences.patch";
 const PREFERENCES_DTO_DEFAULTS: PreferencesDto = {
   distanceUnit: DISTANCE_UNIT.MI,
   defaultMapStyle: null,
+  theme: null,
+  accentColor: null,
   publicProfile: false,
   preciseLocation: false,
   showOnExplore: true,
@@ -24,6 +26,8 @@ export default defineEventHandler(async (event) => {
     .select({
       distanceUnit: userPreferences.distanceUnit,
       defaultMapStyle: userPreferences.defaultMapStyle,
+      theme: userPreferences.theme,
+      accentColor: userPreferences.accentColor,
       publicProfile: userPreferences.publicProfile,
       preciseLocation: userPreferences.preciseLocation,
       showOnExplore: userPreferences.showOnExplore,

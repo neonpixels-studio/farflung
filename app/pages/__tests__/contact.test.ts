@@ -8,6 +8,8 @@ import InputTextarea from "../../components/InputTextarea.vue";
 import AppAlert from "../../components/AppAlert.vue";
 import { submitContactForm } from "~/utils/contactForm";
 
+vi.mock("~/composables/useOgMeta", () => ({ useOgMeta: vi.fn() }));
+
 vi.mock("~/utils/contactForm", async (importOriginal) => ({
   ...(await importOriginal<typeof import("~/utils/contactForm")>()),
   submitContactForm: vi.fn(),

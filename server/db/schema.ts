@@ -566,6 +566,9 @@ export const userPreferences = pgTable(
       .notNull()
       .default(DISTANCE_UNIT.MI),
     defaultMapStyle: text("default_map_style"),
+    // Null means the visitor hasn't chosen: the client keeps its local default.
+    theme: text("theme"),
+    accentColor: text("accent_color"),
     publicProfile: boolean("public_profile").notNull().default(false),
     preciseLocation: boolean("precise_location").notNull().default(false),
     showOnExplore: boolean("show_on_explore").notNull().default(true),

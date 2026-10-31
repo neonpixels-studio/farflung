@@ -438,7 +438,7 @@ function applyEntryForm(entry: Entry): void {
   form.value = buildFormFromEntry(entry);
   uploadedPhotos.value = entry.photos.map((photo) => ({
     id: photo.mediaId,
-    url: "",
+    url: photo.url ?? "",
   }));
   // Edit opens with an empty location field, so drop any place chosen in a
   // prior create session — a stale chip choice must not leak into this entry.

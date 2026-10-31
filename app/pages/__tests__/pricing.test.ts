@@ -3,6 +3,8 @@ import { ref } from "vue";
 import { mount } from "@vue/test-utils";
 import PricingPage from "../pricing.vue";
 
+vi.mock("~/composables/useOgMeta", () => ({ useOgMeta: vi.fn() }));
+
 const isSignedInRef = ref(false);
 
 vi.stubGlobal("useClerkAuth", () => ({

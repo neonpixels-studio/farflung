@@ -1,4 +1,5 @@
 import type { H3Event } from "h3";
+import { buildSignedMediaPath } from "../../utils/mediaUrl";
 import { getDb } from "../../db/index";
 import { media } from "../../db/schema";
 import { ensureUser } from "../../utils/auth";
@@ -144,9 +145,9 @@ function buildUploadResponseUrls(
 ): UploadResponseUrls {
   const host = getHeader(event, "host") ?? FALLBACK_HOST;
   const protocol = getRequestProtocol(event);
-  const url = `${protocol}://${host}/api/media/${mediaId}`;
+  const url = `${protocol}://${host}${buildSignedMediaPath(mediaId)}`;
   const thumbnailUrl = thumbnailKey
-    ? `${protocol}://${host}/api/media/${mediaId}/thumbnail`
+    ? `${protocol}://${host}${buildSignedMediaPath(mediaId, "thumbnail")}`
     : null;
 
   return {

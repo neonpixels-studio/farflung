@@ -1,10 +1,13 @@
 import { useApiClient } from "~/composables/useApiClient";
 import { extractErrorMessage } from "~/utils/extractErrorMessage";
+import type { AccentColor, Theme } from "~/utils/theme";
 import type { DISTANCE_UNIT } from "../../server/db/schema";
 
 export interface UserPreferences {
   distanceUnit: (typeof DISTANCE_UNIT)[keyof typeof DISTANCE_UNIT];
   defaultMapStyle: string | null;
+  theme: Theme | null;
+  accentColor: AccentColor | null;
   publicProfile: boolean;
   preciseLocation: boolean;
   showOnExplore: boolean;
@@ -17,6 +20,8 @@ export interface UserPreferences {
 export const PREFERENCES_DEFAULTS: UserPreferences = {
   distanceUnit: "mi",
   defaultMapStyle: null,
+  theme: null,
+  accentColor: null,
   publicProfile: false,
   preciseLocation: false,
   showOnExplore: true,

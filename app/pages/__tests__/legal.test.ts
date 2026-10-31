@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import PrivacyPage from "../privacy.vue";
 import TermsPage from "../terms.vue";
 import LegalPage from "../../components/LegalPage.vue";
+
+vi.mock("~/composables/useOgMeta", () => ({ useOgMeta: vi.fn() }));
 
 const globalConfig = {
   global: {
@@ -32,7 +34,10 @@ describe.each([
 
 describe("landing footer", () => {
   it("links to the legal pages", () => {
-    const source = readFileSync(resolve(__dirname, "../index.vue"), "utf8");
+    const source = readFileSync(
+      resolve(__dirname, "../../components/MarketingFooter.vue"),
+      "utf8",
+    );
 
     expect(source).toContain('to="/privacy"');
     expect(source).toContain('to="/terms"');

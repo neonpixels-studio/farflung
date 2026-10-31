@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockFetch = vi.fn();
-vi.stubGlobal("$fetch", mockFetch);
+vi.mock("~/composables/useApiClient", () => ({
+  useApiClient: () => ({ apiFetch: mockFetch }),
+}));
 
 const { useMediaUpload } = await import("../useMediaUpload");
 
@@ -30,7 +32,7 @@ describe("useMediaUpload", () => {
     expect(result).toEqual({ id: "media-123", url: "/api/media/media-123" });
   });
 
-  it("calls $fetch with POST, the file content-type, and an ArrayBuffer body", async () => {
+  it("calls apiFetch with POST, the file content-type, and an ArrayBuffer body", async () => {
     mockFetch.mockResolvedValue({ id: "m1", url: "/api/media/m1" });
     const { upload } = useMediaUpload();
 
@@ -61,7 +63,7 @@ describe("useMediaUpload", () => {
     expect(isUploading.value).toBe(false);
   });
 
-  it("sets error to null and rethrows when $fetch rejects with a raw Error", async () => {
+  it("sets error to null and rethrows when apiFetch rejects with a raw Error", async () => {
     const uploadError = new Error("Network failure");
     mockFetch.mockRejectedValue(uploadError);
     const { upload, error } = useMediaUpload();

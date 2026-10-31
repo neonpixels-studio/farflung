@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { useAppearanceSync } from "~/composables/useAppearanceSync";
 import type { Entry, EditEntryHandler } from "~/stores/entries";
 
 // Auth resolves client-side only (Clerk's skipServerMiddleware: true), so this
@@ -34,6 +35,7 @@ import type { Entry, EditEntryHandler } from "~/stores/entries";
 // its watchers/redirects settle. Exposing isLoaded as a data attribute gives
 // e2e tests a real "safe to interact" signal instead of racing on paint.
 const { isLoaded } = useClerkAuth();
+useAppearanceSync();
 
 const sidebarOpen = ref(false);
 const newEntryOpen = ref(false);

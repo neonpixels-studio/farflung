@@ -6,6 +6,8 @@ export interface EntryPhoto {
   entryId: string;
   mediaId: string;
   sortOrder: number;
+  /** Signed, time-limited URL; absent on create and update responses. */
+  url?: string;
 }
 
 export interface EntryTag {

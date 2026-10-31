@@ -161,6 +161,31 @@ describe("JournalEntry component", () => {
     expect(wrapper.find(".post__media").exists()).toBe(true);
   });
 
+  it("shows the photo from its signed URL, and a placeholder without one", () => {
+    const wrapper = mount(JournalEntry, {
+      ...globalConfig,
+      props: {
+        entry: {
+          ...SAMPLE_ENTRY,
+          photos: [
+            {
+              id: "p-1",
+              entryId: "entry-1",
+              mediaId: "m-1",
+              sortOrder: 0,
+              url: "/api/media/m-1?exp=1&sig=abc",
+            },
+            { id: "p-2", entryId: "entry-1", mediaId: "m-2", sortOrder: 1 },
+          ],
+        },
+      },
+    });
+    const images = wrapper.findAll(".post__media img");
+    expect(images).toHaveLength(1);
+    expect(images[0]?.attributes("src")).toBe("/api/media/m-1?exp=1&sig=abc");
+    expect(wrapper.findAll(".post__media .topo")).toHaveLength(1);
+  });
+
   it("hides photo media section when entry has no photos", () => {
     const wrapper = mount(JournalEntry, {
       ...globalConfig,

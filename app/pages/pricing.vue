@@ -1,18 +1,6 @@
 <template>
   <div>
-    <!-- NAV -->
-    <nav class="mk-nav">
-      <NuxtLink class="brand" to="/">
-        <AppIcon name="compass" :size="26" class="brand__mark" />
-        <span class="brand__name">far<b>flung</b></span>
-      </NuxtLink>
-      <div class="links">
-        <NuxtLink to="/home">Product</NuxtLink>
-        <NuxtLink to="/pricing">Plans</NuxtLink>
-        <NuxtLink to="/login">Sign in</NuxtLink>
-        <AppThemeToggle />
-      </div>
-    </nav>
+    <MarketingNav />
 
     <!-- HEADER -->
     <header class="cmp-head" data-reveal>
@@ -241,12 +229,18 @@
         </tfoot>
       </table>
     </div>
+    <MarketingFooter />
   </div>
 </template>
 
 <script setup lang="ts">
+import { useOgMeta } from "~/composables/useOgMeta";
 /* eslint-disable vue/one-component-per-file */
-useHead({ title: "FarFlung — Compare plans" });
+useOgMeta(() => ({
+  pageTitle: "Compare plans",
+  description:
+    "Compare FarFlung's Drifter, Wanderer and Nomad plans. Start free and go further when you travel more.",
+}));
 useScrollReveal();
 
 const { isSignedIn } = useClerkAuth();
@@ -301,29 +295,6 @@ const ComingSoonCell = defineComponent({
   font-size: 11px;
   color: var(--muted);
   white-space: nowrap;
-}
-.mk-nav {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 16px clamp(20px, 5vw, 56px);
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--bg) 84%, transparent);
-  backdrop-filter: blur(10px);
-}
-.links {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  font-size: 12.5px;
-  color: var(--ink-2);
-}
-.links a:hover {
-  color: var(--accent-ink);
 }
 
 .cmp-head {

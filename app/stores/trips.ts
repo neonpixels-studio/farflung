@@ -14,6 +14,8 @@ export interface Trip {
   startDate: string | null;
   endDate: string | null;
   coverImageId: string | null;
+  /** Signed, time-limited URL; only present on the single-trip read. */
+  coverImageUrl?: string | null;
   distanceKm: number | null;
   visibility: TripVisibility;
   createdAt: string;

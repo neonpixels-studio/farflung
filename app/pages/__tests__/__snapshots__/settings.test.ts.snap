@@ -9,7 +9,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
     <!--v-if-->
     <div data-v-a376170b="" class="set-layout">
       <!-- Side nav -->
-      <nav data-v-a376170b="" class="set-nav"><a data-v-a376170b="" href="#profile" class="is-active">Profile</a><a data-v-a376170b="" href="#account" class="">Email &amp; password</a><a data-v-a376170b="" href="#connections" class="">Connections</a><a data-v-a376170b="" href="#billing" class="">Plan &amp; billing</a><a data-v-a376170b="" href="#prefs" class="">Units &amp; map</a><a data-v-a376170b="" href="#privacy" class="">Privacy</a><a data-v-a376170b="" href="#danger" class="">Danger zone</a></nav>
+      <nav data-v-a376170b="" class="set-nav"><a data-v-a376170b="" href="#profile" class="is-active">Profile</a><a data-v-a376170b="" href="#account" class="">Email &amp; password</a><a data-v-a376170b="" href="#connections" class="">Connections</a><a data-v-a376170b="" href="#billing" class="">Plan &amp; billing</a><a data-v-a376170b="" href="#appearance" class="">Appearance</a><a data-v-a376170b="" href="#prefs" class="">Units &amp; map</a><a data-v-a376170b="" href="#privacy" class="">Privacy</a><a data-v-a376170b="" href="#danger" class="">Danger zone</a></nav>
       <div data-v-a376170b="" class="set-sections">
         <!-- Profile -->
         <section data-v-a376170b="" id="profile" class="sect">
@@ -91,10 +91,18 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
               <p data-v-a376170b="">Free forever — upgrade for unlimited places, trips and photo storage.</p>
             </div><a data-v-a376170b="" class="btn btn--primary btn--sm">view plans</a>
           </div>
+        </section><!-- Appearance -->
+        <section data-v-a376170b="" id="appearance" class="sect">
+          <div data-v-a376170b="" class="sect__head">
+            <div data-v-a376170b="" class="label">// 05 — appearance</div>
+            <h3 data-v-a376170b="" class="display" style="margin-top: 8px;">Appearance</h3>
+            <p data-v-a376170b=""> Your theme and accent colour are saved to your account and follow you everywhere. </p>
+          </div>
+          <appearancesettings data-v-a376170b=""></appearancesettings>
         </section><!-- Prefs -->
         <section data-v-a376170b="" id="prefs" class="sect">
           <div data-v-a376170b="" class="sect__head">
-            <div data-v-a376170b="" class="label">// 05 — preferences</div>
+            <div data-v-a376170b="" class="label">// 06 — preferences</div>
             <h3 data-v-a376170b="" class="display" style="margin-top: 8px;">Units &amp; map</h3>
             <p data-v-a376170b="">How distances and your map look across the app.</p>
           </div>
@@ -142,7 +150,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
         </section><!-- Privacy -->
         <section data-v-a376170b="" id="privacy" class="sect">
           <div data-v-a376170b="" class="sect__head">
-            <div data-v-a376170b="" class="label">// 06 — privacy</div>
+            <div data-v-a376170b="" class="label">// 07 — privacy</div>
             <h3 data-v-a376170b="" class="display" style="margin-top: 8px;">Privacy</h3>
             <p data-v-a376170b="">Decide what's public and how precise your locations are.</p>
           </div>

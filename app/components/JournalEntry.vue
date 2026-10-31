@@ -34,7 +34,7 @@
       class="post__media"
     >
       <div v-for="(photo, index) in visiblePhotos" :key="photo.id" class="ph">
-        <div class="topo" style="opacity: 0.4" />
+        <AppImage :src="photo.url" :alt="entry.title" class="post__photo" />
         <span
           v-if="
             index === visiblePhotos.length - 1 &&
@@ -85,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import AppImage from "~/components/AppImage.vue";
 import { computed } from "vue";
 import type { Entry, EntryTag } from "~/stores/entries";
 
@@ -131,6 +132,12 @@ const entryTimestamp = computed(() => {
 </script>
 
 <style scoped>
+.post__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 /* Tags render as <button> so they're clickable (filter the feed to that tag)
    but must keep the same look as the plain-span .tag style in main.css. */
 .tag--clickable {

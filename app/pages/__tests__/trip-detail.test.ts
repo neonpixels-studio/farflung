@@ -14,6 +14,14 @@ import { INVITE_UNAVAILABLE_TITLE } from "~/constants/trips";
 import { UNEXPECTED_ERROR_MESSAGE } from "~/utils/extractErrorMessage";
 import { AUTH_REDIRECT_QUERY_PARAM } from "~/utils/authRedirect";
 
+vi.mock("~/composables/useMediaUpload", () => ({
+  useMediaUpload: () => ({
+    upload: vi.fn(),
+    isUploading: ref(false),
+    error: ref(null),
+  }),
+}));
+
 // The expected /login href once the trip's own URL (see the useRoute stub
 // below, default routeParams.id "trip-1") is carried through as the redirect
 // param (#292).
@@ -1157,26 +1165,32 @@ describe("Trip Detail page (/trips/[id])", () => {
       );
       expect((meta.ogDescription as () => string)()).toBe(description());
       expect((meta.twitterDescription as () => string)()).toBe(description());
-      expect(ogImage()).toBe("https://farflung.test/favicon.ico");
+      expect(ogImage()).toBe("https://farflung.test/og-default.png");
       expect((meta.twitterImage as () => string)()).toBe(ogImage());
       expect(ogUrl()).toBe("https://farflung.test/trips/trip-1");
       expect(meta.ogType).toBe("website");
-      expect((meta.twitterCard as () => string)()).toBe("summary");
+      expect(meta.twitterCard).toBe("summary_large_image");
     });
 
     it("builds an absolute og:image from the trip's real cover, not the optimistic upload preview, and uses the large-image card", () => {
       const tripsStore = useTripsStore();
       tripsStore.currentTripDetail = {
         ...SAMPLE_DETAIL,
-        trip: { ...SAMPLE_DETAIL.trip, coverImageId: "media-abc123" },
+        trip: {
+          ...SAMPLE_DETAIL.trip,
+          coverImageId: "media-abc123",
+          coverImageUrl: "/api/media/media-abc123?exp=1&sig=abc",
+        },
       };
 
       mount(TripDetailPage, buildGlobalConfig(pinia));
 
       const meta = lastSeoMetaCall(useSeoMetaMock);
       const ogImage = meta.ogImage as () => string;
-      expect(ogImage()).toBe("https://farflung.test/api/media/media-abc123");
-      expect((meta.twitterCard as () => string)()).toBe("summary_large_image");
+      expect(ogImage()).toBe(
+        "https://farflung.test/api/media/media-abc123?exp=1&sig=abc",
+      );
+      expect(meta.twitterCard).toBe("summary_large_image");
     });
 
     it("falls back to a placeholder title/description before a trip has loaded", () => {

@@ -36,5 +36,9 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: "FarFlung — Privacy Policy" });
+import { useOgMeta } from "~/composables/useOgMeta";
+useOgMeta(() => ({
+  pageTitle: "Privacy Policy",
+  description: "How FarFlung collects, uses and protects your data.",
+}));
 </script>

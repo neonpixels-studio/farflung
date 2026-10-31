@@ -92,6 +92,13 @@
       "when": 1793480733153,
       "tag": "0013_add_handle_lower_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793482195077,
+      "tag": "0014_add_appearance_preferences",
+      "breakpoints": true
     }
   ]
 }
