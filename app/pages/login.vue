@@ -96,14 +96,14 @@ definePageMeta({ layout: false, path: "/login/:clerkStep(.*)*" });
 // instead from the same embedded form) so either path lands back on the same
 // destination. Both "fallback" props only apply when Clerk has no other
 // redirect already in flight (e.g. an email verification link), so neither
-// ever clobbers Clerk's own multi-step auth flows. `?? undefined` (not a bare
-// null) so an unset param omits the prop entirely, rather than passing an
-// explicit null that could override an app-level default Clerk is configured
-// with elsewhere (env var / dashboard redirect settings).
+// ever clobbers Clerk's own multi-step auth flows. Without a valid return_to,
+// Clerk would otherwise send the visitor to the marketing page at "/".
+const DEFAULT_POST_LOGIN_PATH = "/home";
 const route = useRoute();
 const safeRedirectPath = computed(
   () =>
-    getSafeRedirectPath(route.query[AUTH_REDIRECT_QUERY_PARAM]) ?? undefined,
+    getSafeRedirectPath(route.query[AUTH_REDIRECT_QUERY_PARAM]) ??
+    DEFAULT_POST_LOGIN_PATH,
 );
 
 // Representative placeholder values for the marketing panel.

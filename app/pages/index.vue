@@ -10,9 +10,10 @@
         <a class="nl" href="#features">Features</a>
         <a class="nl" href="#how">How it works</a>
         <a class="nl" href="#plans">Plans</a>
-        <NuxtLink class="nl" to="/login">Sign in</NuxtLink>
+        <NuxtLink v-if="isSignedIn" class="nl" to="/home">Dashboard</NuxtLink>
+        <NuxtLink v-else class="nl" to="/login">Sign in</NuxtLink>
         <AppThemeToggle />
-        <NuxtLink class="btn btn--primary btn--sm" to="/login"
+        <NuxtLink class="btn btn--primary btn--sm" :to="freeTierCtaTarget"
           >start free</NuxtLink
         >
       </div>

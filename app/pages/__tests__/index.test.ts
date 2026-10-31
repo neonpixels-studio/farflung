@@ -19,12 +19,14 @@ const planCheckoutButtonStub = {
   props: ["tier", "cycle", "redirectTo"],
 };
 
+const nuxtLinkStub = { template: "<a><slot /></a>", props: ["to"] };
+
 const globalConfig = {
   global: {
     stubs: {
       AppIcon: { template: "<svg data-icon />" },
       AppThemeToggle: { template: '<div class="theme-toggle" />' },
-      NuxtLink: { template: "<a><slot /></a>", props: ["to"] },
+      NuxtLink: nuxtLinkStub,
       PlanCheckoutButton: planCheckoutButtonStub,
     },
   },
@@ -73,6 +75,27 @@ describe("Landing page (/)", () => {
   it("renders the footer", () => {
     const wrapper = mount(IndexPage, globalConfig);
     expect(wrapper.find("footer.ftr").exists()).toBe(true);
+  });
+
+  it("links the nav to sign-in when signed out", () => {
+    const wrapper = mount(IndexPage, globalConfig);
+    const navLinks = wrapper.find("nav").findAllComponents(nuxtLinkStub);
+    const targets = navLinks.map((link) => link.props("to"));
+
+    expect(wrapper.find("nav").text()).toContain("Sign in");
+    expect(wrapper.find("nav").text()).not.toContain("Dashboard");
+    expect(targets).toEqual(["/", "/login", "/login"]);
+  });
+
+  it("links the nav to the dashboard when signed in", () => {
+    isSignedInRef.value = true;
+    const wrapper = mount(IndexPage, globalConfig);
+    const navLinks = wrapper.find("nav").findAllComponents(nuxtLinkStub);
+    const targets = navLinks.map((link) => link.props("to"));
+
+    expect(wrapper.find("nav").text()).toContain("Dashboard");
+    expect(wrapper.find("nav").text()).not.toContain("Sign in");
+    expect(targets).toEqual(["/", "/home", "/home"]);
   });
 
   it("shows /login CTAs for the paid tiers when signed out", () => {

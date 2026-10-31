@@ -92,8 +92,8 @@ describe("Login page (/login)", () => {
       const wrapper = mount(LoginPage, globalConfig);
 
       const signIn = wrapper.findComponent(signInStub);
-      expect(signIn.props("fallbackRedirectUrl")).toBeUndefined();
-      expect(signIn.props("signUpFallbackRedirectUrl")).toBeUndefined();
+      expect(signIn.props("fallbackRedirectUrl")).toBe("/home");
+      expect(signIn.props("signUpFallbackRedirectUrl")).toBe("/home");
     },
   );
 
@@ -110,11 +110,11 @@ describe("Login page (/login)", () => {
     expect(source).toContain('path: "/login/:clerkStep(.*)*"');
   });
 
-  it("omits both fallback redirect props when no return_to query param is present", () => {
+  it("sends visitors to the dashboard when no return_to query param is present", () => {
     const wrapper = mount(LoginPage, globalConfig);
 
     const signIn = wrapper.findComponent(signInStub);
-    expect(signIn.props("fallbackRedirectUrl")).toBeUndefined();
-    expect(signIn.props("signUpFallbackRedirectUrl")).toBeUndefined();
+    expect(signIn.props("fallbackRedirectUrl")).toBe("/home");
+    expect(signIn.props("signUpFallbackRedirectUrl")).toBe("/home");
   });
 });
