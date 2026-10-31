@@ -124,6 +124,9 @@ export const useTripsStore = defineStore("trips", () => {
   const tripList = ref<Trip[]>([]);
   const currentTripDetail = ref<TripDetail | null>(null);
   const isLoadingList = ref(false);
+  // Set only after a successful fetchTrips, so a page can tell "not fetched
+  // yet" or "fetch failed" apart from "fetched and genuinely empty".
+  const hasLoadedList = ref(false);
   const isLoadingDetail = ref(false);
   const listError = ref<string | null>(null);
   // detailError carries a message for a retryable failure (5xx, network); a 404
@@ -182,6 +185,7 @@ export const useTripsStore = defineStore("trips", () => {
 
     try {
       tripList.value = await fetchAllTripsPages(params);
+      hasLoadedList.value = true;
     } catch (error) {
       listError.value = extractErrorMessage(error);
       throw error;
@@ -400,6 +404,7 @@ export const useTripsStore = defineStore("trips", () => {
     tripList,
     currentTripDetail,
     isLoadingList,
+    hasLoadedList,
     isLoadingDetail,
     listError,
     detailError,

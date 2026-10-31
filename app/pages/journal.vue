@@ -659,7 +659,7 @@ onMounted(() => {
   gap: 28px;
   align-items: start;
   max-width: 960px;
-  margin: 0 auto;
+  margin: 24px auto 0;
 }
 .feed {
   display: flex;

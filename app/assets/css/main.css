@@ -999,7 +999,12 @@ textarea.field__input {
   display: flex;
   align-items: center;
   gap: 12px;
+  /* Action items are <button>s, which shrink-wrap and center text by default. */
+  width: 100%;
+  text-align: left;
   padding: 9px 11px;
+  border: 0;
+  background: transparent;
   border-radius: var(--radius-sm);
   cursor: pointer;
   text-decoration: none;
@@ -1090,6 +1095,9 @@ textarea.field__input {
 /* ---------- notifications dropdown ---------- */
 .notif {
   position: fixed;
+  /* Fallback only; AppNotifications overrides top/right to sit under the bell. */
+  top: 60px;
+  right: 12px;
   z-index: 88;
   width: 360px;
   max-width: calc(100vw - 24px);

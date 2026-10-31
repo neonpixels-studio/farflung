@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { defineComponent, h, inject } from "vue";
 import AppLayout from "../app.vue";
+import AppNotifications from "~/components/AppNotifications.vue";
 import { useCommandPaletteShortcut } from "../../composables/useCommandPaletteShortcut";
 
 // app.vue calls useCommandPaletteShortcut bare, relying on Nuxt's
@@ -204,5 +205,102 @@ describe("layouts/app.vue", () => {
     expect(wrapper.find(".command-palette-stub").attributes("data-open")).toBe(
       "false",
     );
+  });
+
+  describe("notifications bell", () => {
+    // Real AppNotifications (not the stub) so the bell click and the panel's
+    // document-level outside-click handler are exercised together.
+    const bellHost = defineComponent({
+      name: "BellHost",
+      setup() {
+        const toggleNotifications = inject<
+          ((event: MouseEvent) => void) | undefined
+        >("toggleNotifications", undefined);
+        return () =>
+          h(
+            "button",
+            {
+              class: "bell",
+              onClick: (event: MouseEvent) => toggleNotifications?.(event),
+            },
+            "bell",
+          );
+      },
+    });
+
+    let wrapper: ReturnType<typeof mount>;
+
+    function mountWithRealNotifications() {
+      wrapper = mount(AppLayout, {
+        slots: { default: () => h(bellHost) },
+        attachTo: document.body,
+        global: {
+          // Components are Nuxt auto-imports, so the real one must be registered.
+          components: { AppNotifications },
+          stubs: {
+            AppSidebar: sidebarStub,
+            AppNewEntry: newEntryStub,
+            AppCommandPalette: commandPaletteStub,
+            AppIcon: true,
+            NuxtLink: { template: "<a><slot /></a>" },
+          },
+        },
+      });
+      return wrapper;
+    }
+
+    afterEach(() => {
+      wrapper.unmount();
+    });
+
+    it("opens the notifications on the first bell click", async () => {
+      mountWithRealNotifications();
+
+      await wrapper.find(".bell").trigger("click");
+
+      expect(wrapper.findComponent(AppNotifications).props("open")).toBe(true);
+      expect(wrapper.find(".notif").exists()).toBe(true);
+    });
+
+    it("closes on a second bell click without the outside-click handler reopening it", async () => {
+      mountWithRealNotifications();
+      await wrapper.find(".bell").trigger("click");
+
+      await wrapper.find(".bell").trigger("click");
+
+      expect(wrapper.find(".notif").exists()).toBe(false);
+    });
+
+    it("closes on an outside click and reopens on the next bell click", async () => {
+      mountWithRealNotifications();
+      await wrapper.find(".bell").trigger("click");
+
+      document.body.click();
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find(".notif").exists()).toBe(false);
+
+      await wrapper.find(".bell").trigger("click");
+      expect(wrapper.find(".notif").exists()).toBe(true);
+    });
+
+    it("closes on Escape", async () => {
+      mountWithRealNotifications();
+      await wrapper.find(".bell").trigger("click");
+
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find(".notif").exists()).toBe(false);
+    });
+
+    it("anchors the panel to the clicked bell", async () => {
+      mountWithRealNotifications();
+
+      await wrapper.find(".bell").trigger("click");
+
+      expect(wrapper.findComponent(AppNotifications).props("anchor")).toBe(
+        wrapper.find(".bell").element,
+      );
+    });
   });
 });
