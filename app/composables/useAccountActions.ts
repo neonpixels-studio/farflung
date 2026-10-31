@@ -1,12 +1,15 @@
 /**
- * Composable for account-management actions: password change, avatar, and
- * account deletion.
+ * Composable for account-management actions: password change, avatar, sign
+ * out, and account deletion.
  *
  * All API calls go through `apiFetch` so the Clerk session token is injected
  * automatically.
  */
 import { useApiClient } from "~/composables/useApiClient";
 import { extractErrorMessage } from "~/utils/extractErrorMessage";
+
+const SIGN_OUT_FAILED_MESSAGE =
+  "Couldn't sign out. Refresh the page and try again.";
 
 export function useAccountActions() {
   const { apiFetch } = useApiClient();
@@ -18,6 +21,7 @@ export function useAccountActions() {
   const passwordError = ref<string | null>(null);
   const avatarError = ref<string | null>(null);
   const deleteError = ref<string | null>(null);
+  const signOutError = ref<string | null>(null);
 
   async function runAction<T>(
     action: () => Promise<T>,
@@ -131,14 +135,42 @@ export function useAccountActions() {
     );
   }
 
+  // Unlike signOutLocally, a failure is reported: the session is still alive,
+  // so redirecting home would falsely suggest the visitor had signed out.
+  function reportSignOutFailure(): boolean {
+    signOutError.value = SIGN_OUT_FAILED_MESSAGE;
+    return false;
+  }
+
+  async function signOut(): Promise<boolean> {
+    return runAction(
+      async () => {
+        const clerkInstance = clerk.value;
+        if (!clerkInstance) {
+          return reportSignOutFailure();
+        }
+        try {
+          await clerkInstance.signOut({ redirectUrl: "/" });
+          return true;
+        } catch {
+          return reportSignOutFailure();
+        }
+      },
+      signOutError,
+      false,
+    );
+  }
+
   return {
     isLoading: readonly(isLoading),
     passwordError: readonly(passwordError),
     avatarError: readonly(avatarError),
     deleteError: readonly(deleteError),
+    signOutError: readonly(signOutError),
     changePassword,
     uploadAvatar,
     removeAvatar,
     deleteAccount,
+    signOut,
   };
 }

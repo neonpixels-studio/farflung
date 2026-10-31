@@ -193,6 +193,26 @@
                 </button>
               </div>
             </div>
+            <div class="opt-row">
+              <div class="lbl">
+                <b>Sign out</b>
+                <p>End your session on this device.</p>
+              </div>
+              <button
+                class="btn btn--outline btn--sm"
+                :disabled="isAccountLoading"
+                data-testid="sign-out"
+                @click="signOut"
+              >
+                sign out
+              </button>
+            </div>
+            <div
+              v-if="signOutError && !isAccountLoading"
+              class="account-field-error"
+            >
+              {{ signOutError }}
+            </div>
           </section>
 
           <!-- Connections -->
@@ -900,10 +920,12 @@ const {
   passwordError,
   avatarError,
   deleteError,
+  signOutError,
   changePassword,
   uploadAvatar,
   removeAvatar,
   deleteAccount,
+  signOut,
 } = useAccountActions();
 
 onUnmounted(() => {

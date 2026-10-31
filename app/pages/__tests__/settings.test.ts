@@ -133,6 +133,8 @@ const mockAccountIsLoading = ref(false);
 const mockPasswordError = ref<string | null>(null);
 const mockAvatarError = ref<string | null>(null);
 const mockDeleteError = ref<string | null>(null);
+const mockSignOut = vi.fn().mockResolvedValue(true);
+const mockSignOutError = ref<string | null>(null);
 
 vi.mock("~/composables/useAccountActions", () => ({
   useAccountActions: vi.fn(() => ({
@@ -140,10 +142,12 @@ vi.mock("~/composables/useAccountActions", () => ({
     passwordError: readonly(mockPasswordError),
     avatarError: readonly(mockAvatarError),
     deleteError: readonly(mockDeleteError),
+    signOutError: readonly(mockSignOutError),
     changePassword: mockChangePassword,
     uploadAvatar: mockUploadAvatar,
     removeAvatar: mockRemoveAvatar,
     deleteAccount: mockDeleteAccount,
+    signOut: mockSignOut,
   })),
 }));
 
@@ -836,6 +840,23 @@ describe("Settings page (/settings)", () => {
     await wrapper.vm.$nextTick();
 
     expect(mockChangePassword).toHaveBeenCalledWith("validpassword");
+  });
+
+  it("signs out when the sign out button is clicked", async () => {
+    mockSignOut.mockClear();
+    const wrapper = mount(SettingsPage, globalConfig);
+
+    await wrapper.find('[data-testid="sign-out"]').trigger("click");
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the error when signing out fails", async () => {
+    mockSignOutError.value = "Network down";
+    const wrapper = mount(SettingsPage, globalConfig);
+
+    expect(wrapper.find("#account").text()).toContain("Network down");
+    mockSignOutError.value = null;
   });
 
   it("calls deleteAccount when delete forever is clicked with DELETE typed", async () => {

@@ -30,6 +30,41 @@ describe("useAccountActions", () => {
     mockSignOut.mockResolvedValue(undefined);
   });
 
+  describe("signOut", () => {
+    it("signs out through Clerk and redirects home", async () => {
+      const { signOut, signOutError } = useAccountActions();
+
+      const result = await signOut();
+
+      expect(result).toBe(true);
+      expect(mockSignOut).toHaveBeenCalledWith({ redirectUrl: "/" });
+      expect(signOutError.value).toBeNull();
+    });
+
+    it("reports a failure instead of redirecting, since the session is still alive", async () => {
+      mockSignOut.mockRejectedValueOnce(new Error("network"));
+      const { signOut, signOutError } = useAccountActions();
+
+      const result = await signOut();
+
+      expect(result).toBe(false);
+      expect(signOutError.value).toContain("Couldn't sign out");
+    });
+
+    it("reports a failure when Clerk has not loaded", async () => {
+      vi.mocked(globalThis.useClerkInstance).mockReturnValueOnce(
+        shallowRef(null),
+      );
+      const { signOut, signOutError } = useAccountActions();
+
+      const result = await signOut();
+
+      expect(result).toBe(false);
+      expect(mockSignOut).not.toHaveBeenCalled();
+      expect(signOutError.value).toContain("Couldn't sign out");
+    });
+  });
+
   describe("changePassword", () => {
     it("returns true and calls the correct endpoint on success", async () => {
       mockApiFetch.mockResolvedValue({ ok: true });
