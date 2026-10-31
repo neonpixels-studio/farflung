@@ -399,13 +399,21 @@
 
           <!-- Appearance -->
           <section id="appearance" class="sect">
+            <div class="sect__head">
+              <div class="label">// 05 — appearance</div>
+              <h3 class="display" style="margin-top: 8px">Appearance</h3>
+              <p>
+                Your theme and accent colour are saved to your account and
+                follow you everywhere.
+              </p>
+            </div>
             <AppearanceSettings />
           </section>
 
           <!-- Prefs -->
           <section id="prefs" class="sect">
             <div class="sect__head">
-              <div class="label">// 05 — preferences</div>
+              <div class="label">// 06 — preferences</div>
               <h3 class="display" style="margin-top: 8px">Units &amp; map</h3>
               <p>How distances and your map look across the app.</p>
             </div>
@@ -482,7 +490,7 @@
           <!-- Privacy -->
           <section id="privacy" class="sect">
             <div class="sect__head">
-              <div class="label">// 06 — privacy</div>
+              <div class="label">// 07 — privacy</div>
               <h3 class="display" style="margin-top: 8px">Privacy</h3>
               <p>Decide what's public and how precise your locations are.</p>
             </div>

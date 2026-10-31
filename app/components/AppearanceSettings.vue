@@ -1,13 +1,4 @@
 <template>
-  <div class="sect__head">
-    <div class="label">// appearance</div>
-    <h2>Appearance</h2>
-    <p>
-      Your theme and accent colour are saved to your account and follow you
-      everywhere.
-    </p>
-  </div>
-
   <div class="appearance">
     <fieldset class="appearance__group">
       <legend class="appearance__label">Theme</legend>
