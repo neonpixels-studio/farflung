@@ -224,6 +224,24 @@ describe("Trips page (/trips)", () => {
       expect(wrapper.find(".feature").text()).toContain("892 km");
       expect(wrapper.find(".feature").text()).not.toContain("554 mi");
     });
+
+    // mockTripsStats reports "mi", so these prove the header reads the same
+    // preference as the trip cards rather than the unit on the stats response.
+    it("shows the header total in kilometres when the preference is kilometres", () => {
+      mockPreferences.value = { distanceUnit: "km" };
+      const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
+      const header = wrapper.find(".trips-head .label").text();
+      expect(header).toContain("77.6k km");
+      expect(header).not.toContain("miles");
+    });
+
+    it("shows the header total in miles when the preference is miles", () => {
+      mockPreferences.value = { distanceUnit: "mi" };
+      const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
+      const header = wrapper.find(".trips-head .label").text();
+      expect(header).toContain("48.2k miles");
+      expect(header).not.toContain(" km");
+    });
   });
 
   it("shows the featured ongoing trip by name", () => {

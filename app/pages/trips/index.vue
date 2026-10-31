@@ -165,12 +165,7 @@ const tabs = ["All", "Ongoing", "Upcoming", "Past"] as const;
 const activeTab = ref<(typeof tabs)[number]>("All");
 
 const tripsStore = useTripsStore();
-const {
-  stats,
-  displayDistance,
-  loadError: statsError,
-  fetchStats,
-} = useStats();
+const { stats, loadError: statsError, fetchStats } = useStats();
 
 const NO_TRIPS_MESSAGE = "No trips yet, plan your first route above.";
 
@@ -178,15 +173,21 @@ const tripCountsSummary = computed(() =>
   summarizeTripCounts(tripsStore.tripList),
 );
 
-const { formatDistance } = useDistanceUnit();
+const { unit, formatDistance } = useDistanceUnit();
 
 const distanceUnitShort = computed(() =>
-  stats.value.distanceUnit === "km" ? "km" : "miles",
+  unit.value === "km" ? "km" : "miles",
+);
+
+const headerDistance = computed(() =>
+  unit.value === "km"
+    ? stats.value.totalDistanceKm
+    : stats.value.totalDistanceMi,
 );
 
 const tripsHeaderStats = computed(
   () =>
-    `${formatCompact(stats.value.placesCount)} places · ${formatCompact(displayDistance.value)} ${distanceUnitShort.value}`,
+    `${formatCompact(stats.value.placesCount)} places · ${formatCompact(headerDistance.value)} ${distanceUnitShort.value}`,
 );
 
 onMounted(() => {
