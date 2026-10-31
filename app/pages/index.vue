@@ -13,8 +13,23 @@
         <NuxtLink v-if="isSignedIn" class="nl" to="/home">Dashboard</NuxtLink>
         <NuxtLink v-else class="nl" to="/login">Sign in</NuxtLink>
         <AppThemeToggle />
-        <NuxtLink class="btn btn--primary btn--sm" :to="freeTierCtaTarget"
+        <NuxtLink
+          v-if="!isSignedIn"
+          class="btn btn--primary btn--sm"
+          to="/sign-up"
+          external
           >start free</NuxtLink
+        >
+        <NuxtLink
+          v-else-if="upgradeAction === 'pricing'"
+          class="btn btn--primary btn--sm"
+          to="/pricing"
+          >upgrade</NuxtLink
+        >
+        <PlanManageButton
+          v-else-if="upgradeAction === 'portal'"
+          class="btn btn--primary btn--sm"
+          >upgrade</PlanManageButton
         >
       </div>
     </nav>
@@ -30,26 +45,43 @@
             moving. Drop a pin, write the moment, surface the hidden spots worth
             the detour — your whole world, quietly filling in.
           </p>
-          <form class="lp-capture" novalidate @submit.prevent="handleCapture">
-            <span class="lp-capture__pill">
-              <AppIcon name="mail" :size="16" />
-              <input
-                v-model="email"
-                type="email"
-                placeholder="you@domain.com"
-                aria-label="Email address"
-                autocomplete="email"
-              />
-            </span>
-            <button class="btn btn--primary btn--lg" type="submit">
-              start free
-              <AppIcon name="arrow-right" :size="15" />
-            </button>
-          </form>
-          <p class="lp-capture__note">
-            <AppIcon name="check" :size="13" />
-            Free forever plan · no card needed
-          </p>
+          <template v-if="!isSignedIn">
+            <form class="lp-capture" novalidate @submit.prevent="handleCapture">
+              <span class="lp-capture__pill">
+                <AppIcon name="mail" :size="16" />
+                <input
+                  v-model="email"
+                  type="email"
+                  placeholder="you@domain.com"
+                  aria-label="Email address"
+                  autocomplete="email"
+                />
+              </span>
+              <button class="btn btn--primary btn--lg" type="submit">
+                start free
+                <AppIcon name="arrow-right" :size="15" />
+              </button>
+            </form>
+            <p class="lp-capture__note">
+              <AppIcon name="check" :size="13" />
+              Free forever plan · no card needed
+            </p>
+          </template>
+          <NuxtLink
+            v-else-if="upgradeAction === 'pricing'"
+            class="btn btn--primary btn--lg lp-hero__upgrade"
+            to="/pricing"
+          >
+            upgrade
+            <AppIcon name="arrow-right" :size="15" />
+          </NuxtLink>
+          <PlanManageButton
+            v-else-if="upgradeAction === 'portal'"
+            class="btn btn--primary btn--lg lp-hero__upgrade"
+          >
+            upgrade
+            <AppIcon name="arrow-right" :size="15" />
+          </PlanManageButton>
         </div>
         <div class="hero-map" data-reveal>
           <div class="topo" />
@@ -252,9 +284,13 @@
         </div>
         <div class="place-list" data-reveal-stagger data-reveal-step="80">
           <NuxtLink class="place" to="/login">
-            <div class="place__img ph">
-              <div class="topo" style="opacity: 0.4" />
-            </div>
+            <img
+              class="place__img"
+              src="/images/landing/place-chiang-mai.webp"
+              alt="Coffee beans turning in a roaster"
+              loading="lazy"
+              decoding="async"
+            />
             <div class="place__b">
               <div class="place__loc">Chiang Mai, TH</div>
               <div class="place__n">A coffee roaster down a side soi</div>
@@ -265,9 +301,13 @@
             </div>
           </NuxtLink>
           <NuxtLink class="place" to="/login">
-            <div class="place__img ph">
-              <div class="topo" style="opacity: 0.4" />
-            </div>
+            <img
+              class="place__img"
+              src="/images/landing/place-lisbon.webp"
+              alt="Lisbon rooftops and the Tagus from a viewpoint"
+              loading="lazy"
+              decoding="async"
+            />
             <div class="place__b">
               <div class="place__loc">Lisbon, PT</div>
               <div class="place__n">Miradouro with no tour buses</div>
@@ -278,9 +318,13 @@
             </div>
           </NuxtLink>
           <NuxtLink class="place" to="/login">
-            <div class="place__img ph">
-              <div class="topo" style="opacity: 0.4" />
-            </div>
+            <img
+              class="place__img"
+              src="/images/landing/place-mexico-city.webp"
+              alt="A colorful taquería storefront in Mexico City"
+              loading="lazy"
+              decoding="async"
+            />
             <div class="place__b">
               <div class="place__loc">Mexico City, MX</div>
               <div class="place__n">Late-night taquería, locals only</div>
@@ -308,9 +352,13 @@
         </div>
         <div class="entries3" data-reveal-stagger data-reveal-step="100">
           <article class="e3">
-            <div class="e3__img ph">
-              <div class="topo" style="opacity: 0.4" />
-            </div>
+            <img
+              class="e3__img"
+              src="/images/landing/entry-reykjavik.webp"
+              alt="A boat moored in Reykjavík harbor below snowy mountains"
+              loading="lazy"
+              decoding="async"
+            />
             <div class="e3__b">
               <div class="e3__loc">
                 <AppIcon name="pin" :size="11" /> Reykjavík, IS
@@ -328,9 +376,13 @@
             </div>
           </article>
           <article class="e3">
-            <div class="e3__img ph">
-              <div class="topo" style="opacity: 0.4" />
-            </div>
+            <img
+              class="e3__img"
+              src="/images/landing/entry-lisbon.webp"
+              alt="A yellow Lisbon tram on a street of historic buildings"
+              loading="lazy"
+              decoding="async"
+            />
             <div class="e3__b">
               <div class="e3__loc">
                 <AppIcon name="pin" :size="11" /> Lisbon, PT
@@ -348,9 +400,13 @@
             </div>
           </article>
           <article class="e3">
-            <div class="e3__img ph">
-              <div class="topo" style="opacity: 0.4" />
-            </div>
+            <img
+              class="e3__img"
+              src="/images/landing/entry-tokyo.webp"
+              alt="Neon signs over a rainy Tokyo street at night"
+              loading="lazy"
+              decoding="async"
+            />
             <div class="e3__b">
               <div class="e3__loc">
                 <AppIcon name="pin" :size="11" /> Tokyo, JP
@@ -371,80 +427,11 @@
       </div>
     </section>
 
-    <!-- ============ TESTIMONIALS ============ -->
-    <section id="loved" class="lp-sec lp-sec--tint">
-      <div class="lp">
-        <div class="sec-head center" data-reveal>
-          <div class="label">// 06 — loved by travelers</div>
-          <h2>The home base for <b>people without one.</b></h2>
-        </div>
-        <div class="quotes" data-reveal-stagger data-reveal-step="100">
-          <figure class="quote">
-            <div class="quote__stars">
-              <AppIcon v-for="i in 5" :key="i" name="star" :size="15" />
-            </div>
-            <p>
-              "I've lived out of a backpack for two years across eleven
-              countries. FarFlung is the only record of it that I actually trust
-              — and the only one I reread."
-            </p>
-            <figcaption class="quote__who">
-              <span class="quote__av"><AppIcon name="user" :size="18" /></span>
-              <span
-                ><span class="quote__name">Maya R.</span><br /><span
-                  class="quote__role"
-                  >Product designer · remote</span
-                ></span
-              >
-            </figcaption>
-          </figure>
-          <figure class="quote">
-            <div class="quote__stars">
-              <AppIcon v-for="i in 5" :key="i" name="star" :size="15" />
-            </div>
-            <p>
-              "The photo import is magic. I land somewhere new and by the
-              evening my whole day is already pinned and dated. No more mystery
-              camera rolls."
-            </p>
-            <figcaption class="quote__who">
-              <span class="quote__av"><AppIcon name="user" :size="18" /></span>
-              <span
-                ><span class="quote__name">Diego S.</span><br /><span
-                  class="quote__role"
-                  >Software engineer · digital nomad</span
-                ></span
-              >
-            </figcaption>
-          </figure>
-          <figure class="quote">
-            <div class="quote__stars">
-              <AppIcon v-for="i in 5" :key="i" name="star" :size="15" />
-            </div>
-            <p>
-              "Discover sends me to the places friends-of-friends loved, not the
-              top ten lists. I've found my favorite cafés in three cities this
-              way."
-            </p>
-            <figcaption class="quote__who">
-              <span class="quote__av"><AppIcon name="user" :size="18" /></span>
-              <span
-                ><span class="quote__name">Priya K.</span><br /><span
-                  class="quote__role"
-                  >Writer · slow traveler</span
-                ></span
-              >
-            </figcaption>
-          </figure>
-        </div>
-      </div>
-    </section>
-
     <!-- ============ PRICING TEASER ============ -->
     <section id="plans" class="lp-sec">
       <div class="lp">
         <div class="sec-head center" data-reveal>
-          <div class="label">// 07 — plans</div>
+          <div class="label">// 06 — plans</div>
           <h2>Start free. <b>Go further when you do.</b></h2>
           <p>
             Every plan keeps your map and journal forever. Upgrade only when
@@ -458,7 +445,7 @@
             <p class="tier__desc">For the occasional trip.</p>
             <ul>
               <li>
-                <AppIcon name="check" :size="15" /> Up to 50 pins &amp; entries
+                <AppIcon name="check" :size="15" /> 25 pins, unlimited entries
               </li>
               <li><AppIcon name="check" :size="15" /> Personal world map</li>
               <li><AppIcon name="check" :size="15" /> Manual photo upload</li>
@@ -466,6 +453,7 @@
             <NuxtLink
               class="btn btn--outline btn--block"
               :to="freeTierCtaTarget"
+              :external="!isSignedIn"
               >start free</NuxtLink
             >
           </div>
@@ -494,7 +482,11 @@
               class="btn btn--primary btn--block"
               >start free trial</PlanCheckoutButton
             >
-            <NuxtLink v-else class="btn btn--primary btn--block" to="/login"
+            <NuxtLink
+              v-else
+              class="btn btn--primary btn--block"
+              to="/sign-up"
+              external
               >start free trial</NuxtLink
             >
           </div>
@@ -506,11 +498,13 @@
               <li>
                 <AppIcon name="check" :size="15" /> Everything in Wanderer
               </li>
-              <li><AppIcon name="check" :size="15" /> Collaborative trips</li>
+              <li>
+                <AppIcon name="check" :size="15" /> Collaborative trips (coming
+                soon)
+              </li>
               <li>
                 <AppIcon name="check" :size="15" /> Public traveler profile
               </li>
-              <li><AppIcon name="check" :size="15" /> Priority support</li>
             </ul>
             <PlanCheckoutButton
               v-if="isSignedIn"
@@ -519,7 +513,11 @@
               class="btn btn--outline btn--block"
               >start free trial</PlanCheckoutButton
             >
-            <NuxtLink v-else class="btn btn--outline btn--block" to="/login"
+            <NuxtLink
+              v-else
+              class="btn btn--outline btn--block"
+              to="/sign-up"
+              external
               >start free trial</NuxtLink
             >
           </div>
@@ -532,7 +530,7 @@
     </section>
 
     <!-- ============ FINAL CTA ============ -->
-    <section class="lp-sec">
+    <section v-if="!isSignedIn" class="lp-sec">
       <div class="lp">
         <div class="cta" data-reveal>
           <div class="topo" />
@@ -595,24 +593,19 @@
             <h4>Explore</h4>
             <a href="#how">How it works</a>
             <a href="#discover">Discover</a>
-            <NuxtLink to="/home">Product tour</NuxtLink>
             <NuxtLink to="/login">Sign in</NuxtLink>
           </div>
           <div class="ftr__col">
             <h4>Company</h4>
             <a href="#">About</a>
             <NuxtLink to="/contact">Contact</NuxtLink>
-            <a href="#">Journal blog</a>
             <NuxtLink to="/privacy">Privacy</NuxtLink>
             <NuxtLink to="/terms">Terms</NuxtLink>
           </div>
         </div>
         <div class="ftr__base">
           <span>© 2026 FarFlung · made for the perpetually elsewhere</span>
-          <span class="hstack gap-12">
-            <span>Space Grotesk · JetBrains Mono</span>
-            <AppThemeToggle />
-          </span>
+          <AppThemeToggle />
         </div>
       </div>
     </footer>
@@ -620,6 +613,7 @@
 </template>
 
 <script setup lang="ts">
+import { useBilling } from "~/composables/useBilling";
 useHead({ title: "FarFlung — Track every place you wander" });
 useScrollReveal();
 
@@ -628,8 +622,34 @@ const { isSignedIn } = useClerkAuth();
 // Signed-in visitors already have an account — "start free" on the Drifter
 // tier sends them straight into the app rather than back to login.
 const freeTierCtaTarget = computed(() =>
-  isSignedIn.value ? "/home" : "/login",
+  isSignedIn.value ? "/home" : "/sign-up",
 );
+
+const { subscription, fetchSubscription } = useBilling();
+const hasLoadedPlan = ref(false);
+
+async function loadPlan(signedIn: boolean): Promise<void> {
+  if (!signedIn) {
+    return;
+  }
+  await fetchSubscription();
+  hasLoadedPlan.value = true;
+}
+
+onMounted(() => {
+  watch(isSignedIn, loadPlan, { immediate: true });
+});
+
+// Waits for the real plan so a Nomad never sees "upgrade" flash from the
+// Drifter default. Wanderers already subscribe, so checkout would refuse them
+// and plan changes go through the Stripe portal instead.
+const upgradeAction = computed(() => {
+  if (!hasLoadedPlan.value) {
+    return null;
+  }
+  const actionByPlan = { drifter: "pricing", wanderer: "portal", nomad: null };
+  return actionByPlan[subscription.value.plan];
+});
 
 const email = ref("");
 const navStuck = ref(false);
@@ -638,7 +658,9 @@ function handleCapture() {
   if (!email.value) {
     return;
   }
-  navigateTo(`/login?email=${encodeURIComponent(email.value)}`);
+  navigateTo(`/sign-up?email=${encodeURIComponent(email.value)}`, {
+    external: true,
+  });
 }
 
 if (import.meta.client) {
@@ -720,6 +742,9 @@ section[id] {
 }
 .lp-hero h1 b {
   color: var(--accent-ink);
+}
+.lp-hero__upgrade {
+  margin-top: 30px;
 }
 .lp-hero__sub {
   max-width: 500px;
@@ -1055,6 +1080,7 @@ section[id] {
   transform: translateX(4px);
 }
 .place__img {
+  object-fit: cover;
   width: 56px;
   height: 56px;
   flex: none;
@@ -1110,6 +1136,9 @@ section[id] {
   border-color: var(--accent-line);
 }
 .e3__img {
+  width: 100%;
+  object-fit: cover;
+  display: block;
   height: 152px;
   position: relative;
 }
@@ -1151,58 +1180,6 @@ section[id] {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-/* testimonials */
-.quotes {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 44px;
-}
-.quote {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 24px 22px;
-  display: flex;
-  flex-direction: column;
-}
-.quote__stars {
-  display: flex;
-  gap: 2px;
-  color: var(--warning);
-  margin-bottom: 14px;
-}
-.quote p {
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--ink);
-  margin: 0 0 20px;
-}
-.quote__who {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-.quote__av {
-  width: 38px;
-  height: 38px;
-  border-radius: 9px;
-  background: var(--accent-weak);
-  color: var(--accent-ink);
-  display: grid;
-  place-items: center;
-  flex: none;
-}
-.quote__name {
-  font-size: 13px;
-  font-weight: 600;
-}
-.quote__role {
-  font-size: 11px;
-  color: var(--muted);
 }
 
 /* pricing teaser */
@@ -1394,7 +1371,6 @@ section[id] {
   }
   .steps,
   .entries3,
-  .quotes,
   .tiers {
     grid-template-columns: 1fr;
   }
