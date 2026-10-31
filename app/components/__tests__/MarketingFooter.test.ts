@@ -18,6 +18,7 @@ describe("MarketingFooter", () => {
     expect(text).not.toContain("Product tour");
     expect(text).not.toContain("Journal blog");
     expect(text).not.toContain("JetBrains Mono");
+    expect(text).not.toContain("About");
   });
 
   it("uses absolute section links so they work from any marketing page", () => {

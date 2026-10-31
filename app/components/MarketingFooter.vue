@@ -27,7 +27,6 @@
         </div>
         <div class="ftr__col">
           <h4>Company</h4>
-          <a href="#">About</a>
           <NuxtLink to="/contact">Contact</NuxtLink>
           <NuxtLink to="/privacy">Privacy</NuxtLink>
           <NuxtLink to="/terms">Terms</NuxtLink>
