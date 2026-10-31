@@ -505,4 +505,131 @@ describe("AppNotifications", () => {
       ).toContain("Notification 10");
     });
   });
+
+  describe("anchoring and dismissal", () => {
+    let wrapper: ReturnType<typeof mount> | null = null;
+    let anchor: HTMLButtonElement;
+
+    beforeEach(() => {
+      anchor = document.createElement("button");
+      document.body.appendChild(anchor);
+      vi.spyOn(anchor, "getBoundingClientRect").mockReturnValue({
+        top: 20,
+        bottom: 56,
+        left: 900,
+        right: 936,
+        width: 36,
+        height: 36,
+        x: 900,
+        y: 20,
+        toJSON: () => ({}),
+      });
+      vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(
+        1200,
+      );
+    });
+
+    afterEach(() => {
+      wrapper?.unmount();
+      wrapper = null;
+      anchor.remove();
+      vi.restoreAllMocks();
+    });
+
+    function mountOpen(extraProps: Record<string, unknown> = {}) {
+      wrapper = mount(AppNotifications, {
+        props: { open: true, anchor, ...extraProps },
+        ...globalConfig,
+        attachTo: document.body,
+      });
+      return wrapper;
+    }
+
+    it("positions the panel under the anchor, right-aligned to it", () => {
+      const panel = mountOpen().find(".notif");
+
+      expect(panel.attributes("style")).toContain("top: 64px");
+      expect(panel.attributes("style")).toContain("right: 264px");
+    });
+
+    it("keeps a viewport edge gap when the anchor sits flush right (narrow screens)", () => {
+      vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(
+        936,
+      );
+
+      const panel = mountOpen().find(".notif");
+
+      expect(panel.attributes("style")).toContain("right: 12px");
+    });
+
+    it("emits close on a click outside the panel and anchor", async () => {
+      const wrapper = mountOpen();
+
+      document.body.click();
+
+      expect(wrapper.emitted("close")).toHaveLength(1);
+    });
+
+    it("does not emit close for clicks inside the panel", async () => {
+      const wrapper = mountOpen();
+
+      await wrapper.find(".notif__head").trigger("click");
+
+      expect(wrapper.emitted("close")).toBeUndefined();
+    });
+
+    it("does not emit close for clicks on the anchor, leaving it to the toggle", () => {
+      const wrapper = mountOpen();
+
+      anchor.click();
+
+      expect(wrapper.emitted("close")).toBeUndefined();
+    });
+
+    it("does not emit close when the clicked row was detached by its own handler", () => {
+      const wrapper = mountOpen();
+      const row = wrapper.find(".notif__item").element;
+      row.addEventListener("click", () => row.remove());
+
+      row.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+      expect(wrapper.emitted("close")).toBeUndefined();
+    });
+
+    it("emits close on Escape and returns focus to the anchor", () => {
+      const wrapper = mountOpen();
+
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+
+      expect(wrapper.emitted("close")).toHaveLength(1);
+      expect(document.activeElement).toBe(anchor);
+    });
+
+    it("ignores other keys", () => {
+      const wrapper = mountOpen();
+
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+
+      expect(wrapper.emitted("close")).toBeUndefined();
+    });
+
+    it("stops listening once closed", async () => {
+      const wrapper = mountOpen();
+      await wrapper.setProps({ open: false });
+
+      document.body.click();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+
+      expect(wrapper.emitted("close")).toBeUndefined();
+    });
+
+    it("stops listening after unmount", () => {
+      const wrapper = mountOpen();
+      wrapper.unmount();
+
+      document.body.click();
+
+      expect(wrapper.emitted("close")).toBeUndefined();
+    });
+  });
 });

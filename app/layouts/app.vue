@@ -16,6 +16,7 @@
     />
     <AppNotifications
       :open="notificationsOpen"
+      :anchor="notificationsAnchor"
       @close="notificationsOpen = false"
     />
     <AppCommandPalette
@@ -37,6 +38,7 @@ const { isLoaded } = useClerkAuth();
 const sidebarOpen = ref(false);
 const newEntryOpen = ref(false);
 const notificationsOpen = ref(false);
+const notificationsAnchor = ref<HTMLElement | null>(null);
 const commandPaletteOpen = ref(false);
 
 // The entry being edited, or null for a fresh "new entry". The drawer switches
@@ -64,8 +66,10 @@ const openEditEntry: EditEntryHandler = (entry) => {
 };
 provide("openEditEntry", openEditEntry);
 
-provide("openNotifications", () => {
-  notificationsOpen.value = true;
+// Called from the bell's click handler; the bell becomes the panel's anchor.
+provide("toggleNotifications", (event: MouseEvent) => {
+  notificationsAnchor.value = event.currentTarget as HTMLElement;
+  notificationsOpen.value = !notificationsOpen.value;
 });
 
 provide("openCommandPalette", () => {

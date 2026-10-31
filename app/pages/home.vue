@@ -11,7 +11,7 @@
       <button
         class="icon-btn"
         aria-label="Alerts"
-        @click="openNotifications?.()"
+        @click="toggleNotifications?.($event)"
       >
         <AppIcon name="bell" :size="18" />
       </button>
@@ -267,6 +267,7 @@ import { formatCompact } from "~/utils/formatNumber";
 import { useStats } from "~/composables/useStats";
 import { useConnections } from "~/composables/useConnections";
 import type { Place } from "~/stores/places";
+import type { ToggleNotificationsHandler } from "~/composables/useNotifications";
 import type { Entry } from "~/stores/entries";
 import type { TripStop } from "~/stores/trips";
 
@@ -333,8 +334,8 @@ const localDateLabel = ref("");
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
-const openNotifications = inject<(() => void) | undefined>(
-  "openNotifications",
+const toggleNotifications = inject<ToggleNotificationsHandler | undefined>(
+  "toggleNotifications",
   undefined,
 );
 
