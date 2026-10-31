@@ -11,7 +11,7 @@
       <button
         class="icon-btn"
         aria-label="Alerts"
-        @click="openNotifications?.()"
+        @click="toggleNotifications?.($event)"
       >
         <AppIcon name="bell" :size="18" />
       </button>
@@ -300,6 +300,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import { PLACE_CATEGORIES } from "~/constants/placeCategories";
+import type { ToggleNotificationsHandler } from "~/composables/useNotifications";
 import type {
   FeaturedTrip,
   DiscoverGuide,
@@ -312,8 +313,8 @@ import {
   formatHandle,
 } from "~/utils/travelerLabels";
 
-const openNotifications = inject<(() => void) | undefined>(
-  "openNotifications",
+const toggleNotifications = inject<ToggleNotificationsHandler | undefined>(
+  "toggleNotifications",
   undefined,
 );
 

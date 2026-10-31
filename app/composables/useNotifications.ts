@@ -8,6 +8,10 @@ export interface AppNotificationActor {
   handle: string | null;
 }
 
+// Provided by the app layout as "toggleNotifications"; receives the bell click
+// so the panel can anchor itself to the button.
+export type ToggleNotificationsHandler = (event: MouseEvent) => void;
+
 export interface AppNotification {
   id: string;
   type: string;
