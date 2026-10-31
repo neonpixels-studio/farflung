@@ -33,6 +33,11 @@ export function usePreferences() {
     ...PREFERENCES_DEFAULTS,
   }));
 
+  // Shared (not per-call) so a page that only reads a preference, like the
+  // trip distance display, can tell "not fetched yet" from "fetched, and it is
+  // the default".
+  const hasLoaded = useState<boolean>("user-preferences-loaded", () => false);
+
   const isLoading = ref(false);
   const loadError = ref<string | null>(null);
   const saveError = ref<string | null>(null);
@@ -44,6 +49,7 @@ export function usePreferences() {
     try {
       const data = await apiFetch<UserPreferences>("/api/preferences");
       preferences.value = data;
+      hasLoaded.value = true;
     } catch (error: unknown) {
       const message = extractErrorMessage(error);
       loadError.value = message;
@@ -63,6 +69,7 @@ export function usePreferences() {
         body: patch,
       });
       preferences.value = data;
+      hasLoaded.value = true;
       return true;
     } catch (error: unknown) {
       saveError.value = extractErrorMessage(error);
@@ -72,6 +79,7 @@ export function usePreferences() {
 
   return {
     preferences,
+    hasLoaded,
     isLoading: readonly(isLoading),
     loadError: readonly(loadError),
     saveError: readonly(saveError),

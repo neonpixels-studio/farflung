@@ -102,7 +102,7 @@ To enable the map, set a Mapbox public access token. Without it the page degrade
 1. Create a public token at [https://account.mapbox.com/access-tokens/](https://account.mapbox.com/access-tokens/).
 2. Set `NUXT_PUBLIC_MAPBOX_TOKEN=<your-token>` in your `.env`.
 
-Available base styles: Outdoors, Streets, Satellite, Light, Dark, and FarFlung violet (custom).
+Available base styles: Outdoors, Streets, Satellite, Light, Dark, and FarFlung violet (custom). All of them use Mapbox's stock styles, so nothing beyond the public token is needed. FarFlung violet is the stock Light style recoloured at runtime (water, land and roads) each time a style loads; see `app/composables/mapboxBrandStyle.ts`. The default style chosen in Settings is applied when `/map` opens (falling back to Outdoors if the plan doesn't allow it); picking a style in the map's own picker lasts for the session only.
 
 ## Media storage
 
@@ -180,23 +180,28 @@ FarFlung uses **[Stripe](https://stripe.com)** directly (Checkout + the Billing 
 
 ### Instagram (photo import)
 
-FarFlung connects to Instagram via the **Instagram Graph API** (not the deprecated Basic Display API). This requires a Facebook App linked to a Business or Creator Instagram account.
+FarFlung connects to Instagram with **Instagram API with Instagram Login** (the `api.instagram.com` / `graph.instagram.com` hosts; the Basic Display API was retired in December 2024). It works with Business or Creator Instagram accounts and needs no Facebook Page. The only scope requested is `instagram_business_basic`.
 
 **Setup:**
 
-1. Go to [Meta for Developers](https://developers.facebook.com) → Create App → Business type.
-2. Add the **Instagram** product to the app.
-3. Under Instagram → Settings, add `https://<your-domain>/api/connections/instagram/callback` as a valid OAuth redirect URI.
-4. Copy the **App ID** and **App Secret** and set them as `INSTAGRAM_CLIENT_ID` and `INSTAGRAM_CLIENT_SECRET` in your environment.
+1. Go to [Meta for Developers](https://developers.facebook.com) and create an app (use case: Other, type: Business).
+2. Add the **Instagram** product, then open **API setup with Instagram login**.
+3. Under **Business login settings**, add `https://<your-domain>/api/connections/instagram/callback` as an OAuth redirect URI. Meta may add a trailing slash to what you enter; use exactly what the list shows.
+4. Copy the **Instagram app ID** and **Instagram app secret** shown in that same section (these are not the main Meta app ID and secret) and set them as `INSTAGRAM_CLIENT_ID` and `INSTAGRAM_CLIENT_SECRET`.
+5. While the app is in development mode, only Instagram accounts added under App roles > Instagram Testers (and accepted in Instagram) can connect.
+
+`NUXT_PUBLIC_SITE_ORIGIN` must be set too: the redirect URI is built from it.
 
 **How it works:**
 
-- `GET /api/connections/instagram/start` — sets a CSRF state cookie and redirects the user to Instagram's OAuth authorization page.
-- `GET /api/connections/instagram/callback` — exchanges the authorization code for a long-lived token (60-day expiry), stores the encrypted token in `connected_accounts`, then redirects to `/settings#connections`.
-- `DELETE /api/connections/instagram` — removes the row from `connected_accounts`, revoking access.
-- `POST /api/connections/instagram/import` — pulls geotagged media, stores images in Netlify Blobs, and creates journal entries with linked places. Refreshes the stored token first when it is near expiry so imports self-heal. The client follows Instagram's `paging.next` up to a fixed page bound (the `INSTAGRAM_MAX_MEDIA_PAGES` constant in `server/utils/instagramClient.ts`, not an env var) so photos older than the most recent batch are still ingested; re-imports are idempotent via `media.source_id`.
+- `GET /api/connections/instagram/start` returns `{ url }`, the Instagram authorization URL. The settings page fetches it with the Clerk Bearer token and then navigates, because a full-page navigation can't send that header. The URL carries an HMAC-signed `state` (user id, random nonce, 10 minute expiry) and the nonce is also set as an httpOnly cookie.
+- `GET /api/connections/instagram/callback` arrives as a plain browser redirect from Instagram with no Authorization header, so `server/middleware/auth.ts` lets that one path through and the handler authenticates from the signed `state`, which must also match the nonce cookie in the same browser (see `server/utils/oauthState.ts`). It then exchanges the code for a long-lived token (60-day expiry), stores the encrypted token in `connected_accounts`, and redirects to `/settings#connections`.
+- `DELETE /api/connections/instagram` removes the row from `connected_accounts`, revoking access.
+- `POST /api/connections/instagram/import` pulls image media, stores images in Netlify Blobs, and creates journal entries with no place (Instagram's media API exposes no location, so users place them themselves). Refreshes the stored token first when it is near expiry so imports self-heal. The client follows Instagram's `paging.next` up to a fixed page bound (the `INSTAGRAM_MAX_MEDIA_PAGES` constant in `server/utils/instagramClient.ts`, not an env var) so photos older than the most recent batch are still ingested; re-imports are idempotent via `media.source_id`.
 
-Access tokens are encrypted at rest using AES-256-GCM. Generate a key with `openssl rand -hex 32` and set it as `TOKEN_ENCRYPTION_KEY`.
+Instagram sync is a Wanderer and Nomad feature; a Drifter sees an upgrade prompt instead of a connect button.
+
+Access tokens are encrypted at rest using AES-256-GCM. Generate a key with `openssl rand -hex 32` and set it as `TOKEN_ENCRYPTION_KEY`. The same key, domain-separated, signs the OAuth `state`.
 
 **Token refresh.** Instagram long-lived tokens expire after 60 days. The stored expiry (`connected_accounts.expires_at`) drives two refresh paths so a connection never lapses silently:
 
@@ -207,12 +212,22 @@ Because the scheduled function runs in the Netlify Functions runtime (not the Ni
 
 ### Google (via Clerk)
 
-Google sign-in is managed by Clerk's hosted OAuth flow — users connect Google through Clerk's sign-in UI. The Settings → Connections section reads the real connection state from Clerk's API rather than maintaining a separate database row.
+Google is linked through Clerk's external accounts. The Settings > Connections **connect** button calls `user.createExternalAccount({ strategy: "oauth_google", redirectUrl })` in the browser and navigates to the Google URL Clerk returns; Clerk completes the OAuth round trip and sends the user back to `/settings?connection=google_success#connections`. There is no database row: the section reads the real connection state from Clerk's API.
 
-- `GET /api/connections/google` — returns `{ connected, emailAddress, identificationId }` from Clerk.
-- `DELETE /api/connections/google` — removes the Google external account from the user's Clerk record via the Clerk Backend API.
+- `GET /api/connections/google` returns `{ connected, emailAddress, identificationId }` from Clerk.
+- `DELETE /api/connections/google` removes the Google external account from the user's Clerk record via the Clerk Backend API.
 
-No additional app registration is required for Google; Clerk handles it. Configure Google OAuth in the [Clerk Dashboard](https://dashboard.clerk.com) → Social Connections → Google.
+Google has to be enabled in the [Clerk Dashboard](https://dashboard.clerk.com) under Configure > SSO connections > Google (add a connection for all users). In production Clerk requires your own Google OAuth client ID and secret; the development instance uses shared credentials.
+
+## Public profile URLs
+
+A traveler's public profile lives at `/@<handle>` once they choose a handle in Settings, and at `/u/<clerk id>` always. A `/u/<id>` visit redirects (client-side, replace) to `/@<handle>` when the owner has a well-formed handle.
+
+- Handles are 3 to 30 characters of letters, digits, hyphen and underscore (starting and ending with a letter or digit), not case sensitive, and a list of reserved words is refused (`server/utils/handle.ts`). The casing the user typed is kept for display.
+- Uniqueness is enforced by a unique index on `lower(handle)` (migration `0013_add_handle_lower_unique`).
+- `GET /api/handles/<handle>` resolves a handle to a profile. It is in the optional-auth allowlist but runs the same `requireViewableProfile` gate as `/api/users/<id>`, so an unknown handle and a private profile are the same 404.
+- `GET /api/handles/<handle>/availability` (session required) feeds the live check in Settings.
+- The route itself is registered in `nuxt.config.ts` through `handle-route.config.ts`, as a second route for `app/pages/u/[id].vue`.
 
 ---
 

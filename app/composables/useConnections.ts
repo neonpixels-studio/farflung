@@ -84,8 +84,16 @@ const CONNECTIONS_DEFAULTS: ConnectionsState = {
   google: { connected: false, emailAddress: null, identificationId: null },
 };
 
+const GOOGLE_STRATEGY = "oauth_google";
+const GOOGLE_RETURN_PATH = "/settings?connection=google_success#connections";
+const GOOGLE_CONNECT_FAILED_MESSAGE =
+  "Couldn't start the Google connection. Try again in a moment.";
+
 export function useConnections() {
   const { apiFetch } = useApiClient();
+  // Read synchronously during setup: Clerk composables rely on Vue's injection
+  // context, which is gone by the time the async connect handler resumes.
+  const { user } = useClerkUser();
 
   const connections = useState<ConnectionsState>("connections-state", () => ({
     ...CONNECTIONS_DEFAULTS,
@@ -116,11 +124,42 @@ export function useConnections() {
     }
   }
 
-  function startInstagramConnect(): void {
-    // Navigates the top-level window to the OAuth start endpoint, which sets
-    // the state cookie and redirects to Instagram. The callback redirects back
-    // to /settings?connection=instagram_success#connections.
-    window.location.href = "/api/connections/instagram/start";
+  // The start route needs the Clerk Bearer token, which a full-page navigation
+  // can't send (server/middleware/auth.ts accepts only a Bearer token), so it
+  // returns the Instagram URL and the browser goes there after. The callback
+  // redirects back to /settings?connection=instagram_success#connections.
+  async function startInstagramConnect(): Promise<void> {
+    actionError.value = null;
+    try {
+      const { url } = await apiFetch<{ url: string }>(
+        "/api/connections/instagram/start",
+      );
+      window.location.href = url;
+    } catch (error: unknown) {
+      actionError.value = extractErrorMessage(error);
+    }
+  }
+
+  // Google is linked through Clerk, which hosts the OAuth redirect; Clerk
+  // returns the browser to GOOGLE_RETURN_PATH once the account is attached.
+  async function startGoogleConnect(): Promise<void> {
+    actionError.value = null;
+    try {
+      const externalAccount = await user.value?.createExternalAccount({
+        strategy: GOOGLE_STRATEGY,
+        redirectUrl: `${window.location.origin}${GOOGLE_RETURN_PATH}`,
+      });
+      const redirectUrl =
+        externalAccount?.verification?.externalVerificationRedirectURL;
+      if (!redirectUrl) {
+        actionError.value = GOOGLE_CONNECT_FAILED_MESSAGE;
+        return;
+      }
+      window.location.href = redirectUrl.href;
+    } catch (error: unknown) {
+      console.error("useConnections: Google connect failed", error);
+      actionError.value = GOOGLE_CONNECT_FAILED_MESSAGE;
+    }
   }
 
   async function disconnectInstagram(): Promise<boolean> {
@@ -183,6 +222,7 @@ export function useConnections() {
     importResult: readonly(importResult),
     fetchConnections,
     startInstagramConnect,
+    startGoogleConnect,
     disconnectInstagram,
     disconnectGoogle,
     importInstagramPhotos,

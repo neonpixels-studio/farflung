@@ -1,12 +1,16 @@
 /**
  * GET /api/connections/instagram/start
  *
- * Redirects the authenticated user to Instagram's OAuth authorization page.
- * A CSRF state token is generated and stored in a short-lived cookie for the
- * callback handler to verify.
+ * Returns the Instagram OAuth authorization URL for the authenticated user as
+ * `{ url }`. This needs the Clerk Bearer token, which a full-page navigation
+ * can't send, so the client fetches it and then navigates (same convention as
+ * the billing routes). The signed `state` in the URL carries the user, and its
+ * nonce is set as a short-lived cookie that the callback checks, because the
+ * callback arrives with no Authorization header (see utils/oauthState.ts).
  */
 
-import { requireUser } from "../../../utils/auth";
+import { ensureUser } from "../../../utils/auth";
+import { issueOAuthState } from "../../../utils/oauthState";
 import { buildInstagramAuthUrl } from "../../../utils/instagramClient";
 import { assertInstagramSyncAllowed } from "../../../utils/planLimits";
 
@@ -41,13 +45,13 @@ function readInstagramConfig(): { clientId: string; redirectUri: string } {
 }
 
 export default defineEventHandler(async (event) => {
-  const userId = requireUser(event);
+  const userId = await ensureUser(event);
   await assertInstagramSyncAllowed(userId);
 
   const { clientId, redirectUri } = readInstagramConfig();
-  const state = crypto.randomUUID();
+  const { state, nonce } = issueOAuthState(userId);
 
-  setCookie(event, STATE_COOKIE_NAME, state, {
+  setCookie(event, STATE_COOKIE_NAME, nonce, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -55,7 +59,5 @@ export default defineEventHandler(async (event) => {
     path: "/",
   });
 
-  const authUrl = buildInstagramAuthUrl({ clientId, redirectUri, state });
-
-  return sendRedirect(event, authUrl, 302);
+  return { url: buildInstagramAuthUrl({ clientId, redirectUri, state }) };
 });

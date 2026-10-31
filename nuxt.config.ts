@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
+import { addHandleProfileRoute } from "./handle-route.config";
 import { FAVICON_HEAD_LINKS, FAVICON_HEAD_META } from "./favicon-head.config";
 import { buildPublicRuntimeConfig } from "./public-runtime-config";
 import {
@@ -81,6 +82,7 @@ export default defineNuxtConfig({
   },
   hooks: {
     "modules:done": writeScheduledFunctionEnvModule,
+    "pages:extend": (pages) => addHandleProfileRoute(pages),
   },
   css: ["~/assets/css/main.css", "mapbox-gl/dist/mapbox-gl.css"],
   devtools: { enabled: true },

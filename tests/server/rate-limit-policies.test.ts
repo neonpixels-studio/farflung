@@ -32,6 +32,8 @@ const EXPECTED_POLICY_KEYS = [
   "GET /api/search",
   "POST /csp-report",
   "POST /api/feedback",
+  "GET /api/connections/instagram/callback",
+  "PATCH /api/account/name",
 ];
 
 // Nitro accepts a method-suffixed handler (search.get.ts) or a method-agnostic

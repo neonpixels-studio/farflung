@@ -3,6 +3,7 @@ import { ensureUser } from "../utils/auth";
 import { getDb } from "../db/index";
 import { userPreferences, DISTANCE_UNIT } from "../db/schema";
 import { optionalString } from "../utils/db-helpers";
+import { describeHandleProblem, findHandleProblem } from "../utils/handle";
 import {
   MAP_STYLES,
   assertMapStyleAllowed,
@@ -13,9 +14,10 @@ const VALID_MAP_STYLES = MAP_STYLES;
 
 type ValidMapStyle = (typeof VALID_MAP_STYLES)[number];
 
+// displayName is not writable here: it is derived from Clerk's first + last
+// name by PATCH /api/account/name so every reader stays in step with Clerk.
+// handle has its own format rules (see validateHandle).
 const STRING_FIELD_MAX_LENGTHS: Record<string, number> = {
-  displayName: 100,
-  handle: 50,
   homeBase: 100,
   bio: 500,
 };
@@ -55,7 +57,6 @@ type PatchResult = {
   publicProfile?: boolean;
   preciseLocation?: boolean;
   showOnExplore?: boolean;
-  displayName?: string | null;
   handle?: string | null;
   homeBase?: string | null;
   bio?: string | null;
@@ -124,7 +125,7 @@ function validateStringFields(
   body: Record<string, unknown>,
   patch: PatchResult,
 ): void {
-  const stringFields = ["displayName", "handle", "homeBase", "bio"] as const;
+  const stringFields = ["homeBase", "bio"] as const;
 
   for (const field of stringFields) {
     if (body[field] === undefined) {
@@ -149,12 +150,39 @@ function validateStringFields(
   }
 }
 
+function validateHandle(
+  body: Record<string, unknown>,
+  patch: PatchResult,
+): void {
+  if (body.handle === undefined) {
+    return;
+  }
+  if (body.handle === null) {
+    patch.handle = null;
+    return;
+  }
+  const value = optionalString(body.handle, "handle")?.trim();
+  if (value === undefined || value === "") {
+    patch.handle = null;
+    return;
+  }
+  const problem = findHandleProblem(value);
+  if (problem) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: describeHandleProblem(problem),
+    });
+  }
+  patch.handle = value;
+}
+
 function validatePatch(body: Record<string, unknown>): PatchResult {
   const patch: PatchResult = {};
   validateDistanceUnit(body, patch);
   validateMapStyle(body, patch);
   validateBooleanFields(body, patch);
   validateStringFields(body, patch);
+  validateHandle(body, patch);
   return patch;
 }
 

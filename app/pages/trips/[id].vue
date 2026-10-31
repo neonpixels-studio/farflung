@@ -113,7 +113,7 @@
             {{ tripDetail.facts.stopCount }}
             {{ tripDetail.facts.stopCount === 1 ? "stop" : "stops" }}
             <template v-if="tripDetail.facts.distanceKm != null">
-              · {{ formatKm(tripDetail.facts.distanceKm) }}
+              · {{ formatDistance(tripDetail.facts.distanceKm) }}
             </template>
           </span>
           <span>
@@ -237,7 +237,7 @@
                 <div class="stop__foot">
                   <span v-if="stop.distanceKm != null" class="m">
                     <AppIcon name="ruler" :size="12" />
-                    {{ formatKm(stop.distanceKm) }}
+                    {{ formatDistance(stop.distanceKm) }}
                   </span>
                 </div>
               </div>
@@ -305,7 +305,9 @@
           </div>
           <div v-if="tripDetail.facts.distanceKm != null" class="fact">
             <span class="k">Distance</span>
-            <span class="v">{{ formatKm(tripDetail.facts.distanceKm) }}</span>
+            <span class="v">{{
+              formatDistance(tripDetail.facts.distanceKm)
+            }}</span>
           </div>
           <div
             v-if="
@@ -316,8 +318,8 @@
           >
             <span class="k">Logged</span>
             <span class="v">
-              {{ formatKm(tripDetail.facts.loggedDistanceKm) }} /
-              {{ formatKm(tripDetail.facts.distanceKm) }}
+              {{ formatDistance(tripDetail.facts.loggedDistanceKm) }} /
+              {{ formatDistance(tripDetail.facts.distanceKm) }}
             </span>
           </div>
           <div v-if="tripDetail.facts.nights != null" class="fact">
@@ -392,6 +394,8 @@
 import { useTripsStore } from "~/stores/trips";
 import type { Trip, TripStop } from "~/stores/trips";
 import { useMediaUpload } from "~/composables/useMediaUpload";
+import { useDistanceUnit } from "~/composables/useDistanceUnit";
+import { formatDistanceKm } from "~/utils/formatDistance";
 import { moveIdUp, moveIdDown, moveIdToDropTarget } from "~/utils/stopOrder";
 import type { StopOrderMutator } from "~/utils/stopOrder";
 import { INVITE_UNAVAILABLE_TITLE } from "~/constants/trips";
@@ -425,6 +429,10 @@ const { user: clerkUser } = useClerkUser();
 // state so a signed-out owner arriving from a bookmark/expired session isn't
 // dead-ended.
 const { isLoaded: isClerkLoaded, isSignedIn } = useClerkAuth();
+const { formatDistance } = useDistanceUnit();
+// Share-preview text is read by other people, so it ignores the viewer's own
+// unit preference and stays in the unit trips are stored in.
+const SHARE_PREVIEW_UNIT = "km";
 const { viewerAuthResolved } = useViewerAuthResolved(isClerkLoaded);
 const {
   upload,
@@ -559,7 +567,7 @@ const tripDescription = computed(() => {
   const stopsPhrase = `${stopCount} ${stopCount === 1 ? "stop" : "stops"}`;
   const distancePhrase =
     tripDetail.value.facts.distanceKm != null
-      ? `, ${formatKm(tripDetail.value.facts.distanceKm)}`
+      ? `, ${formatDistanceKm(tripDetail.value.facts.distanceKm, SHARE_PREVIEW_UNIT)}`
       : "";
   return `${statusLabel.value} trip with ${stopsPhrase}${distancePhrase} on ${SITE_NAME}.`;
 });
@@ -726,10 +734,6 @@ function formatHeroDates(
 
 function formatStopDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString("en-US", UTC_DATE_FORMAT);
-}
-
-function formatKm(km: number): string {
-  return `${km.toLocaleString(undefined, { maximumFractionDigits: 0 })} km`;
 }
 
 function mapPinStyle(index: number, total: number): string {

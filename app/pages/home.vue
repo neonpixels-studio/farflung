@@ -62,7 +62,7 @@
               >, {{ importResult.skipped }} skipped</template
             >
           </template>
-          <template v-else>Geotagged photos from Instagram are ready</template>
+          <template v-else>Photos from Instagram are ready to import</template>
         </p>
         <p class="alert__msg">
           Import them straight into your journal entries.
@@ -265,6 +265,7 @@
 <script setup lang="ts">
 import { formatCompact } from "~/utils/formatNumber";
 import { useStats } from "~/composables/useStats";
+import { resolveClerkDisplayName } from "~/utils/clerkDisplayName";
 import { useConnections } from "~/composables/useConnections";
 import type { Place } from "~/stores/places";
 import type { Entry } from "~/stores/entries";
@@ -277,20 +278,7 @@ useHead({ title: "FarFlung — Home" });
 
 const { user } = useClerkUser();
 
-function resolveDisplayName(): string {
-  const currentUser = user.value;
-  if (!currentUser) {
-    return "Traveler";
-  }
-  return (
-    currentUser.firstName ||
-    currentUser.fullName ||
-    currentUser.username ||
-    "Traveler"
-  );
-}
-
-const displayName = computed(resolveDisplayName);
+const displayName = computed(() => resolveClerkDisplayName(user.value));
 
 // ── Time-of-day greeting ──────────────────────────────────────────────────────
 

@@ -10,10 +10,12 @@ const MAPBOX_STYLE_URLS: Record<string, string> = {
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
   light: "mapbox://styles/mapbox/light-v11",
   dark: "mapbox://styles/mapbox/dark-v11",
-  // "custom" uses the Outdoors base until a published FarFlung custom style exists.
-  // Replace this URL with the real style ID once it is published to Mapbox Studio.
-  custom: "mapbox://styles/mapbox/outdoors-v12",
+  // "custom" (FarFlung violet) is the stock light style recoloured at runtime on
+  // every style load; see mapboxBrandStyle.ts and useMapbox.ts.
+  custom: "mapbox://styles/mapbox/light-v11",
 };
+
+export const BRAND_STYLE_KEY = "custom";
 
 const MAPBOX_STYLE_LABELS: Record<string, string> = {
   outdoors: "outdoors-v12",

@@ -144,6 +144,7 @@ import { useTripsStore } from "~/stores/trips";
 import type { Trip } from "~/stores/trips";
 import { formatCompact } from "~/utils/formatNumber";
 import { useStats } from "~/composables/useStats";
+import { useDistanceUnit } from "~/composables/useDistanceUnit";
 import { formatTripDateRange } from "~/utils/tripDates";
 import type { TripStatus } from "~/utils/tripDates";
 import { extractErrorMessage } from "~/utils/extractErrorMessage";
@@ -167,6 +168,8 @@ const {
   loadError: statsError,
   fetchStats,
 } = useStats();
+
+const { formatDistance } = useDistanceUnit();
 
 const distanceUnitShort = computed(() =>
   stats.value.distanceUnit === "km" ? "km" : "miles",
@@ -248,10 +251,6 @@ function tripStatusLabel(trip: Trip) {
 
 function formatTripDates(trip: Trip): string {
   return formatTripDateRange(trip.startDate, trip.endDate);
-}
-
-function formatDistance(distanceKm: number): string {
-  return `${distanceKm.toFixed(0)} km`;
 }
 </script>
 

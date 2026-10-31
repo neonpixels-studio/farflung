@@ -10,7 +10,8 @@ import {
   refreshLongLivedToken,
   fetchInstagramUser,
   fetchInstagramMedia,
-  filterGeotaggedMedia,
+  filterImportableMedia,
+  INSTAGRAM_MEDIA_FIELDS,
   parseMetaError,
   redactAccessToken,
   InstagramApiError,
@@ -504,6 +505,20 @@ describe("fetchInstagramMedia", () => {
     expect(result.data[0]!.id).toBe("m1");
   });
 
+  it("does not request a location field, which the IG Media API does not document", async () => {
+    vi.mocked(fetch).mockResolvedValue(makeFetchResponse({ data: [] }));
+
+    await fetchInstagramMedia("access-token");
+
+    const requestedUrl = new URL(String(vi.mocked(fetch).mock.calls[0]![0]));
+    const requestedFields = requestedUrl.searchParams.get("fields")!.split(",");
+    expect(requestedFields).not.toContain("location");
+    expect(requestedFields).toEqual(INSTAGRAM_MEDIA_FIELDS.split(","));
+    expect(requestedFields).toEqual(
+      expect.arrayContaining(["id", "media_type", "media_url", "timestamp"]),
+    );
+  });
+
   it("throws when the API returns a non-OK status", async () => {
     vi.mocked(fetch).mockResolvedValue(makeFetchResponse({}, false, 400));
 
@@ -695,94 +710,30 @@ describe("fetchInstagramMedia", () => {
   });
 });
 
-describe("filterGeotaggedMedia", () => {
-  it("returns only IMAGE items with a location that has coordinates", () => {
-    const items: InstagramMediaItem[] = [
-      {
-        id: "1",
-        media_type: "IMAGE",
-        media_url: "https://cdn.ig.com/1.jpg",
-        timestamp: "2024-01-01T00:00:00Z",
-        permalink: "https://ig.com/1",
-        location: { name: "Paris", latitude: 48.8566, longitude: 2.3522 },
-      },
-      {
-        id: "2",
-        media_type: "IMAGE",
-        media_url: "https://cdn.ig.com/2.jpg",
-        timestamp: "2024-01-02T00:00:00Z",
-        permalink: "https://ig.com/2",
-        // No location — should be filtered out.
-      },
-      {
-        id: "3",
-        media_type: "VIDEO",
-        media_url: "https://cdn.ig.com/3.mp4",
-        timestamp: "2024-01-03T00:00:00Z",
-        permalink: "https://ig.com/3",
-        location: { name: "Rome", latitude: 41.9028, longitude: 12.4964 },
-        // VIDEO type — should be filtered out.
-      },
+describe("filterImportableMedia", () => {
+  function makeTypedItem(id: string, mediaType: string): InstagramMediaItem {
+    return { ...makeMediaItem(id), media_type: mediaType };
+  }
+
+  it("keeps IMAGE and CAROUSEL_ALBUM items and drops other media types", () => {
+    const items = [
+      makeTypedItem("1", "IMAGE"),
+      makeTypedItem("2", "VIDEO"),
+      makeTypedItem("3", "CAROUSEL_ALBUM"),
     ];
 
-    const result = filterGeotaggedMedia(items);
+    const result = filterImportableMedia(items);
+
+    expect(result.map((item) => item.id)).toEqual(["1", "3"]);
+  });
+
+  it("keeps image items that carry no location", () => {
+    const result = filterImportableMedia([makeTypedItem("1", "IMAGE")]);
 
     expect(result).toHaveLength(1);
-    expect(result[0]!.id).toBe("1");
   });
 
-  it("returns an empty array when no items have a location", () => {
-    const items: InstagramMediaItem[] = [
-      {
-        id: "1",
-        media_type: "IMAGE",
-        media_url: "https://cdn.ig.com/1.jpg",
-        timestamp: "2024-01-01T00:00:00Z",
-        permalink: "https://ig.com/1",
-      },
-    ];
-    expect(filterGeotaggedMedia(items)).toHaveLength(0);
-  });
-
-  it("includes CAROUSEL_ALBUM items that have a location with lat/lon", () => {
-    const items: InstagramMediaItem[] = [
-      {
-        id: "1",
-        media_type: "CAROUSEL_ALBUM",
-        media_url: "https://cdn.ig.com/carousel.jpg",
-        timestamp: "2024-01-01T00:00:00Z",
-        permalink: "https://ig.com/1",
-        location: { name: "Tokyo", latitude: 35.6762, longitude: 139.6503 },
-      },
-    ];
-    expect(filterGeotaggedMedia(items)).toHaveLength(1);
-  });
-
-  it("excludes items whose location has coordinates but an empty name", () => {
-    const items: InstagramMediaItem[] = [
-      {
-        id: "1",
-        media_type: "IMAGE",
-        media_url: "https://cdn.ig.com/1.jpg",
-        timestamp: "2024-01-01T00:00:00Z",
-        permalink: "https://ig.com/1",
-        location: { name: "", latitude: 48.8566, longitude: 2.3522 },
-      },
-    ];
-    expect(filterGeotaggedMedia(items)).toHaveLength(0);
-  });
-
-  it("excludes items whose location name is not a string", () => {
-    const items = [
-      {
-        id: "1",
-        media_type: "IMAGE",
-        media_url: "https://cdn.ig.com/1.jpg",
-        timestamp: "2024-01-01T00:00:00Z",
-        permalink: "https://ig.com/1",
-        location: { name: null, latitude: 48.8566, longitude: 2.3522 },
-      },
-    ] as unknown as InstagramMediaItem[];
-    expect(filterGeotaggedMedia(items)).toHaveLength(0);
+  it("returns an empty array when there are no items", () => {
+    expect(filterImportableMedia([])).toEqual([]);
   });
 });
