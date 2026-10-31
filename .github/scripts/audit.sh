@@ -20,11 +20,6 @@ set -euo pipefail
 # High/critical advisories accepted because no patched version exists upstream.
 # Remove an entry the moment its package ships a fix and bump via `overrides`.
 #
-# GHSA-86w9-cpqp-85rv (node-forge <=1.4.0, RSA PKCS#1 v1.5 signature
-#   verification accepts malformed DigestInfo). No patched release as of Oct
-#   2026. Pulled in by @dotenvx/dotenvx and nuxt > @nuxt/cli > listhen, which
-#   only use forge to generate local dev/proxy certificates and never call
-#   signature verification. Remove once node-forge ships >1.4.0.
 # GHSA-vfj7-8cjw-p6xm (braces <=3.0.3, stack-exhaustion DoS on deeply nested
 #   patterns). No patched release as of Oct 2026. Pulled in by nuxt >
 #   nitropack > globby > fast-glob > micromatch, which only expands build-time
@@ -39,7 +34,6 @@ set -euo pipefail
 #   bundle). Mirrors markpost 60a4c2f / basin #338. Remove once @nuxt/devtools
 #   supports simple-git 4.
 ALLOWLISTED_ADVISORIES=(
-  GHSA-86w9-cpqp-85rv
   GHSA-vfj7-8cjw-p6xm
   GHSA-858h-whjf-mvg5
   GHSA-g4wm-2vf7-vfgr
