@@ -83,10 +83,6 @@ async function fetchEntryPhotos(
     .orderBy(asc(entryPhotos.sortOrder));
 }
 
-function withSignedUrl<Photo extends { mediaId: string }>(photo: Photo) {
-  return { ...photo, url: buildSignedMediaPath(photo.mediaId) };
-}
-
 async function fetchEntryTags(
   database: ReturnType<typeof getDb>,
   entryIds: string[],
@@ -129,6 +125,10 @@ async function fetchEntriesPage(
     )
     .limit(PAGE_SIZE)
     .offset(pageToOffset(page, PAGE_SIZE));
+}
+
+function withSignedUrl<Photo extends { mediaId: string }>(photo: Photo) {
+  return { ...photo, url: buildSignedMediaPath(photo.mediaId) };
 }
 
 export default defineEventHandler(async (event) => {
