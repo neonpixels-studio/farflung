@@ -37,7 +37,7 @@
           </template>
           <NuxtLink
             v-else-if="upgradeAction === 'pricing'"
-            class="btn btn--primary btn--lg"
+            class="btn btn--primary btn--lg lp-hero__upgrade"
             to="/pricing"
           >
             upgrade
@@ -45,7 +45,7 @@
           </NuxtLink>
           <PlanManageButton
             v-else-if="upgradeAction === 'portal'"
-            class="btn btn--primary btn--lg"
+            class="btn btn--primary btn--lg lp-hero__upgrade"
           >
             upgrade
             <AppIcon name="arrow-right" :size="15" />
@@ -602,6 +602,9 @@ section[id] {
 }
 .lp-hero h1 b {
   color: var(--accent-ink);
+}
+.lp-hero__upgrade {
+  margin-top: 30px;
 }
 .lp-hero__sub {
   max-width: 500px;
