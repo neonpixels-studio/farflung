@@ -1,6 +1,20 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import { buildPublicRuntimeConfig } from "./public-runtime-config";
+import {
+  renderScheduledFunctionEnvModule,
+  SCHEDULED_FUNCTION_ENV_MODULE_PATH,
+} from "./scheduled-function-env";
 import { buildSecurityRouteRules } from "./security-headers.config";
+
+function writeScheduledFunctionEnvModule() {
+  mkdirSync(dirname(SCHEDULED_FUNCTION_ENV_MODULE_PATH), { recursive: true });
+  writeFileSync(
+    SCHEDULED_FUNCTION_ENV_MODULE_PATH,
+    renderScheduledFunctionEnvModule(process.env),
+  );
+}
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
@@ -56,6 +70,9 @@ export default defineNuxtConfig({
     neonPixelsDashboardToken: process.env.NEON_PIXELS_DASHBOARD_TOKEN || "",
     public: buildPublicRuntimeConfig(process.env),
   },
+  hooks: {
+    "modules:done": writeScheduledFunctionEnvModule,
+  },
   css: ["~/assets/css/main.css", "mapbox-gl/dist/mapbox-gl.css"],
   devtools: { enabled: true },
   nitro: {
@@ -70,6 +87,10 @@ export default defineNuxtConfig({
     replace: {
       "process.env.NUXT_PUBLIC_SENTRY_DSN": JSON.stringify(
         process.env.NUXT_PUBLIC_SENTRY_DSN || "",
+      ),
+      // Same reason: server/middleware/rateLimit.ts reads this at request time.
+      "process.env.TRUST_NETLIFY_CLIENT_IP": JSON.stringify(
+        process.env.TRUST_NETLIFY_CLIENT_IP || "",
       ),
     },
   },

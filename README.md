@@ -43,10 +43,10 @@ client values (`NUXT_PUBLIC_*`) are captured the same way, by
 `public-runtime-config.ts` and the `clerk` block in `nuxt.config.ts`. A new
 public value must be added there, or it reaches production blank.
 
-Netlify's environment does need the `DOTENV_PRIVATE_KEY_*` keys for builds, plus
-the runtime variables read outside the Nuxt bundle: `DATABASE_URL` and
-`TOKEN_ENCRYPTION_KEY` (scheduled functions) and `TRUST_NETLIFY_CLIENT_IP` (rate
-limiting).
+The only variables Netlify needs are the `DOTENV_PRIVATE_KEY_*` keys, in Builds
+scope. Scheduled functions are bundled outside Nuxt, so `scheduled-function-env.ts`
+writes the values they need to a gitignored module at build, and
+`TRUST_NETLIFY_CLIENT_IP` is inlined by `nitro.replace`.
 
 `NUXT_PUBLIC_SENTRY_DSN` is a special case: `sentry.server.config.ts` runs
 before `useRuntimeConfig()` exists, so per Sentry's docs it can only read the
@@ -203,7 +203,7 @@ Access tokens are encrypted at rest using AES-256-GCM. Generate a key with `open
 - **On use** — `import.post` refreshes and re-persists the token whenever it is within `INSTAGRAM_REFRESH_THRESHOLD_DAYS` of expiry (`server/utils/instagramToken.ts`).
 - **Scheduled** — `netlify/functions/refresh-instagram-tokens.mts` (daily via `netlify.toml`) renews tokens for accounts that go quiet, so an inactive user's connection stays alive (`server/utils/refreshInstagramTokens.ts`).
 
-Because the scheduled function runs in the Netlify Functions runtime (not the Nitro bundle), it reads `DATABASE_URL` and `TOKEN_ENCRYPTION_KEY` directly from the environment — both must be set as Netlify site environment variables, the same requirement as the existing `purge-deleted-accounts` scheduled function for `DATABASE_URL`.
+Because the scheduled function runs in the Netlify Functions runtime (not the Nitro bundle), it gets `DATABASE_URL` and `TOKEN_ENCRYPTION_KEY` from the build-time module written by `scheduled-function-env.ts`, the same as the `purge-deleted-accounts` scheduled function, so neither is set in Netlify.
 
 ### Google (via Clerk)
 

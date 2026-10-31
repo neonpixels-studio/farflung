@@ -13,6 +13,10 @@ const { mockCreateDb, mockPurgeExpiredDeletedAccounts } = vi.hoisted(() => ({
   mockPurgeExpiredDeletedAccounts: vi.fn(),
 }));
 
+vi.mock("../../.generated/scheduled-function-env", () => ({
+  bakedEnvironment: {},
+}));
+
 vi.mock("../../server/db/index", () => ({
   createDb: mockCreateDb,
 }));

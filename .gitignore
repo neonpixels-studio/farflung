@@ -2,6 +2,7 @@
 node_modules/
 .nuxt/
 .output/
+.generated/
 dist/
 # Local env (dotenvx). The encrypted .env* files ARE committed; the private
 # keys and any local-only plaintext overrides are NOT.

@@ -14,7 +14,8 @@
  *
  * Because this file is not part of the Nitro bundle, it cannot use
  * useRuntimeConfig() or any other Nitro auto-import — it reads
- * DATABASE_URL directly from process.env via createDb().
+ * DATABASE_URL from process.env, filled from the build-time values in
+ * scheduled-function-env.ts, via createDb().
  *
  * Security note: Netlify does not expose scheduled functions on a public,
  * directly-invokable HTTP endpoint — they can only be triggered by
@@ -32,11 +33,14 @@
  * this job is depended on for compliance-grade deletion SLAs, but is out of
  * scope for this change; flagged here rather than silently left out.
  */
+import { bakedEnvironment } from "../../.generated/scheduled-function-env";
+import { applyBakedEnvironment } from "../../scheduled-function-env";
 import { createDb } from "../../server/db/index";
 import { purgeExpiredDeletedAccounts } from "../../server/utils/purgeAccounts";
 
 export const handler = async () => {
   try {
+    applyBakedEnvironment(bakedEnvironment);
     const db = createDb(process.env.DATABASE_URL ?? "");
     const result = await purgeExpiredDeletedAccounts(db);
 

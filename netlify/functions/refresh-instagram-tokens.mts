@@ -14,7 +14,8 @@
  *
  * Because this file is not part of the Nitro bundle, it cannot use
  * useRuntimeConfig() or any other Nitro auto-import — it reads DATABASE_URL
- * directly from process.env via createDb().
+ * from process.env, filled from the build-time values in
+ * scheduled-function-env.ts, via createDb().
  *
  * Per-account failures where Instagram genuinely revoked the token (a code-190
  * revocation or a 401 — the user revoked access or it lapsed) are expected and
@@ -27,15 +28,18 @@
  * app-secret rotation) classifies as unrecoverable, so it stays green here and
  * is not caught by this gate. Mirrors purge-deleted-accounts.mts.
  */
+import { bakedEnvironment } from "../../.generated/scheduled-function-env";
+import { applyBakedEnvironment } from "../../scheduled-function-env";
 import { createDb } from "../../server/db/index";
 import { refreshExpiringInstagramTokens } from "../../server/utils/refreshInstagramTokens";
 
 export const handler = async () => {
   try {
-    // This standalone function reads secrets straight from the Netlify
-    // Functions env (it is not in the Nitro bundle, so useRuntimeConfig() is
-    // unavailable). Fail fast with a clear message if either is unset, rather
+    // This standalone function is not in the Nitro bundle, so useRuntimeConfig()
+    // is unavailable; its secrets come from the build-time values in
+    // scheduled-function-env.ts. Fail fast with a clear message if either is unset, rather
     // than surfacing a driver error or a ReferenceError deep in token decrypt.
+    applyBakedEnvironment(bakedEnvironment);
     if (!process.env.DATABASE_URL) {
       throw new Error("refresh-instagram-tokens: DATABASE_URL is not set");
     }

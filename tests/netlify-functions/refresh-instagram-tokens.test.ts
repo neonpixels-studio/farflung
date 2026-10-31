@@ -14,6 +14,10 @@ const { mockCreateDb, mockRefreshExpiringInstagramTokens } = vi.hoisted(() => ({
   mockRefreshExpiringInstagramTokens: vi.fn(),
 }));
 
+vi.mock("../../.generated/scheduled-function-env", () => ({
+  bakedEnvironment: {},
+}));
+
 vi.mock("../../server/db/index", () => ({
   createDb: mockCreateDb,
 }));

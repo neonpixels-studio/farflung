@@ -16,8 +16,8 @@ const rateLimitStore = new RateLimitStore();
 // or inferred from a generic-looking env var another host/tool could also
 // set. NETLIFY=true is a Netlify *build*-time variable only — it is not
 // injected into the Functions runtime, so it can't be used to detect this at
-// request time either; TRUST_NETLIFY_CLIENT_IP is set explicitly in the
-// Netlify site's environment variables instead (see .env.example).
+// request time either; TRUST_NETLIFY_CLIENT_IP is set in the encrypted env file
+// and inlined at build by nitro.replace in nuxt.config.ts (see .env.example).
 const NETLIFY_CLIENT_IP_HEADER = "x-nf-client-connection-ip";
 const isTrustedNetlifyDeployment = (): boolean =>
   process.env.TRUST_NETLIFY_CLIENT_IP === "true";
