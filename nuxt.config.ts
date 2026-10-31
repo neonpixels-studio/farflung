@@ -9,6 +9,7 @@ import {
   SCHEDULED_FUNCTION_ENV_MODULE_PATH,
 } from "./scheduled-function-env";
 import { buildSecurityRouteRules } from "./security-headers.config";
+import { THEME_INIT_SCRIPT } from "./theme-head.config";
 
 function writeScheduledFunctionEnvModule() {
   mkdirSync(dirname(SCHEDULED_FUNCTION_ENV_MODULE_PATH), { recursive: true });
@@ -26,6 +27,7 @@ export default defineNuxtConfig({
     head: {
       link: FAVICON_HEAD_LINKS,
       meta: FAVICON_HEAD_META,
+      script: [{ innerHTML: THEME_INIT_SCRIPT, tagPosition: "head" }],
     },
   },
   sourcemap: { client: "hidden" },
