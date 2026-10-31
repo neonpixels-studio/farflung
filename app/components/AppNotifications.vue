@@ -141,6 +141,10 @@ function handleDocumentKeydown(event: KeyboardEvent): void {
 }
 
 function removeDismissListeners(): void {
+  // This also runs from the immediate watcher during SSR, where there's no DOM.
+  if (typeof document === "undefined") {
+    return;
+  }
   document.removeEventListener("click", handleDocumentClick, true);
   document.removeEventListener("keydown", handleDocumentKeydown);
 }

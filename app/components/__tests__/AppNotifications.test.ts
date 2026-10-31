@@ -632,4 +632,17 @@ describe("AppNotifications", () => {
       expect(wrapper.emitted("close")).toBeUndefined();
     });
   });
+
+  it("renders on the server, where document doesn't exist", async () => {
+    const { createSSRApp } = await import("vue");
+    const { renderToString } = await import("vue/server-renderer");
+    const app = createSSRApp(AppNotifications, { open: false });
+    const realDocument = document;
+    vi.stubGlobal("document", undefined);
+    try {
+      await expect(renderToString(app)).resolves.toBeTypeOf("string");
+    } finally {
+      vi.stubGlobal("document", realDocument);
+    }
+  });
 });
