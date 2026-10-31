@@ -62,6 +62,15 @@ describe("Landing page (/)", () => {
     );
   });
 
+  it("spaces the hero upgrade button away from the paragraph", async () => {
+    isSignedInRef.value = true;
+    const wrapper = mount(IndexPage, globalConfig);
+    await flushPromises();
+    expect(wrapper.find(".lp-hero__copy .lp-hero__upgrade").text()).toContain(
+      "upgrade",
+    );
+  });
+
   it("has no testimonials section", () => {
     const wrapper = mount(IndexPage, globalConfig);
     expect(wrapper.find("#loved").exists()).toBe(false);
