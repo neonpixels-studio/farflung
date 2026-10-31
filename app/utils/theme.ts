@@ -1,7 +1,9 @@
 export type Theme = "light" | "dark" | "system";
 export type ResolvedTheme = Exclude<Theme, "system">;
 
-export const THEME_STORAGE_KEY = "farflung:theme";
+// Not "farflung:theme": that key was auto-written as "light" for every visitor,
+// so its value says nothing about what they chose.
+export const THEME_STORAGE_KEY = "farflung:theme-preference";
 export const THEME_ATTR = "data-theme";
 export const DEFAULT_THEME: Theme = "system";
 export const PREFERS_DARK_QUERY = "(prefers-color-scheme: dark)";
