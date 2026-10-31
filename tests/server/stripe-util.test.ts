@@ -160,9 +160,28 @@ describe("createCheckoutSession", () => {
       customer: undefined,
       success_url: "https://app.test/settings",
       cancel_url: "https://app.test/pricing",
-      subscription_data: { metadata: { userId: "user-1" } },
+      subscription_data: {
+        metadata: { userId: "user-1" },
+        trial_period_days: 14,
+      },
     });
     expect(session.url).toBe("https://checkout.stripe.com/session_123");
+  });
+
+  it("does not give a returning customer another trial", async () => {
+    mockCheckoutSessionsCreate.mockResolvedValue({ url: "https://x" });
+    const { createCheckoutSession } = await importFreshStripeUtil();
+
+    await createCheckoutSession({
+      userId: "user-1",
+      priceId: "price_wanderer_monthly",
+      existingCustomerId: "cus_existing",
+      successUrl: "https://app.test/settings",
+      cancelUrl: "https://app.test/pricing",
+    });
+
+    const [[sessionParams]] = mockCheckoutSessionsCreate.mock.calls;
+    expect(sessionParams.subscription_data.trial_period_days).toBeUndefined();
   });
 
   it("reuses an existing Stripe customer ID when provided", async () => {

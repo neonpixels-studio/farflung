@@ -1,22 +1,22 @@
 <template>
   <button
     type="button"
-    :disabled="!configured"
+    :disabled="!configured || isRedirecting"
     :title="configured ? undefined : unconfiguredTitle"
     v-bind="$attrs"
     @click="startCheckout"
   >
     <slot />
   </button>
+  <p v-if="redirectError" class="plan-action-error" role="alert">
+    {{ redirectError }}
+  </p>
 </template>
 
 <script setup lang="ts">
 /**
- * Redirects the browser to GET /api/billing/checkout, which creates a Stripe
- * Checkout Session server-side and 302s to Stripe's hosted checkout page —
- * the same "navigate to a server route that redirects to a hosted
- * third-party flow" convention app/composables/useConnections.ts uses for
- * Instagram OAuth.
+ * Sends the browser to a Stripe Checkout Session created by
+ * GET /api/billing/checkout.
  *
  * The Stripe Price ID for each tier/cycle is a human-configured, server-only
  * value (see server/utils/stripe.ts / README "Billing" section) that never
@@ -27,6 +27,7 @@
  * disabled until it is, rather than opening a checkout that would fail.
  */
 import { useBillingConfig } from "~/composables/useBillingConfig";
+import { useBillingRedirect } from "~/composables/useBillingRedirect";
 
 type PlanTier = "wanderer" | "nomad";
 type BillingCycleOption = "monthly" | "yearly";
@@ -43,6 +44,8 @@ defineOptions({ inheritAttrs: false });
 const unconfiguredTitle = "Checkout is not configured yet";
 
 const { config, fetchBillingConfig } = useBillingConfig();
+const { isRedirecting, redirectError, redirectToBilling } =
+  useBillingRedirect();
 
 onMounted(() => {
   fetchBillingConfig();
@@ -73,6 +76,6 @@ function startCheckout(): void {
   if (props.redirectTo) {
     params.set("redirectTo", props.redirectTo);
   }
-  window.location.href = `/api/billing/checkout?${params.toString()}`;
+  redirectToBilling(`/api/billing/checkout?${params.toString()}`);
 }
 </script>

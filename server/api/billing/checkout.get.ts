@@ -2,11 +2,9 @@
  * GET /api/billing/checkout
  *
  * Creates a Stripe Checkout Session for the requested plan tier + billing
- * cycle and redirects the browser to Stripe's hosted checkout page.
- * Navigated to via a full-page redirect (window.location.href from
- * <PlanCheckoutButton>), the same convention
- * server/api/connections/instagram/start.get.ts uses for the other
- * "redirect to a hosted third-party flow" case in this app.
+ * cycle and returns its hosted URL. Returned rather than redirected to because
+ * this route needs the Clerk Bearer token, which a full-page navigation can't
+ * send; see useBillingRedirect.
  */
 
 import { ensureUser } from "../../utils/auth";
@@ -132,5 +130,5 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  return sendRedirect(event, session.url, 302);
+  return { url: session.url };
 });

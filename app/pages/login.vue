@@ -47,6 +47,7 @@
         <SignIn
           routing="path"
           path="/login"
+          sign-up-url="/sign-up"
           :fallback-redirect-url="safeRedirectPath"
           :sign-up-fallback-redirect-url="safeRedirectPath"
           :appearance="{
