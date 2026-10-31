@@ -565,6 +565,9 @@ textarea.field__input {
   gap: 10px;
   padding-top: 12px;
 }
+.side-foot .theme-toggle {
+  align-self: flex-start;
+}
 .user-chip {
   display: flex;
   align-items: center;
