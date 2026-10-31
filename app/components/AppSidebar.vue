@@ -6,32 +6,67 @@
     </NuxtLink>
 
     <nav class="nav">
-      <NuxtLink class="nav__item" to="/home" @click="close">
+      <NuxtLink
+        class="nav__item"
+        :class="{ 'is-active': isActive('/home') }"
+        to="/home"
+        @click="close"
+      >
         <AppIcon name="compass2" :size="17" />
         Home
       </NuxtLink>
-      <NuxtLink class="nav__item" to="/map" @click="close">
+      <NuxtLink
+        class="nav__item"
+        :class="{ 'is-active': isActive('/map') }"
+        to="/map"
+        @click="close"
+      >
         <AppIcon name="map" :size="17" />
         Map
       </NuxtLink>
-      <NuxtLink class="nav__item" to="/journal" @click="close">
+      <NuxtLink
+        class="nav__item"
+        :class="{ 'is-active': isActive('/journal') }"
+        to="/journal"
+        @click="close"
+      >
         <AppIcon name="journal" :size="17" />
         Journal
       </NuxtLink>
-      <NuxtLink class="nav__item" to="/trips" @click="close">
+      <NuxtLink
+        class="nav__item"
+        :class="{ 'is-active': isActive('/trips') }"
+        to="/trips"
+        @click="close"
+      >
         <AppIcon name="route" :size="17" />
         Trips
       </NuxtLink>
-      <NuxtLink class="nav__item" to="/guides" @click="close">
+      <NuxtLink
+        class="nav__item"
+        :class="{ 'is-active': isActive('/guides') }"
+        to="/guides"
+        @click="close"
+      >
         <AppIcon name="layers" :size="17" />
         Guides
       </NuxtLink>
-      <NuxtLink class="nav__item" to="/explore" @click="close">
+      <NuxtLink
+        class="nav__item"
+        :class="{ 'is-active': isActive('/explore') }"
+        to="/explore"
+        @click="close"
+      >
         <AppIcon name="globe" :size="17" />
         Explore
       </NuxtLink>
       <div class="nav__sep" />
-      <NuxtLink class="nav__item" to="/settings" @click="close">
+      <NuxtLink
+        class="nav__item"
+        :class="{ 'is-active': isActive('/settings') }"
+        to="/settings"
+        @click="close"
+      >
         <AppIcon name="settings" :size="17" />
         Settings
       </NuxtLink>
@@ -67,6 +102,13 @@ defineProps<{ isOpen: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 
 const { user } = useClerkUser();
+const route = useRoute();
+
+// Path-based rather than the router's active class: /trips and /trips/:id are
+// sibling routes, so the router wouldn't treat /trips as active on a trip page.
+function isActive(path: string): boolean {
+  return route.path === path || route.path.startsWith(`${path}/`);
+}
 
 function resolveDisplayName(): string {
   const u = user.value;

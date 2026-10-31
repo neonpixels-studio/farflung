@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   applyTheme,
+  DEFAULT_THEME,
+  resolveTheme,
   readStoredTheme,
   isValidTheme,
   THEME_STORAGE_KEY,
@@ -16,8 +18,12 @@ describe("isValidTheme", () => {
     expect(isValidTheme("dark")).toBe(true);
   });
 
+  it("accepts system", () => {
+    expect(isValidTheme("system")).toBe(true);
+  });
+
   it("rejects unknown strings", () => {
-    expect(isValidTheme("system")).toBe(false);
+    expect(isValidTheme("sepia")).toBe(false);
   });
 
   it("rejects null", () => {
@@ -31,7 +37,7 @@ describe("readStoredTheme", () => {
   });
 
   it("returns light when nothing stored", () => {
-    expect(readStoredTheme()).toBe("light");
+    expect(readStoredTheme()).toBe(DEFAULT_THEME);
   });
 
   it("returns stored dark theme", () => {
@@ -46,7 +52,7 @@ describe("readStoredTheme", () => {
 
   it("falls back to light for an unrecognized value", () => {
     localStorage.setItem(THEME_STORAGE_KEY, "auto");
-    expect(readStoredTheme()).toBe("light");
+    expect(readStoredTheme()).toBe(DEFAULT_THEME);
   });
 });
 
@@ -77,5 +83,21 @@ describe("applyTheme", () => {
     applyTheme("light", root);
     expect(root.getAttribute(THEME_ATTR)).toBe("light");
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+  });
+});
+
+describe("resolveTheme", () => {
+  it("defaults to following the system", () => {
+    expect(DEFAULT_THEME).toBe("system");
+  });
+
+  it("keeps an explicit choice regardless of the OS setting", () => {
+    expect(resolveTheme("light", true)).toBe("light");
+    expect(resolveTheme("dark", false)).toBe("dark");
+  });
+
+  it("follows the OS setting for system", () => {
+    expect(resolveTheme("system", true)).toBe("dark");
+    expect(resolveTheme("system", false)).toBe("light");
   });
 });
