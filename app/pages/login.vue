@@ -17,7 +17,6 @@
           <AppIcon name="compass" :size="26" class="brand__mark" />
           <span class="brand__name">far<b>flung</b></span>
         </NuxtLink>
-        <AppThemeToggle />
       </div>
 
       <div class="brand-mid">
@@ -45,9 +44,6 @@
     <!-- RIGHT: Clerk sign-in form -->
     <div class="auth__form">
       <div class="auth__form-inner">
-        <div class="auth-corner">
-          <AppThemeToggle />
-        </div>
         <SignIn
           routing="path"
           path="/login"
@@ -58,9 +54,10 @@
             variables: {
               colorPrimary: '#a855f7',
               colorBackground: 'var(--surface)',
-              colorInputBackground: 'var(--surface-2)',
-              colorInputText: 'var(--ink)',
-              colorText: 'var(--ink)',
+              colorInput: 'var(--surface-2)',
+              colorInputForeground: 'var(--ink)',
+              colorForeground: 'var(--ink)',
+              colorMutedForeground: 'var(--muted)',
               fontFamily: 'JetBrains Mono, ui-monospace, monospace',
               borderRadius: '7px',
             },
@@ -222,11 +219,6 @@ const loginDistanceValue = formatCompact(PLACEHOLDER_DISTANCE);
   max-width: 420px;
   margin: 0 auto;
 }
-.auth-corner {
-  position: absolute;
-  top: 28px;
-  right: 32px;
-}
 
 @media (max-width: 860px) {
   .auth {
@@ -244,10 +236,6 @@ const loginDistanceValue = formatCompact(PLACEHOLDER_DISTANCE);
   }
   .auth__form {
     padding: 36px 22px;
-  }
-  .auth-corner {
-    top: 22px;
-    right: 22px;
   }
 }
 </style>

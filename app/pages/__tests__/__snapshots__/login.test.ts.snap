@@ -5,9 +5,7 @@ exports[`Login page (/login) > renders without crashing and matches snapshot 1`]
   <!-- LEFT: brand panel -->
   <div data-v-43592d06="" class="auth__brand">
     <div data-v-43592d06="" class="topo"></div><span data-v-43592d06="" class="pin-float" style="left: 64%; top: 30%;"><svg data-v-43592d06="" data-icon="" name="pin" size="26" class="pin"></svg><small data-v-43592d06="">tokyo</small></span><span data-v-43592d06="" class="pin-float" style="left: 42%; top: 46%;"><svg data-v-43592d06="" data-icon="" name="pin" size="20" class="pin"></svg><small data-v-43592d06="">lisbon</small></span>
-    <div data-v-43592d06="" class="brand-top"><a data-v-43592d06="" class="brand"><svg data-v-43592d06="" data-icon="" name="compass" size="26" class="brand__mark"></svg><span data-v-43592d06="" class="brand__name">far<b data-v-43592d06="">flung</b></span></a>
-      <div data-v-43592d06="" class="theme-toggle"></div>
-    </div>
+    <div data-v-43592d06="" class="brand-top"><a data-v-43592d06="" class="brand"><svg data-v-43592d06="" data-icon="" name="compass" size="26" class="brand__mark"></svg><span data-v-43592d06="" class="brand__name">far<b data-v-43592d06="">flung</b></span></a></div>
     <div data-v-43592d06="" class="brand-mid">
       <div data-v-43592d06="" class="label"> // 117 places · 9 countries </div>
       <h1 data-v-43592d06="" style="margin-top: 14px;">Your map is<br data-v-43592d06=""><b data-v-43592d06="">waiting.</b></h1>
@@ -26,9 +24,6 @@ exports[`Login page (/login) > renders without crashing and matches snapshot 1`]
   </div><!-- RIGHT: Clerk sign-in form -->
   <div data-v-43592d06="" class="auth__form">
     <div data-v-43592d06="" class="auth__form-inner">
-      <div data-v-43592d06="" class="auth-corner">
-        <div data-v-43592d06="" class="theme-toggle"></div>
-      </div>
       <div data-v-43592d06="" class="clerk-sign-in" sign-up-url="/sign-up" appearance="[object Object]"></div>
     </div>
   </div>
