@@ -1,7 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
 import AppCommandPalette from "../AppCommandPalette.vue";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 // navigateTo is stubbed globally in vitest.setup.ts; cast for spy access
 const mockNavigateTo = navigateTo as ReturnType<typeof vi.fn>;
@@ -492,5 +494,53 @@ describe("AppCommandPalette", () => {
 
     await wrapper.find(".cmdk__input").setValue("tokyo");
     expect(mockSearch).toHaveBeenCalledWith("tokyo");
+  });
+
+  describe("item layout", () => {
+    // Only the real .cmdk__item rule is injected (happy-dom doesn't cascade
+    // the full stylesheet). It does no layout either, so this asserts the
+    // declarations that make both element types fill the row, not pixels.
+    const mainStylesheet = readFileSync(
+      resolve(__dirname, "../../assets/css/main.css"),
+      "utf8",
+    );
+    const itemRule = /\n\.cmdk__item \{[^}]*\}/.exec(mainStylesheet)?.[0] ?? "";
+
+    let styleElement: HTMLStyleElement;
+
+    beforeEach(() => {
+      styleElement = document.createElement("style");
+      styleElement.textContent = itemRule;
+      document.head.appendChild(styleElement);
+    });
+
+    afterEach(() => {
+      styleElement.remove();
+    });
+
+    it("finds the .cmdk__item rule in the stylesheet", () => {
+      expect(itemRule).not.toBe("");
+    });
+
+    it.each([
+      ["button (action items)", "button.cmdk__item"],
+      ["link (navigation items)", "a.cmdk__item"],
+    ])(
+      "makes the %s fill the width with left-aligned text",
+      (_label, selector) => {
+        const wrapper = mount(AppCommandPalette, {
+          props: { open: true },
+          ...globalConfig,
+          attachTo: document.body,
+        });
+
+        const item = wrapper.find(selector).element;
+        const computed = getComputedStyle(item);
+
+        expect(computed.width).toBe("100%");
+        expect(computed.textAlign).toBe("left");
+        wrapper.unmount();
+      },
+    );
   });
 });
