@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { reactive } from "vue";
 import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
@@ -155,6 +157,39 @@ describe("Journal page (/journal)", () => {
     const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
     expect(wrapper.find(".feed").exists()).toBe(true);
     expect(wrapper.html()).toMatchSnapshot();
+  });
+
+  describe("spacing under the topbar", () => {
+    // Injects the real scoped .jcols rule from the SFC (happy-dom doesn't
+    // run the SFC style pipeline). It does no layout, so this asserts the
+    // declared top margin and that horizontal centering survives it.
+    let styleElement: HTMLStyleElement;
+
+    beforeEach(() => {
+      const source = readFileSync(resolve(__dirname, "../journal.vue"), "utf8");
+      const jcolsRule = /\n\.jcols \{[^}]*\}/.exec(source)?.[0] ?? "";
+      styleElement = document.createElement("style");
+      styleElement.textContent = jcolsRule;
+      document.head.appendChild(styleElement);
+    });
+
+    afterEach(() => {
+      styleElement.remove();
+    });
+
+    it("separates the compose bar and trips rail from the topbar", () => {
+      const wrapper = mount(JournalPage, {
+        ...buildGlobalConfig(pinia),
+        attachTo: document.body,
+      });
+
+      const computed = getComputedStyle(wrapper.find(".jcols").element);
+
+      expect(computed.marginTop).toBe("24px");
+      expect(computed.marginLeft).toBe("auto");
+      expect(computed.marginRight).toBe("auto");
+      wrapper.unmount();
+    });
   });
 
   it("renders 3 feed tabs", () => {
