@@ -30,7 +30,7 @@ describe("ProfileGuideList", () => {
 
     const links = wrapper.findAll("a.guide");
     expect(links).toHaveLength(2);
-    expect(links[0].attributes("href")).toBe("/guides/guide-1");
+    expect(links[0]!.attributes("href")).toBe("/guides/guide-1");
     expect(wrapper.html()).toMatchSnapshot();
   });
 

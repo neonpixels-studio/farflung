@@ -160,7 +160,7 @@ describe("Guides page (/guides)", () => {
     it("creates a guide with the entered title and closes the form", async () => {
       const guidesStore = useGuidesStore();
       const createdGuide: Guide = {
-        ...SAMPLE_GUIDES[0],
+        ...SAMPLE_GUIDES[0]!,
         id: "g-new",
         title: "Patagonia loop",
       };
@@ -208,7 +208,7 @@ describe("Guides page (/guides)", () => {
         .findAll(".gcard__acts button")
         .filter((button) => button.text() === "edit");
 
-      await editButtons[0].trigger("click");
+      await editButtons[0]!.trigger("click");
 
       const titleInput = wrapper.find(
         'input[placeholder="Guide title…"]',
@@ -219,7 +219,7 @@ describe("Guides page (/guides)", () => {
     it("updates the guide and closes the edit form", async () => {
       const guidesStore = useGuidesStore();
       const updatedGuide: Guide = {
-        ...SAMPLE_GUIDES[0],
+        ...SAMPLE_GUIDES[0]!,
         title: "Tokyo on foot, revised",
       };
       vi.spyOn(guidesStore, "updateGuide").mockResolvedValue(updatedGuide);
@@ -228,7 +228,7 @@ describe("Guides page (/guides)", () => {
       const editButtons = wrapper
         .findAll(".gcard__acts button")
         .filter((button) => button.text() === "edit");
-      await editButtons[0].trigger("click");
+      await editButtons[0]!.trigger("click");
 
       await wrapper
         .find('input[placeholder="Guide title…"]')
@@ -362,36 +362,36 @@ describe("Guides page (/guides)", () => {
       const guidesStore = useGuidesStore();
       const likeSpy = vi
         .spyOn(guidesStore, "likeGuide")
-        .mockResolvedValue({ ...SAMPLE_GUIDES[0], likeCount: 13 });
+        .mockResolvedValue({ ...SAMPLE_GUIDES[0]!, likeCount: 13 });
 
       const wrapper = mount(GuidesPage, buildGlobalConfig(pinia));
 
-      await wrapper.findAll(".gcard__like")[0].trigger("click");
+      await wrapper.findAll(".gcard__like")[0]!.trigger("click");
       await flushPromises();
 
       expect(likeSpy).toHaveBeenCalledWith("g-1");
-      expect(wrapper.findAll(".gcard__like")[0].classes()).toContain("liked");
+      expect(wrapper.findAll(".gcard__like")[0]!.classes()).toContain("liked");
     });
 
     it("unlikes a guide on the second click", async () => {
       const guidesStore = useGuidesStore();
       vi.spyOn(guidesStore, "likeGuide").mockResolvedValue({
-        ...SAMPLE_GUIDES[0],
+        ...SAMPLE_GUIDES[0]!,
         likeCount: 13,
       });
       const unlikeSpy = vi
         .spyOn(guidesStore, "unlikeGuide")
-        .mockResolvedValue({ ...SAMPLE_GUIDES[0], likeCount: 12 });
+        .mockResolvedValue({ ...SAMPLE_GUIDES[0]!, likeCount: 12 });
 
       const wrapper = mount(GuidesPage, buildGlobalConfig(pinia));
 
-      await wrapper.findAll(".gcard__like")[0].trigger("click");
+      await wrapper.findAll(".gcard__like")[0]!.trigger("click");
       await flushPromises();
-      await wrapper.findAll(".gcard__like")[0].trigger("click");
+      await wrapper.findAll(".gcard__like")[0]!.trigger("click");
       await flushPromises();
 
       expect(unlikeSpy).toHaveBeenCalledWith("g-1");
-      expect(wrapper.findAll(".gcard__like")[0].classes()).not.toContain(
+      expect(wrapper.findAll(".gcard__like")[0]!.classes()).not.toContain(
         "liked",
       );
     });
@@ -404,10 +404,10 @@ describe("Guides page (/guides)", () => {
 
       const wrapper = mount(GuidesPage, buildGlobalConfig(pinia));
 
-      await wrapper.findAll(".gcard__like")[0].trigger("click");
+      await wrapper.findAll(".gcard__like")[0]!.trigger("click");
       await flushPromises();
 
-      expect(wrapper.findAll(".gcard__like")[0].classes()).not.toContain(
+      expect(wrapper.findAll(".gcard__like")[0]!.classes()).not.toContain(
         "liked",
       );
     });
@@ -417,7 +417,7 @@ describe("Guides page (/guides)", () => {
     it("keeps the guide liked when the unlike request fails", async () => {
       const guidesStore = useGuidesStore();
       vi.spyOn(guidesStore, "likeGuide").mockResolvedValue({
-        ...SAMPLE_GUIDES[0],
+        ...SAMPLE_GUIDES[0]!,
         likeCount: 13,
       });
       vi.spyOn(guidesStore, "unlikeGuide").mockRejectedValue(
@@ -426,12 +426,12 @@ describe("Guides page (/guides)", () => {
 
       const wrapper = mount(GuidesPage, buildGlobalConfig(pinia));
 
-      await wrapper.findAll(".gcard__like")[0].trigger("click");
+      await wrapper.findAll(".gcard__like")[0]!.trigger("click");
       await flushPromises();
-      await wrapper.findAll(".gcard__like")[0].trigger("click");
+      await wrapper.findAll(".gcard__like")[0]!.trigger("click");
       await flushPromises();
 
-      expect(wrapper.findAll(".gcard__like")[0].classes()).toContain("liked");
+      expect(wrapper.findAll(".gcard__like")[0]!.classes()).toContain("liked");
     });
   });
 });

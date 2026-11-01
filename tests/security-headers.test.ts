@@ -155,11 +155,11 @@ describe("buildSecurityRouteRules", () => {
     const rules = buildSecurityRouteRules("production");
 
     expect(Object.keys(rules)).toEqual(["/**"]);
-    expect(rules["/**"].headers["X-Frame-Options"]).toBe("DENY");
-    expect(rules["/**"].headers["Strict-Transport-Security"]).toContain(
+    expect(rules["/**"]!.headers["X-Frame-Options"]).toBe("DENY");
+    expect(rules["/**"]!.headers["Strict-Transport-Security"]).toContain(
       "max-age=63072000",
     );
-    expect(rules["/**"].headers["Content-Security-Policy-Report-Only"]).toBe(
+    expect(rules["/**"]!.headers["Content-Security-Policy-Report-Only"]).toBe(
       CONTENT_SECURITY_POLICY_REPORT_ONLY,
     );
   });

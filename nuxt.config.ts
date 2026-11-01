@@ -41,11 +41,9 @@ export default defineNuxtConfig({
       // Server-side maps live under .netlify/functions-internal, not published.
       filesToDeleteAfterUpload: ["dist/**/*.map"],
     },
-    sourceMapsUploadOptions: {
-      org: process.env.SENTRY_ORG,
-      project: process.env.SENTRY_PROJECT,
-      authToken: process.env.SENTRY_AUTH_TOKEN,
-    },
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
   },
   clerk: {
     skipServerMiddleware: true,

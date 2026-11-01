@@ -88,11 +88,11 @@ function hasRequiredDraftFields(value: Record<string, unknown>): boolean {
 // spreading an array (`{ ...[] }`) yields `{}`, which would then fail
 // hasRequiredDraftFields anyway, but rejecting it here up front keeps the
 // object-shape check and the field-completeness check separately readable.
-function isDraftShapedObject(value: unknown): value is Record<string, unknown> {
+function isDraftShapedObject(value: unknown): value is EntryDraft {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return false;
   }
-  return hasRequiredDraftFields(value);
+  return hasRequiredDraftFields(value as Record<string, unknown>);
 }
 
 // A restored draft's `date` can be corrupt: hand-edited localStorage, a value
@@ -236,7 +236,7 @@ export function useEntryDraft() {
         return null;
       }
       return {
-        ...(parsed as EntryDraft),
+        ...parsed,
         date: normalizeDraftDate(parsed.date),
       };
     } catch {

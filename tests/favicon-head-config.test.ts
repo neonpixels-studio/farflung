@@ -10,7 +10,7 @@ function publicFileExists(urlPath: string): boolean {
 }
 
 describe("favicon head config", () => {
-  it.each(FAVICON_HEAD_LINKS.map((link) => [link.rel, link.href]))(
+  it.each(FAVICON_HEAD_LINKS.map((link) => [link!.rel, link!.href]))(
     "%s link points at a file in public (%s)",
     (_rel, href) => {
       expect(publicFileExists(href as string)).toBe(true);
@@ -18,7 +18,7 @@ describe("favicon head config", () => {
   );
 
   it("links the web manifest", () => {
-    const relValues = FAVICON_HEAD_LINKS.map((link) => link.rel);
+    const relValues = FAVICON_HEAD_LINKS.map((link) => link!.rel);
 
     expect(relValues).toContain("manifest");
   });

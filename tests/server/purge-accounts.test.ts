@@ -189,8 +189,8 @@ describe("purgeExpiredDeletedAccounts", () => {
 
     // Enumeration must precede the delete, or FK CASCADE removes the media
     // rows (and their keys) before they can be read.
-    expect(mediaSelectWhere.mock.invocationCallOrder[0]).toBeLessThan(
-      deleteWhere.mock.invocationCallOrder[0],
+    expect(mediaSelectWhere.mock.invocationCallOrder[0]!).toBeLessThan(
+      deleteWhere.mock.invocationCallOrder[0]!,
     );
     // Blob removal must follow the delete, so a failed delete never destroys a
     // surviving account's photos.
@@ -198,7 +198,7 @@ describe("purgeExpiredDeletedAccounts", () => {
       ...mockRemoveMediaBlob.mock.invocationCallOrder,
     );
     expect(firstBlobCall).toBeGreaterThan(
-      deleteWhere.mock.invocationCallOrder[0],
+      deleteWhere.mock.invocationCallOrder[0]!,
     );
   });
 

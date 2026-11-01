@@ -40,7 +40,7 @@ const mockRequireUser = vi.mocked(requireUser);
 const mockGetDb = vi.mocked(getDb);
 const mockApplyPreciseLocationPrivacy = vi.mocked(applyPreciseLocationPrivacy);
 const mockGetQuery = vi.mocked(
-  globalThis.getQuery as (event: unknown) => Record<string, unknown>,
+  getQuery as (event: unknown) => Record<string, unknown>,
 );
 
 function makeDbWithRows(rows: Record<string, unknown>[]) {

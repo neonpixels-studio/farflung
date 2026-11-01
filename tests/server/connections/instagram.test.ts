@@ -73,7 +73,11 @@ const {
       returning: mockDbInsertReturning,
     });
   };
-  const mockDbInsertValues = vi.fn(makeInsertValuesResult);
+  const mockDbInsertValues = vi.fn<
+    (
+      values: Record<string, unknown>,
+    ) => ReturnType<typeof makeInsertValuesResult>
+  >(makeInsertValuesResult);
   const mockDbInsert = vi.fn(() => ({
     values: mockDbInsertValues,
   }));
@@ -339,10 +343,10 @@ describe("GET /api/connections/instagram/start", () => {
   it("puts a signed state for the user in the URL and its nonce in the cookie", async () => {
     await call(startHandler, makeEvent());
 
-    const { state } = mockBuildInstagramAuthUrl.mock.calls[0][0] as {
+    const { state } = mockBuildInstagramAuthUrl.mock.calls[0]![0] as {
       state: string;
     };
-    const cookieNonce = mockSetCookie.mock.calls[0][2] as string;
+    const cookieNonce = mockSetCookie.mock.calls[0]![2] as string;
     expect(mockSetCookie).toHaveBeenCalledWith(
       expect.anything(),
       "ig_oauth_state",
@@ -469,7 +473,7 @@ describe("GET /api/connections/instagram/callback", () => {
   it("rejects a state whose payload was tampered with to name another user", async () => {
     const [encodedPayload, signature] = issued.state.split(".");
     const payload = JSON.parse(
-      Buffer.from(encodedPayload, "base64url").toString("utf8"),
+      Buffer.from(encodedPayload!, "base64url").toString("utf8"),
     ) as Record<string, unknown>;
     payload.userId = "victim";
     const forgedPayload = Buffer.from(JSON.stringify(payload)).toString(
@@ -704,7 +708,7 @@ describe("POST /api/connections/instagram/import", () => {
   //
   // Optional `capturedInserts` records every value object passed to an insert on
   // the import path, so tests can assert on the media row's fields.
-  function makeImportDb(capturedInserts?: Record<string, unknown>[]): object {
+  function makeImportDb(capturedInserts?: Record<string, unknown>[]) {
     if (capturedInserts) {
       mockDbInsertValues.mockImplementation(
         (values: Record<string, unknown>) => {
@@ -909,7 +913,7 @@ describe("POST /api/connections/instagram/import", () => {
     // original key's `-thumb` suffix. Deriving the expected thumbnail key from
     // the actual original key pins the pairing (not two independent matchers).
     expect(mockPutMediaBlob).toHaveBeenCalledTimes(2);
-    const originalKey = mockPutMediaBlob.mock.calls[0][0] as string;
+    const originalKey = mockPutMediaBlob.mock.calls[0]![0] as string;
     expect(originalKey).toMatch(/^user-1\//);
     expect(mockPutMediaBlob.mock.calls[0]).toEqual([
       originalKey,
@@ -1219,6 +1223,7 @@ describe("POST /api/connections/instagram/import", () => {
       imported: number;
       hasMore: boolean;
       errors: string[];
+      remaining: number;
     };
 
     expect(result.imported).toBe(0);
@@ -1352,7 +1357,7 @@ describe("POST /api/connections/instagram/import", () => {
     // in one database.batch() call, the neon-http driver's real BEGIN/COMMIT
     // unit, instead of two independent, non-atomic insert round trips.
     expect(mockDbBatch).toHaveBeenCalledTimes(1);
-    expect(mockDbBatch.mock.calls[0][0]).toHaveLength(2);
+    expect(mockDbBatch.mock.calls[0]![0]).toHaveLength(2);
   });
 
   it("rolls back defensively with id-scoped deletes when the entries/entryPhotos batch fails", async () => {
@@ -1400,7 +1405,10 @@ describe("POST /api/connections/instagram/import", () => {
     // The media insert is the first values() call in the flow and is no
     // longer awaited via .returning(), so reject the values() call itself.
     mockDbInsertValues.mockImplementationOnce(() =>
-      Promise.reject(new Error("duplicate key value")),
+      Object.assign(Promise.reject(new Error("duplicate key value")), {
+        onConflictDoUpdate: mockDbInsertOnConflict,
+        returning: mockDbInsertReturning,
+      }),
     );
     const importDb = makeImportDb();
     mockGetDb.mockReturnValue(importDb);

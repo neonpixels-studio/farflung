@@ -402,8 +402,8 @@ describe("Home / Dashboard page (/home)", () => {
   it("first map pin is large, subsequent pins are small", () => {
     const wrapper = mount(HomePage, globalConfig);
     const pins = wrapper.findAll(".pin-abs");
-    expect(pins[0].classes()).not.toContain("sm");
-    expect(pins[1].classes()).toContain("sm");
+    expect(pins[0]!.classes()).not.toContain("sm");
+    expect(pins[1]!.classes()).toContain("sm");
   });
 
   it("renders the current trip card from the trips store", () => {

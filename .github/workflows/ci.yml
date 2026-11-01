@@ -28,6 +28,7 @@ jobs:
         env:
           BASE_BRANCH: ${{ github.event.pull_request.base.ref || 'main' }}
       - run: npx nuxt prepare
+      - run: npm run typecheck
       - run: npm run test:ci
 
   changed:

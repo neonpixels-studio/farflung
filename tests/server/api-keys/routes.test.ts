@@ -85,7 +85,9 @@ describe("POST /api/api-keys", () => {
     mockEnsureUser.mockResolvedValue("user-1");
     stubActiveKeyCount(0);
     insertChain.returning.mockImplementation(async () => {
-      const values = insertChain.values.mock.calls.at(-1)?.[0 as never] as {
+      const values = (insertChain.values.mock.calls as unknown[][]).at(
+        -1,
+      )?.[0] as {
         id: string;
         name: string;
         prefix: string;
@@ -118,10 +120,9 @@ describe("POST /api/api-keys", () => {
     expect(result.prefix).toBe(key.slice(3, 11));
     expect(result.expiresAt).toBeNull();
 
-    const stored = insertChain.values.mock.calls[0]?.[0 as never] as Record<
-      string,
-      unknown
-    >;
+    const stored = (
+      insertChain.values.mock.calls as unknown[][]
+    )[0]?.[0] as Record<string, unknown>;
     expect(stored.keyHash).toBe(createHash("sha256").update(key).digest("hex"));
     expect(Object.values(stored)).not.toContain(key);
     expect(stored.userId).toBe("user-1");
@@ -173,7 +174,7 @@ describe("POST /api/api-keys", () => {
     await call(postHandler);
 
     const whereSql = new PgDialect().sqlToQuery(
-      selectChain.where.mock.calls[0]?.[0 as never] as unknown as SQL,
+      selectChain.where.mock.calls[0]?.[0] as unknown as SQL,
     ).sql;
     expect(whereSql).toContain('"api_keys"."user_id" = $');
     expect(whereSql).toContain('"api_keys"."revoked_at" is null');
@@ -203,7 +204,7 @@ describe("GET /api/api-keys", () => {
     await call(getHandler);
 
     const whereSql = new PgDialect().sqlToQuery(
-      selectChain.where.mock.calls[0]?.[0 as never] as unknown as SQL,
+      selectChain.where.mock.calls[0]?.[0] as unknown as SQL,
     ).sql;
     expect(whereSql).toContain('"api_keys"."user_id" = $');
     expect(whereSql).toContain('"api_keys"."revoked_at" is null');
@@ -226,7 +227,7 @@ describe("DELETE /api/api-keys/:id", () => {
       revokedAt: expect.any(Date),
     });
     const { sql: whereSql, params } = new PgDialect().sqlToQuery(
-      updateChain.where.mock.calls[0]?.[0 as never] as unknown as SQL,
+      (updateChain.where.mock.calls as unknown[][])[0]?.[0] as unknown as SQL,
     );
     expect(whereSql).toContain('"api_keys"."user_id" = $');
     expect(params).toEqual(expect.arrayContaining(["key-1", "user-1"]));

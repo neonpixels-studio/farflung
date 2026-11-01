@@ -1,8 +1,8 @@
 <template>
   <!-- eslint-disable vue/no-v-html -->
   <svg
-    :width="size"
-    :height="size"
+    :width="size ?? undefined"
+    :height="size ?? undefined"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -112,7 +112,7 @@ const ICONS: Record<string, string> = {
 const props = withDefaults(
   defineProps<{
     name: string;
-    size?: number | string;
+    size?: number | string | null;
   }>(),
   {
     size: 24,

@@ -222,7 +222,7 @@ describe("Activity page (/activity)", () => {
       // previous and a next neighbor.
       const dismissButtons = wrapper.findAll(".activity__dismiss");
       const middleButton = dismissButtons[1];
-      middleButton?.element.focus();
+      (middleButton?.element as HTMLButtonElement | undefined)?.focus();
       expect(document.activeElement).toBe(middleButton?.element);
 
       await middleButton?.trigger("click");
@@ -244,7 +244,7 @@ describe("Activity page (/activity)", () => {
       const dismissButtons = wrapper.findAll(".activity__dismiss");
       const lastButton = dismissButtons[dismissButtons.length - 1];
       const survivingNotification = SAMPLE_NOTIFICATIONS[1] as AppNotification;
-      lastButton?.element.focus();
+      (lastButton?.element as HTMLButtonElement | undefined)?.focus();
 
       await lastButton?.trigger("click");
       await flushPromises();
@@ -265,7 +265,7 @@ describe("Activity page (/activity)", () => {
         attachTo: document.body,
       });
       const dismissButton = wrapper.find(".activity__dismiss");
-      dismissButton.element.focus();
+      (dismissButton.element as HTMLButtonElement).focus();
 
       await dismissButton.trigger("click");
       await flushPromises();

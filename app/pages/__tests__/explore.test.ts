@@ -295,7 +295,7 @@ describe("Explore page (/explore)", () => {
   it("sets hero search value when chip is clicked", async () => {
     const wrapper = mount(ExplorePage, globalConfig);
     const chips = wrapper.findAll(".xchip");
-    await chips[0].trigger("click");
+    await chips[0]!.trigger("click");
     expect(
       (wrapper.find(".xsearch input").element as HTMLInputElement).value,
     ).toBe("Cold-water swims");
@@ -324,9 +324,9 @@ describe("Explore page (/explore)", () => {
     mockFetchTrendingPlaces.mockResolvedValue(undefined);
     const wrapper = mount(ExplorePage, globalConfig);
     const filters = wrapper.findAll(".fbtn");
-    await filters[1].trigger("click");
-    expect(filters[1].classes()).toContain("is-active");
-    expect(filters[0].classes()).not.toContain("is-active");
+    await filters[1]!.trigger("click");
+    expect(filters[1]!.classes()).toContain("is-active");
+    expect(filters[0]!.classes()).not.toContain("is-active");
     expect(mockFetchTrendingPlaces).toHaveBeenCalledWith("nature");
   });
 
@@ -352,11 +352,11 @@ describe("Explore page (/explore)", () => {
       .findAllComponents(linkStub)
       .filter((link) => link.classes().includes("pcard"));
     expect(placeLinks).toHaveLength(4);
-    expect(placeLinks[0].props("to")).toEqual({
+    expect(placeLinks[0]!.props("to")).toEqual({
       path: "/map",
       query: { place: "Reynisfjara", country: "Iceland", category: "nature" },
     });
-    expect(placeLinks[1].props("to")).toEqual({
+    expect(placeLinks[1]!.props("to")).toEqual({
       path: "/map",
       query: { place: "Alfama", country: "Portugal", category: "city" },
     });
@@ -404,8 +404,8 @@ describe("Explore page (/explore)", () => {
       .findAllComponents(linkStub)
       .filter((link) => link.classes().includes("person__name"));
     // Guards against a userId/id typo pointing every profile link at /u/undefined.
-    expect(personLinks[0].props("to")).toBe("/u/user_elsa");
-    expect(personLinks[1].props("to")).toBe("/u/user_marco");
+    expect(personLinks[0]!.props("to")).toBe("/u/user_elsa");
+    expect(personLinks[1]!.props("to")).toBe("/u/user_marco");
   });
 
   it("calls fetchAll and fetchFollowing on mount", async () => {
@@ -437,7 +437,7 @@ describe("Explore page (/explore)", () => {
   it("calls toggleFollow with the correct userId when follow button is clicked", async () => {
     mockToggleFollow.mockResolvedValue(undefined);
     const wrapper = mount(ExplorePage, globalConfig);
-    const firstFollowBtn = wrapper.findAll(".person .btn")[0];
+    const firstFollowBtn = wrapper.findAll(".person .btn")[0]!;
     await firstFollowBtn.trigger("click");
     expect(mockToggleFollow).toHaveBeenCalledWith("user_elsa");
   });
@@ -447,7 +447,7 @@ describe("Explore page (/explore)", () => {
       followingIds.value = new Set([...followingIds.value, userId]);
     });
     const wrapper = mount(ExplorePage, globalConfig);
-    const firstFollowBtn = wrapper.findAll(".person .btn")[0];
+    const firstFollowBtn = wrapper.findAll(".person .btn")[0]!;
     await firstFollowBtn.trigger("click");
     await wrapper.vm.$nextTick();
     expect(firstFollowBtn.classes()).toContain("btn--primary");
@@ -457,7 +457,7 @@ describe("Explore page (/explore)", () => {
   it("disables a follow button while its toggle is pending", async () => {
     pendingUserIds.value = new Set(["user_elsa"]);
     const wrapper = mount(ExplorePage, globalConfig);
-    const firstFollowBtn = wrapper.findAll(".person .btn")[0];
+    const firstFollowBtn = wrapper.findAll(".person .btn")[0]!;
     expect((firstFollowBtn.element as HTMLButtonElement).disabled).toBe(true);
   });
 
@@ -504,7 +504,7 @@ describe("Explore page (/explore)", () => {
 
     const wrapper = mount(ExplorePage, globalConfig);
     const byLines = wrapper.findAll(".guide__by");
-    expect(byLines[0].text()).toBe("by a traveler");
+    expect(byLines[0]!.text()).toBe("by a traveler");
 
     vi.stubGlobal("useDiscover", () => ({
       featuredTrips,
@@ -543,7 +543,7 @@ describe("Explore page (/explore)", () => {
 
     const wrapper = mount(ExplorePage, globalConfig);
     const byLines = wrapper.findAll(".guide__by");
-    expect(byLines[0].text()).toBe("by No Handle Person");
+    expect(byLines[0]!.text()).toBe("by No Handle Person");
 
     vi.stubGlobal("useDiscover", () => ({
       featuredTrips,
@@ -581,7 +581,7 @@ describe("Explore page (/explore)", () => {
 
     const wrapper = mount(ExplorePage, globalConfig);
     const nameEls = wrapper.findAll(".person__name b");
-    expect(nameEls[0].text()).toBe("FarFlung traveler");
+    expect(nameEls[0]!.text()).toBe("FarFlung traveler");
 
     vi.stubGlobal("useDiscover", () => ({
       featuredTrips,
@@ -619,8 +619,8 @@ describe("Explore page (/explore)", () => {
 
     const wrapper = mount(ExplorePage, globalConfig);
     const sublines = wrapper.findAll(".person__name span");
-    expect(sublines[0].text()).not.toContain("places");
-    expect(sublines[0].text()).toContain("newbie");
+    expect(sublines[0]!.text()).not.toContain("places");
+    expect(sublines[0]!.text()).toContain("newbie");
 
     vi.stubGlobal("useDiscover", () => ({
       featuredTrips,

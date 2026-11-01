@@ -65,7 +65,7 @@ describe("POST /api/guides", () => {
     );
     // likeCount must never be settable through the authoring path — the
     // insert payload must not include it so the column default (0) applies.
-    expect(mockDb._values.mock.calls[0][0]).not.toHaveProperty("likeCount");
+    expect(mockDb._values.mock.calls[0]![0]).not.toHaveProperty("likeCount");
   });
 
   it("accepts body, readTimeMinutes, and visibility", async () => {

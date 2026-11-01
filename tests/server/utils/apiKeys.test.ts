@@ -87,7 +87,9 @@ describe("findActiveApiKey", () => {
   it("filters out revoked and expired keys and soft-deleted accounts", async () => {
     await findActiveApiKey("ff_known");
 
-    const whereSql = renderSql(selectChain.where.mock.calls[0]?.[0]);
+    const whereSql = renderSql(
+      (selectChain.where.mock.calls as unknown[][])[0]?.[0],
+    );
     expect(whereSql).toContain('"api_keys"."key_hash" = $1');
     expect(whereSql).toContain('"api_keys"."revoked_at" is null');
     expect(whereSql).toContain('"api_keys"."expires_at" is null');
@@ -99,7 +101,7 @@ describe("findActiveApiKey", () => {
     await findActiveApiKey("ff_known");
 
     const { params } = new PgDialect().sqlToQuery(
-      selectChain.where.mock.calls[0]?.[0] as unknown as SQL,
+      (selectChain.where.mock.calls as unknown[][])[0]?.[0] as unknown as SQL,
     );
     expect(params).toContain(hashApiKey("ff_known"));
     expect(params).not.toContain("ff_known");

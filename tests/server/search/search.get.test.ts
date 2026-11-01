@@ -18,7 +18,7 @@ import { runSearch } from "../../../server/utils/search-queries";
 const mockRequireUser = vi.mocked(requireUser);
 const mockRunSearch = vi.mocked(runSearch);
 const mockGetQuery = vi.mocked(
-  globalThis.getQuery as (event: unknown) => Record<string, unknown>,
+  getQuery as (event: unknown) => Record<string, unknown>,
 );
 
 const EMPTY_RESULTS = {
@@ -93,7 +93,9 @@ describe("GET /api/search", () => {
       ],
       trips: [],
       entries: [],
+      guides: [],
       people: [],
+      tags: [],
     };
     mockGetQuery.mockReturnValue({ q: "  reyk  " });
     mockRunSearch.mockResolvedValue(searchResults);

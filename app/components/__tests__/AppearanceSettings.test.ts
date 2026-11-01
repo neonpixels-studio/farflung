@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
 import { mount } from "@vue/test-utils";
 import AppearanceSettings from "../AppearanceSettings.vue";
-import { ACCENT_COLORS } from "~/utils/theme";
+import { ACCENT_COLORS } from "~/utils/accentColors";
 
 const theme = ref("system");
 const accent = ref("violet");

@@ -61,7 +61,7 @@ describe("groupEntriesByDay", () => {
   it("sets a stable UTC-based key on each group", () => {
     const entry = makeEntry({ occurredAt: "2026-06-12T23:00:00.000Z" });
     const groups = groupEntriesByDay([entry]);
-    expect(groups[0].key).toBe("2026-06-12");
+    expect(groups[0]!.key).toBe("2026-06-12");
   });
 
   it("gives groups in different years distinct keys even with the same month/day", () => {
@@ -71,7 +71,7 @@ describe("groupEntriesByDay", () => {
     ];
     const groups = groupEntriesByDay(entries);
     expect(groups).toHaveLength(2);
-    expect(groups[0].key).not.toBe(groups[1].key);
+    expect(groups[0]!.key).not.toBe(groups[1]!.key);
   });
 
   it("groups two entries on the same UTC day into one group", () => {
@@ -88,7 +88,7 @@ describe("groupEntriesByDay", () => {
 
     const groups = groupEntriesByDay(entries);
     expect(groups).toHaveLength(1);
-    expect(groups[0].entries).toHaveLength(2);
+    expect(groups[0]!.entries).toHaveLength(2);
   });
 
   it("creates separate groups for entries on different days", () => {
@@ -110,7 +110,7 @@ describe("groupEntriesByDay", () => {
 
     const groups = groupEntriesByDay([entry]);
     expect(groups).toHaveLength(1);
-    expect(groups[0].entries[0].id).toBe("e-1");
+    expect(groups[0]!.entries[0]!.id).toBe("e-1");
   });
 
   it("preserves entry order within a group", () => {
@@ -120,8 +120,8 @@ describe("groupEntriesByDay", () => {
     ];
 
     const groups = groupEntriesByDay(entries);
-    expect(groups[0].entries[0].id).toBe("e-1");
-    expect(groups[0].entries[1].id).toBe("e-2");
+    expect(groups[0]!.entries[0]!.id).toBe("e-1");
+    expect(groups[0]!.entries[1]!.id).toBe("e-2");
   });
 });
 
@@ -135,8 +135,8 @@ describe("groupEntriesByTrip", () => {
     const groups = groupEntriesByTrip([entry], []);
 
     expect(groups).toHaveLength(1);
-    expect(groups[0].tripName).toBe("No trip");
-    expect(groups[0].trip).toBeNull();
+    expect(groups[0]!.tripName).toBe("No trip");
+    expect(groups[0]!.trip).toBeNull();
   });
 
   it("groups entries by their associated trip", () => {
@@ -148,8 +148,8 @@ describe("groupEntriesByTrip", () => {
 
     const groups = groupEntriesByTrip(entries, [trip]);
     expect(groups).toHaveLength(1);
-    expect(groups[0].tripName).toBe("Iceland");
-    expect(groups[0].entries).toHaveLength(2);
+    expect(groups[0]!.tripName).toBe("Iceland");
+    expect(groups[0]!.entries).toHaveLength(2);
   });
 
   it("creates separate groups for entries on different trips", () => {
@@ -168,7 +168,7 @@ describe("groupEntriesByTrip", () => {
     const entry = makeEntry({ id: "e-1", tripId: "unknown-trip" });
     const groups = groupEntriesByTrip([entry], []);
 
-    expect(groups[0].tripName).toBe("No trip");
+    expect(groups[0]!.tripName).toBe("No trip");
   });
 
   it("appends the 'No trip' group after named trip groups", () => {
@@ -179,7 +179,7 @@ describe("groupEntriesByTrip", () => {
     ];
 
     const groups = groupEntriesByTrip(entries, [trip]);
-    expect(groups[groups.length - 1].tripName).toBe("No trip");
+    expect(groups[groups.length - 1]!.tripName).toBe("No trip");
   });
 });
 
@@ -205,7 +205,7 @@ describe("filterEntriesWithPhotos", () => {
 
     const result = filterEntriesWithPhotos([withPhoto, withoutPhoto]);
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("e-1");
+    expect(result[0]!.id).toBe("e-1");
   });
 });
 
@@ -248,7 +248,7 @@ describe("useJournalFeed", () => {
     const { photoEntries } = useJournalFeed(entries, ref([]));
 
     expect(photoEntries.value).toHaveLength(1);
-    expect(photoEntries.value[0].id).toBe("e-2");
+    expect(photoEntries.value[0]!.id).toBe("e-2");
   });
 
   it("accepts a plain array for trips", () => {

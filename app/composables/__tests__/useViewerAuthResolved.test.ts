@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, type Ref } from "vue";
 import { useViewerAuthResolved } from "../useViewerAuthResolved";
 import { CLERK_BOOTSTRAP_TIMEOUT_MS } from "../useClerkGatedFetch";
 
 // Mounts a bare host component so onMounted/onUnmounted (used internally by
 // useViewerAuthResolved) have a real component instance to attach to.
-function mountHost(isClerkLoaded: ReturnType<typeof ref<boolean>>) {
+function mountHost(isClerkLoaded: Ref<boolean>) {
   let viewerAuthResolved: ReturnType<
     typeof useViewerAuthResolved
   >["viewerAuthResolved"];

@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import type { BatchItem } from "drizzle-orm/batch";
 import * as schema from "./schema";
 
-let cachedDb: ReturnType<typeof drizzle> | null = null;
+let cachedDb: ReturnType<typeof createDb> | null = null;
 
 /**
  * Builds a drizzle client from an explicit connection string. Exported

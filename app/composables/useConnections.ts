@@ -27,7 +27,7 @@ export interface ConnectionsState {
 export interface InstagramImportResult {
   imported: number;
   skipped: number;
-  errors: string[];
+  errors: readonly string[];
   // The import is bounded per run; `hasMore` is true when items remain and the
   // client should call the endpoint again to resume. `remaining` is how many
   // new items were deferred to a later run.

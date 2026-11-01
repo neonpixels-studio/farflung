@@ -266,9 +266,9 @@ describe("Map page (/map)", () => {
   it("activates filter chip when clicked", async () => {
     const wrapper = await mountWithPlaces();
     const chips = wrapper.findAll(".chip");
-    await chips[1].trigger("click");
-    expect(chips[1].classes()).toContain("is-active");
-    expect(chips[0].classes()).not.toContain("is-active");
+    await chips[1]!.trigger("click");
+    expect(chips[1]!.classes()).toContain("is-active");
+    expect(chips[0]!.classes()).not.toContain("is-active");
   });
 
   it("shows no detail card on initial load (no place pre-selected)", async () => {
@@ -279,14 +279,14 @@ describe("Map page (/map)", () => {
   it("updates detail card when a place is selected", async () => {
     const wrapper = await mountWithPlaces();
     const items = wrapper.findAll(".place-item");
-    await items[0].trigger("click");
+    await items[0]!.trigger("click");
     expect(wrapper.find(".detail__name").text()).toBe("Reykjavík");
   });
 
   it("closes detail card when close button is clicked", async () => {
     const wrapper = await mountWithPlaces();
     const items = wrapper.findAll(".place-item");
-    await items[0].trigger("click");
+    await items[0]!.trigger("click");
     expect(wrapper.find(".detail.is-open").exists()).toBe(true);
 
     await wrapper.find(".detail__close").trigger("click");
@@ -346,7 +346,7 @@ describe("Map page (/map)", () => {
     it("keeps picking a style in the map session-only (never saves it)", async () => {
       mockSavedStyle.value = "dark";
       const wrapper = await mountWithPlaces();
-      await wrapper.findAll(".lstyle")[2].trigger("click");
+      await wrapper.findAll(".lstyle")[2]!.trigger("click");
       expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
         "satellite",
       );
@@ -357,7 +357,7 @@ describe("Map page (/map)", () => {
   it("changes map style when a style is selected", async () => {
     const wrapper = await mountWithPlaces();
     const styles = wrapper.findAll(".lstyle");
-    await styles[2].trigger("click");
+    await styles[2]!.trigger("click");
     expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
       "satellite",
     );
@@ -371,7 +371,7 @@ describe("Map page (/map)", () => {
     const unlocked = styles.filter((style) => !style.classes("is-locked"));
     expect(unlocked.map((style) => style.text())).toEqual(["Outdoors"]);
 
-    await styles[2].trigger("click");
+    await styles[2]!.trigger("click");
     expect(wrapper.find(".map-stage").attributes("data-mapstyle")).toBe(
       "outdoors",
     );
@@ -387,7 +387,7 @@ describe("Map page (/map)", () => {
   it("closes the layers popover after selecting a style", async () => {
     const wrapper = await mountWithPlaces();
     await wrapper.find(".map-cbtn").trigger("click");
-    await wrapper.findAll(".lstyle")[1].trigger("click");
+    await wrapper.findAll(".lstyle")[1]!.trigger("click");
     expect(wrapper.find(".layers-pop.is-open").exists()).toBe(false);
   });
 
@@ -472,7 +472,7 @@ describe("Map page (/map)", () => {
 
   it("does not show the edit form until the edit button is clicked", async () => {
     const wrapper = await mountWithPlaces();
-    await wrapper.findAll(".place-item")[0].trigger("click");
+    await wrapper.findAll(".place-item")[0]!.trigger("click");
     expect(wrapper.find(".place-edit-form").exists()).toBe(false);
 
     await wrapper.find('button[aria-label="Edit place"]').trigger("click");
@@ -481,7 +481,7 @@ describe("Map page (/map)", () => {
 
   it("PATCHes the place and refreshes the detail card on save", async () => {
     const wrapper = await mountWithPlaces();
-    await wrapper.findAll(".place-item")[0].trigger("click");
+    await wrapper.findAll(".place-item")[0]!.trigger("click");
     await wrapper.find('button[aria-label="Edit place"]').trigger("click");
 
     const updated = {
@@ -506,7 +506,7 @@ describe("Map page (/map)", () => {
 
   it("renders the update error and keeps the form open when the PATCH fails", async () => {
     const wrapper = await mountWithPlaces();
-    await wrapper.findAll(".place-item")[0].trigger("click");
+    await wrapper.findAll(".place-item")[0]!.trigger("click");
     await wrapper.find('button[aria-label="Edit place"]').trigger("click");
 
     mockApiFetch.mockRejectedValueOnce(new Error("Save failed"));
@@ -529,7 +529,7 @@ describe("Map page (/map)", () => {
     // extractErrorMessage's output, not just hardcoded to the generic
     // fallback (which the test above alone wouldn't catch).
     const wrapper = await mountWithPlaces();
-    await wrapper.findAll(".place-item")[0].trigger("click");
+    await wrapper.findAll(".place-item")[0]!.trigger("click");
     await wrapper.find('button[aria-label="Edit place"]').trigger("click");
 
     mockApiFetch.mockRejectedValueOnce(
@@ -549,11 +549,11 @@ describe("Map page (/map)", () => {
 
   it("closes the edit form when a different place is selected", async () => {
     const wrapper = await mountWithPlaces();
-    await wrapper.findAll(".place-item")[0].trigger("click");
+    await wrapper.findAll(".place-item")[0]!.trigger("click");
     await wrapper.find('button[aria-label="Edit place"]').trigger("click");
     expect(wrapper.find(".place-edit-form").exists()).toBe(true);
 
-    await wrapper.findAll(".place-item")[1].trigger("click");
+    await wrapper.findAll(".place-item")[1]!.trigger("click");
     expect(wrapper.find(".place-edit-form").exists()).toBe(false);
   });
 

@@ -141,9 +141,9 @@ describe("POST /api/follows", () => {
     // createNotification) for the notification row. Both calls share the
     // same mocked .values() function, so its call history holds both
     // payloads in order.
-    const valuesMock = insertChain.insert.mock.results[0].value.values;
+    const valuesMock = insertChain.insert.mock.results[0]!.value.values;
     expect(valuesMock.mock.calls).toHaveLength(2);
-    const notificationPayload = valuesMock.mock.calls[1][0] as Record<
+    const notificationPayload = valuesMock.mock.calls[1]![0] as Record<
       string,
       unknown
     >;
@@ -169,7 +169,7 @@ describe("POST /api/follows", () => {
 
     await callHandler();
 
-    const valuesMock = insertChain.insert.mock.results[0].value.values;
+    const valuesMock = insertChain.insert.mock.results[0]!.value.values;
     // Only the follows-row insert should have happened; createNotification
     // is skipped entirely when the follow was already there.
     expect(valuesMock.mock.calls).toHaveLength(1);

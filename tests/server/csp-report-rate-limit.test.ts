@@ -14,7 +14,7 @@ const { default: rateLimitMiddleware } =
 const { RATE_LIMIT_POLICIES } =
   await import("../../server/utils/rateLimitPolicies");
 
-const CSP_POLICY = RATE_LIMIT_POLICIES["POST /csp-report"];
+const CSP_POLICY = RATE_LIMIT_POLICIES["POST /csp-report"]!;
 const run = rateLimitMiddleware as (event: unknown) => void;
 
 function cspEvent(ip: string) {

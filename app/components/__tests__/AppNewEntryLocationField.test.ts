@@ -58,7 +58,7 @@ describe("AppNewEntryLocationField", () => {
 
   it("emits select with the place when a suggestion chip is clicked", async () => {
     const wrapper = mountField({ suggestions: SUGGESTIONS });
-    await wrapper.findAll(".chip")[0].trigger("click");
+    await wrapper.findAll(".chip")[0]!.trigger("click");
     expect(wrapper.emitted("select")?.[0]).toEqual([SUGGESTIONS[0]]);
   });
 

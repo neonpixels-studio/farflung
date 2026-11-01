@@ -4,7 +4,7 @@ import { getDb } from "../db/index";
 import { userPreferences, DISTANCE_UNIT } from "../db/schema";
 import { optionalString } from "../utils/db-helpers";
 import { describeHandleProblem, findHandleProblem } from "../utils/handle";
-import { ACCENT_COLORS } from "../../app/utils/theme";
+import { ACCENT_COLORS } from "../../app/utils/accentColors";
 import {
   MAP_STYLES,
   assertMapStyleAllowed,

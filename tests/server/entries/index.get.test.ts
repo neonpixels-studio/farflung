@@ -33,7 +33,7 @@ import { entries, entryTags } from "../../../server/db/schema";
 const mockRequireUser = vi.mocked(requireUser);
 const mockGetDb = vi.mocked(getDb);
 const mockGetQuery = vi.mocked(
-  globalThis.getQuery as (event: unknown) => Record<string, unknown>,
+  getQuery as (event: unknown) => Record<string, unknown>,
 );
 
 function makeDbForListing(
@@ -398,7 +398,7 @@ describe("GET /api/entries", () => {
     expect(eq).toHaveBeenCalledWith(entryTags.tagId, "tag-1");
     expect(inArray).toHaveBeenCalledWith(entries.id, expect.anything());
     expect(result.entries).toHaveLength(1);
-    expect(result.entries[0].id).toBe("e-1");
+    expect(result.entries[0]!.id).toBe("e-1");
   });
 
   it("ignores a blank tagId (whitespace-only)", async () => {

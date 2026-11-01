@@ -155,7 +155,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, longQuery);
 
-    const calledUrl = mockApiFetch.mock.calls[0][0] as string;
+    const calledUrl = mockApiFetch.mock.calls[0]![0] as string;
     const decoded = decodeURIComponent(calledUrl.replace("/api/search?q=", ""));
     expect(decoded.length).toBe(100);
   });
@@ -166,7 +166,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "reyk");
 
-    const place = results.value.places[0];
+    const place = results.value.places[0]!;
     expect(place.id).toBe("p-1");
     expect(place.title).toBe("Reykjavík");
     expect(place.icon).toBe("pin");
@@ -179,7 +179,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "reyk");
 
-    const place = results.value.places[0];
+    const place = results.value.places[0]!;
     expect(place.subtitle).toBe("Capital · Iceland");
   });
 
@@ -189,7 +189,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "iceland");
 
-    const trip = results.value.trips[0];
+    const trip = results.value.trips[0]!;
     expect(trip.id).toBe("t-1");
     expect(trip.title).toBe("Iceland Ring Road");
     expect(trip.icon).toBe("route");
@@ -202,7 +202,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "harbor");
 
-    const entry = results.value.entries[0];
+    const entry = results.value.entries[0]!;
     expect(entry.id).toBe("e-1");
     expect(entry.title).toBe("Harbor at 4am");
     expect(entry.icon).toBe("journal");
@@ -215,7 +215,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "kyoto");
 
-    const guide = results.value.guides[0];
+    const guide = results.value.guides[0]!;
     expect(guide.id).toBe("g-1");
     expect(guide.title).toBe("48 hours in Kyoto");
     expect(guide.icon).toBe("layers");
@@ -228,7 +228,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "hiking");
 
-    const tag = results.value.tags[0];
+    const tag = results.value.tags[0]!;
     expect(tag.id).toBe("tag-1");
     expect(tag.title).toBe("#hiking");
     expect(tag.icon).toBe("tag");
@@ -241,7 +241,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "elsa");
 
-    const person = results.value.people[0];
+    const person = results.value.people[0]!;
     expect(person.id).toBe("u-2");
     expect(person.title).toBe("@elsa_far");
     expect(person.icon).toBe("user");
@@ -257,7 +257,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "marco");
 
-    expect(results.value.people[0].title).toBe("Marco Reis");
+    expect(results.value.people[0]!.title).toBe("Marco Reis");
   });
 
   it("falls back to 'FarFlung traveler' when both handle and displayName are null", async () => {
@@ -269,7 +269,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "traveler");
 
-    expect(results.value.people[0].title).toBe("FarFlung traveler");
+    expect(results.value.people[0]!.title).toBe("FarFlung traveler");
   });
 
   it("people results never include an email address in the SearchItem", async () => {
@@ -278,7 +278,7 @@ describe("useSearch", () => {
 
     await searchAndFlush(search, "elsa");
 
-    const person = results.value.people[0];
+    const person = results.value.people[0]!;
     // The SearchItem type does not have an email field; double-check at runtime
     expect((person as Record<string, unknown>).email).toBeUndefined();
   });
@@ -320,7 +320,7 @@ describe("useSearch", () => {
     await vi.runAllTimersAsync();
 
     // Only the second (newer) response should be applied
-    expect(results.value.places[0].title).toBe("Tokyo");
+    expect(results.value.places[0]!.title).toBe("Tokyo");
   });
 
   it("sets error when the fetch fails and resets results to empty", async () => {

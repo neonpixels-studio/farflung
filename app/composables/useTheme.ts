@@ -16,12 +16,12 @@ export function useTheme() {
     () => DEFAULT_THEME,
   );
 
-  const accent = useState<import("~/utils/theme").AccentColor>(
+  const accent = useState<import("~/utils/accentColors").AccentColor>(
     "accent",
     () => DEFAULT_ACCENT,
   );
 
-  function setAccent(next: import("~/utils/theme").AccentColor) {
+  function setAccent(next: import("~/utils/accentColors").AccentColor) {
     accent.value = next;
     if (import.meta.client) {
       applyAccent(next);

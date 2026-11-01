@@ -285,8 +285,7 @@ function toUtcDateString(date: Date): string {
 }
 
 function previousUtcDateString(dateString: string): string {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
+  const date = new Date(`${dateString}T00:00:00.000Z`);
   date.setUTCDate(date.getUTCDate() - 1);
   return toUtcDateString(date);
 }

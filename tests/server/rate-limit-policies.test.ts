@@ -97,7 +97,7 @@ describe("RATE_LIMIT_POLICIES route drift guard", () => {
   it("resolves every policy key to an existing route handler file", () => {
     for (const policyKey of Object.keys(RATE_LIMIT_POLICIES)) {
       const [method, apiPath] = policyKey.split(" ");
-      const candidates = candidateHandlerPaths(method, apiPath);
+      const candidates = candidateHandlerPaths(method!, apiPath!);
       const matchesAHandler = candidates.some((candidate) =>
         existsSync(candidate),
       );

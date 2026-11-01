@@ -140,11 +140,11 @@ describe("Journal page (/journal)", () => {
     vi.spyOn(entriesStore, "fetchEntries").mockResolvedValue();
     vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([]);
     vi.spyOn(entriesStore, "likeEntry").mockResolvedValue({
-      ...SAMPLE_ENTRIES[0],
+      ...SAMPLE_ENTRIES[0]!,
       likeCount: 25,
     });
     vi.spyOn(entriesStore, "unlikeEntry").mockResolvedValue({
-      ...SAMPLE_ENTRIES[0],
+      ...SAMPLE_ENTRIES[0]!,
       likeCount: 23,
     });
 
@@ -201,9 +201,9 @@ describe("Journal page (/journal)", () => {
   it("switches active tab when clicked", async () => {
     const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
     const tabs = wrapper.findAll(".feed-tabs button");
-    await tabs[1].trigger("click");
-    expect(tabs[1].classes()).toContain("is-active");
-    expect(tabs[0].classes()).not.toContain("is-active");
+    await tabs[1]!.trigger("click");
+    expect(tabs[1]!.classes()).toContain("is-active");
+    expect(tabs[0]!.classes()).not.toContain("is-active");
   });
 
   it("renders the compose bar", () => {
@@ -240,20 +240,22 @@ describe("Journal page (/journal)", () => {
   it("calls likeEntry on the store when like is toggled on an unliked entry", async () => {
     const entriesStore = useEntriesStore();
     const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
-    const likeBtn = wrapper.findAll(".like")[0];
+    const likeBtn = wrapper.findAll(".like")[0]!;
     await likeBtn.trigger("click");
-    expect(entriesStore.likeEntry).toHaveBeenCalledWith(SAMPLE_ENTRIES[0].id);
+    expect(entriesStore.likeEntry).toHaveBeenCalledWith(SAMPLE_ENTRIES[0]!.id);
   });
 
   it("calls unlikeEntry on the store when like is toggled on an already-liked entry", async () => {
     const entriesStore = useEntriesStore();
     const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
     // First click likes it
-    const likeBtn = wrapper.findAll(".like")[0];
+    const likeBtn = wrapper.findAll(".like")[0]!;
     await likeBtn.trigger("click");
     // Second click unlikes it
     await likeBtn.trigger("click");
-    expect(entriesStore.unlikeEntry).toHaveBeenCalledWith(SAMPLE_ENTRIES[0].id);
+    expect(entriesStore.unlikeEntry).toHaveBeenCalledWith(
+      SAMPLE_ENTRIES[0]!.id,
+    );
   });
 
   it("invokes the injected openEditEntry with the entry when an entry's edit is triggered", async () => {
@@ -266,9 +268,9 @@ describe("Journal page (/journal)", () => {
       },
     });
 
-    await wrapper.findAll(".post__edit")[0].trigger("click");
+    await wrapper.findAll(".post__edit")[0]!.trigger("click");
 
-    expect(openEditEntry).toHaveBeenCalledWith(SAMPLE_ENTRIES[0]);
+    expect(openEditEntry).toHaveBeenCalledWith(SAMPLE_ENTRIES[0]!);
   });
 
   it("renders the right rail with active trip card", () => {
@@ -296,7 +298,7 @@ describe("Journal page (/journal)", () => {
   it("renders By trip groups when By trip tab is active", async () => {
     const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
     const tabs = wrapper.findAll(".feed-tabs button");
-    await tabs[1].trigger("click");
+    await tabs[1]!.trigger("click");
     const dayDivs = wrapper.findAll(".day-div");
     // entry-1 belongs to trip-1; entry-2 has no trip → "No trip"
     expect(dayDivs.length).toBeGreaterThanOrEqual(1);
@@ -305,7 +307,7 @@ describe("Journal page (/journal)", () => {
   it("renders Photos tab with empty state when no photos", async () => {
     const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
     const tabs = wrapper.findAll(".feed-tabs button");
-    await tabs[2].trigger("click");
+    await tabs[2]!.trigger("click");
     expect(wrapper.find(".photo-grid").exists()).toBe(false);
     expect(wrapper.html()).toContain("no photos yet");
   });
@@ -328,7 +330,7 @@ describe("Journal page (/journal)", () => {
     it("fetches and shows only entries for that tag when a tag is clicked", async () => {
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
 
@@ -351,7 +353,7 @@ describe("Journal page (/journal)", () => {
       const entriesStore = useEntriesStore();
       entriesStore.entries = [];
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
 
       routeQuery.tag = "tag-1";
@@ -362,7 +364,7 @@ describe("Journal page (/journal)", () => {
       expect(wrapper.find(".tag-filter-bar").exists()).toBe(true);
       expect(wrapper.findAll(".post")).toHaveLength(0);
 
-      entriesStore.entries = [SAMPLE_ENTRIES[0]];
+      entriesStore.entries = [SAMPLE_ENTRIES[0]!];
       await wrapper.vm.$nextTick();
 
       expect(wrapper.findAll(".post")).toHaveLength(1);
@@ -372,7 +374,7 @@ describe("Journal page (/journal)", () => {
     it("drops an entry from the tag view once it's deleted from the store", async () => {
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
 
@@ -381,7 +383,7 @@ describe("Journal page (/journal)", () => {
       expect(wrapper.findAll(".post")).toHaveLength(1);
 
       entriesStore.entries = entriesStore.entries.filter(
-        (entry) => entry.id !== SAMPLE_ENTRIES[0].id,
+        (entry) => entry.id !== SAMPLE_ENTRIES[0]!.id,
       );
       await wrapper.vm.$nextTick();
 
@@ -391,7 +393,7 @@ describe("Journal page (/journal)", () => {
     it("drops an entry from the tag view once its tag is removed via edit", async () => {
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
 
@@ -400,7 +402,7 @@ describe("Journal page (/journal)", () => {
       expect(wrapper.findAll(".post")).toHaveLength(1);
 
       entriesStore.entries = entriesStore.entries.map((entry) =>
-        entry.id === SAMPLE_ENTRIES[0].id ? { ...entry, tags: [] } : entry,
+        entry.id === SAMPLE_ENTRIES[0]!.id ? { ...entry, tags: [] } : entry,
       );
       await wrapper.vm.$nextTick();
 
@@ -410,7 +412,7 @@ describe("Journal page (/journal)", () => {
     it("clears the filter and restores the active tab when the clear button is clicked", async () => {
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
 
@@ -429,7 +431,7 @@ describe("Journal page (/journal)", () => {
     it("clears the filter when switching tabs", async () => {
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
 
@@ -438,10 +440,10 @@ describe("Journal page (/journal)", () => {
       expect(wrapper.find(".tag-filter-bar").exists()).toBe(true);
 
       const tabs = wrapper.findAll(".feed-tabs button");
-      await tabs[1].trigger("click");
+      await tabs[1]!.trigger("click");
 
       expect(wrapper.find(".tag-filter-bar").exists()).toBe(false);
-      expect(tabs[1].classes()).toContain("is-active");
+      expect(tabs[1]!.classes()).toContain("is-active");
     });
 
     it("pre-applies a tag filter from the route query on mount", async () => {
@@ -449,7 +451,7 @@ describe("Journal page (/journal)", () => {
       routeQuery.tagName = "portugal";
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[1],
+        SAMPLE_ENTRIES[1]!,
       ]);
 
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
@@ -463,7 +465,7 @@ describe("Journal page (/journal)", () => {
       routeQuery.tag = "tag-2";
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[1],
+        SAMPLE_ENTRIES[1]!,
       ]);
 
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
@@ -480,7 +482,7 @@ describe("Journal page (/journal)", () => {
       routeQuery.tagName = "iceland";
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
 
       mount(JournalPage, buildGlobalConfig(pinia));
@@ -505,7 +507,7 @@ describe("Journal page (/journal)", () => {
     it("writes tag/tagName onto the URL when a tag is clicked, and removes them on clear", async () => {
       const entriesStore = useEntriesStore();
       vi.spyOn(entriesStore, "fetchEntriesByTag").mockResolvedValue([
-        SAMPLE_ENTRIES[0],
+        SAMPLE_ENTRIES[0]!,
       ]);
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
 
@@ -533,7 +535,7 @@ describe("Journal page (/journal)", () => {
       const fetchEntriesByTagSpy = vi
         .spyOn(entriesStore, "fetchEntriesByTag")
         .mockImplementationOnce(() => firstFetch)
-        .mockResolvedValueOnce([SAMPLE_ENTRIES[1]]);
+        .mockResolvedValueOnce([SAMPLE_ENTRIES[1]!]);
 
       const wrapper = mount(JournalPage, buildGlobalConfig(pinia));
 
@@ -553,7 +555,7 @@ describe("Journal page (/journal)", () => {
 
       // The stale first request now resolves — it must not clobber the
       // second (current) filter's result.
-      resolveFirst([SAMPLE_ENTRIES[0]]);
+      resolveFirst([SAMPLE_ENTRIES[0]!]);
       await flushPromises();
 
       expect(wrapper.find(".tag-filter-bar").text()).toContain("portugal");

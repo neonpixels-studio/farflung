@@ -55,7 +55,7 @@ describe("verifySvixSignature", () => {
     const { rawBody, headers } = buildSignedRequest(SAMPLE_PAYLOAD);
     const result = verifySvixSignature(
       rawBody,
-      headers as SvixHeadersParam,
+      headers as unknown as SvixHeadersParam,
       TEST_SECRET,
     );
     expect((result as typeof SAMPLE_PAYLOAD).type).toBe("user.created");
@@ -83,7 +83,7 @@ describe("verifySvixSignature", () => {
     expect(() =>
       verifySvixSignature(
         alteredBody,
-        headers as SvixHeadersParam,
+        headers as unknown as SvixHeadersParam,
         TEST_SECRET,
       ),
     ).toThrow();

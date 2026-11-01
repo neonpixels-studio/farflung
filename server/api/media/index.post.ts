@@ -165,7 +165,7 @@ function assertFileSizeAllowed(byteLength: number): void {
 
 function resolveContentType(event: H3Event): string {
   // Strip any parameters (e.g. "image/jpeg; charset=binary" → "image/jpeg").
-  return (getHeader(event, "content-type") ?? "").split(";")[0].trim();
+  return (getHeader(event, "content-type") ?? "").split(";")[0]?.trim() ?? "";
 }
 
 // Reject early on Content-Length before reading the body at all. This is

@@ -4,8 +4,10 @@
  * mapping without coupling to mapbox-gl itself.
  */
 
+const DEFAULT_MAPBOX_STYLE_URL = "mapbox://styles/mapbox/outdoors-v12";
+
 const MAPBOX_STYLE_URLS: Record<string, string> = {
-  outdoors: "mapbox://styles/mapbox/outdoors-v12",
+  outdoors: DEFAULT_MAPBOX_STYLE_URL,
   streets: "mapbox://styles/mapbox/streets-v12",
   satellite: "mapbox://styles/mapbox/satellite-streets-v12",
   light: "mapbox://styles/mapbox/light-v11",
@@ -27,7 +29,7 @@ const MAPBOX_STYLE_LABELS: Record<string, string> = {
 };
 
 export function resolveMapboxStyleUrl(styleKey: string): string {
-  return MAPBOX_STYLE_URLS[styleKey] ?? MAPBOX_STYLE_URLS.outdoors;
+  return MAPBOX_STYLE_URLS[styleKey] ?? DEFAULT_MAPBOX_STYLE_URL;
 }
 
 export function resolveMapboxStyleLabel(styleKey: string): string {

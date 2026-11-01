@@ -489,7 +489,7 @@ describe("useTripsStore", () => {
 
       await store.patchTrip("trip-1", { name: "Iceland Renamed" });
 
-      expect(store.tripList[0].name).toBe("Iceland Renamed");
+      expect(store.tripList[0]!.name).toBe("Iceland Renamed");
     });
 
     it("updates currentTripDetail when it matches the patched trip", async () => {
@@ -624,7 +624,7 @@ describe("useTripsStore", () => {
 
       await store.patchStop("trip-1", "stop-1", { name: "Reykjavík Updated" });
 
-      expect(store.currentTripDetail?.stops[0].name).toBe("Reykjavík Updated");
+      expect(store.currentTripDetail?.stops[0]!.name).toBe("Reykjavík Updated");
     });
 
     it("recomputes facts when stop distance changes", async () => {

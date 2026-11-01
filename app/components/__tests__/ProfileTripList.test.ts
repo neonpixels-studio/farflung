@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import ProfileTripList from "../ProfileTripList.vue";
 import type { ProfileTrip } from "~/composables/useProfile";
+import type { TripStatus } from "~/utils/tripDates";
 
 const globalConfig = {
   global: {
@@ -42,7 +43,7 @@ describe("ProfileTripList", () => {
 
     const links = wrapper.findAll("a.trip");
     expect(links).toHaveLength(2);
-    expect(links[0].attributes("href")).toBe("/trips/trip-1");
+    expect(links[0]!.attributes("href")).toBe("/trips/trip-1");
     expect(wrapper.html()).toMatchSnapshot();
   });
 
@@ -75,9 +76,9 @@ describe("ProfileTripList", () => {
       ...globalConfig,
       props: {
         trips: [
-          { ...TRIPS[0], id: "t-ongoing", status: "ongoing" },
-          { ...TRIPS[0], id: "t-upcoming", status: "upcoming" },
-          { ...TRIPS[0], id: "t-past", status: "past" },
+          { ...TRIPS[0]!, id: "t-ongoing", status: "ongoing" },
+          { ...TRIPS[0]!, id: "t-upcoming", status: "upcoming" },
+          { ...TRIPS[0]!, id: "t-past", status: "past" },
         ],
       },
     });
@@ -92,7 +93,7 @@ describe("ProfileTripList", () => {
     const wrapper = mount(ProfileTripList, {
       ...globalConfig,
       props: {
-        trips: [{ ...TRIPS[0], status: "archived" }],
+        trips: [{ ...TRIPS[0]!, status: "archived" as unknown as TripStatus }],
       },
     });
 
@@ -103,7 +104,7 @@ describe("ProfileTripList", () => {
     const wrapper = mount(ProfileTripList, {
       ...globalConfig,
       props: {
-        trips: [{ ...TRIPS[0], status: "archived" }],
+        trips: [{ ...TRIPS[0]!, status: "archived" as unknown as TripStatus }],
       },
     });
 

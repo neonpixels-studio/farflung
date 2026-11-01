@@ -1,4 +1,11 @@
-export const FAVICON_HEAD_LINKS = [
+import type { NuxtConfig } from "nuxt/schema";
+
+type Link = NonNullable<NonNullable<NuxtConfig["app"]>["head"]>["link"] extends
+  (infer Entry)[] | undefined
+  ? Entry
+  : never;
+
+export const FAVICON_HEAD_LINKS: Link[] = [
   {
     rel: "icon",
     type: "image/png",

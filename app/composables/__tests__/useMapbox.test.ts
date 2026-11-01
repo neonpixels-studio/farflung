@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ref } from "vue";
+import { shallowRef } from "vue";
 
 // Stub useRuntimeConfig before importing the composable
 vi.stubGlobal("useRuntimeConfig", () => ({
@@ -254,7 +254,7 @@ describe("useMapbox", () => {
         "outdoors",
       )) as mapboxgl.Map;
 
-      setStyle(ref(map).value, "custom");
+      setStyle(shallowRef(map).value, "custom");
       expect(mockMapSetStyle).toHaveBeenCalledWith(
         "mapbox://styles/mapbox/light-v11",
       );
@@ -394,7 +394,7 @@ describe("useMapbox", () => {
       await syncMarkers(fakeMap, places, null, vi.fn());
 
       // The marker created for p-1 is the first in createdMarkers
-      const markerElement = createdMarkers[0].element;
+      const markerElement = createdMarkers[0]!.element;
 
       setMarkerActive("p-1", null);
 
@@ -428,7 +428,7 @@ describe("useMapbox", () => {
 
       await syncMarkers(fakeMap, places, null, vi.fn());
 
-      const markerElement = createdMarkers[0].element;
+      const markerElement = createdMarkers[0]!.element;
       markerElement.classList.add("is-active");
 
       setMarkerActive(null, "p-1");

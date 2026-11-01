@@ -42,7 +42,7 @@ describe("OAuth state", () => {
     const { state, nonce } = issueOAuthState("user-1", NOW);
     const [encodedPayload, signature] = state.split(".");
     const payload = JSON.parse(
-      Buffer.from(encodedPayload, "base64url").toString("utf8"),
+      Buffer.from(encodedPayload!, "base64url").toString("utf8"),
     );
     payload.userId = "someone-else";
     const forged = Buffer.from(JSON.stringify(payload)).toString("base64url");

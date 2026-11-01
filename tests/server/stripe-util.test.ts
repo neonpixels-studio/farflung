@@ -180,7 +180,7 @@ describe("createCheckoutSession", () => {
       cancelUrl: "https://app.test/pricing",
     });
 
-    const [[sessionParams]] = mockCheckoutSessionsCreate.mock.calls;
+    const [sessionParams] = mockCheckoutSessionsCreate.mock.calls[0]!;
     expect(sessionParams.subscription_data.trial_period_days).toBeUndefined();
   });
 

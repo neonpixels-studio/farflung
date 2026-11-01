@@ -81,7 +81,9 @@ interface DueAccount {
 
 function makeDb(dueAccounts: DueAccount[]) {
   const limit = vi.fn().mockResolvedValue(dueAccounts);
-  const orderBy = vi.fn(() => ({ limit }));
+  const orderBy = vi.fn<(column: unknown) => { limit: typeof limit }>(() => ({
+    limit,
+  }));
   const selectWhere = vi.fn(() => ({ orderBy }));
   const selectFrom = vi.fn(() => ({ where: selectWhere }));
   const select = vi.fn(() => ({ from: selectFrom }));

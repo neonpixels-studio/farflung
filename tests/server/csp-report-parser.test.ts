@@ -95,7 +95,7 @@ describe("parseCspReports", () => {
   it("truncates oversized string fields", () => {
     const longValue = "a".repeat(5000);
     const [violation] = parseLegacyReport({ "blocked-uri": longValue });
-    expect(violation.blockedUri).toHaveLength(512);
+    expect(violation!.blockedUri).toHaveLength(512);
   });
 
   it("caps how many reports one request can fan out", () => {
@@ -107,7 +107,7 @@ describe("parseCspReports", () => {
 
   it("drops non-integer line numbers instead of passing them through", () => {
     const [violation] = parseLegacyReport({ "line-number": "9" });
-    expect(violation.lineNumber).toBeNull();
+    expect(violation!.lineNumber).toBeNull();
   });
 
   it.each([
@@ -117,7 +117,7 @@ describe("parseCspReports", () => {
     ["inline", "inline"],
   ])("sanitizes blocked URI %s", (blockedUri, expected) => {
     const [violation] = parseLegacyReport({ "blocked-uri": blockedUri });
-    expect(violation.blockedUri).toBe(expected);
+    expect(violation!.blockedUri).toBe(expected);
   });
 
   it.each(["script-src<script>", "SCRIPT-SRC", "made-up-directive"])(
@@ -130,7 +130,7 @@ describe("parseCspReports", () => {
 
   it("nulls out unknown dispositions", () => {
     const [violation] = parseLegacyReport({ disposition: "x" });
-    expect(violation.disposition).toBeNull();
+    expect(violation!.disposition).toBeNull();
   });
 
   it("never leaks credentials or query from a URL cut mid-userinfo", () => {
@@ -138,14 +138,14 @@ describe("parseCspReports", () => {
     const [violation] = parseLegacyReport({
       "blocked-uri": `https://user:${secret}@host.example/p?token=abc`,
     });
-    expect(violation.blockedUri).toBe("https://host.example/p");
+    expect(violation!.blockedUri).toBe("https://host.example/p");
   });
 
   it("strips credentials and query from URLs the parser rejects", () => {
     const [violation] = parseLegacyReport({
       "blocked-uri": "https://user:pw@host:notaport/p?token=abc#x",
     });
-    expect(violation.blockedUri).toBe(
+    expect(violation!.blockedUri).toBe(
       "https://user:pw@host:notaport/p".split("@")[1],
     );
   });

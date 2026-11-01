@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ref, readonly } from "vue";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { ref, readonly, type Ref } from "vue";
 import { mount, flushPromises } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
+import { createPinia, setActivePinia, type Pinia } from "pinia";
 import SettingsPage from "../settings.vue";
 import type { UserSubscriptionDto } from "~/composables/useBilling";
+import type { UserPreferences } from "~/composables/usePreferences";
 import { DELETION_GRACE_PERIOD_DAYS } from "~/utils/accountDeletion";
 import { useTripsStore } from "~/stores/trips";
 import type { Trip } from "~/stores/trips";
@@ -161,9 +162,11 @@ vi.mock("~/composables/useAccountActions", () => ({
   })),
 }));
 
-const defaultPreferencesData = {
-  distanceUnit: "mi" as const,
+const defaultPreferencesData: UserPreferences = {
+  distanceUnit: "mi",
   defaultMapStyle: "outdoors",
+  theme: null,
+  accentColor: null,
   publicProfile: true,
   preciseLocation: false,
   showOnExplore: true,
@@ -173,22 +176,33 @@ const defaultPreferencesData = {
   bio: "Chasing cold coffee and warm light.",
 };
 
+type SavePreferencesMock = Mock<
+  (patch: Partial<UserPreferences>) => Promise<boolean>
+>;
+
 function makePreferencesMock(
   overrides: {
-    savePreferences?: ReturnType<typeof vi.fn>;
+    savePreferences?: SavePreferencesMock;
     saveError?: string | null;
     loadError?: string | null;
-    preferences?: typeof defaultPreferencesData;
+    preferences?: UserPreferences;
   } = {},
 ) {
+  const preferences: Ref<UserPreferences> = ref(
+    overrides.preferences ?? defaultPreferencesData,
+  );
   return {
-    preferences: ref(overrides.preferences ?? defaultPreferencesData),
+    preferences,
+    hasLoaded: ref(false),
     isLoading: readonly(ref(false)),
     loadError: readonly(ref(overrides.loadError ?? null)),
     saveError: readonly(ref(overrides.saveError ?? null)),
-    fetchPreferences: vi.fn().mockResolvedValue(undefined),
+    fetchPreferences: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     savePreferences:
-      overrides.savePreferences ?? vi.fn().mockResolvedValue(true),
+      overrides.savePreferences ??
+      vi
+        .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+        .mockResolvedValue(true),
   };
 }
 
@@ -336,14 +350,9 @@ const planManageButtonStub = {
   template: '<button class="plan-manage-btn"><slot /></button>',
 };
 
-const globalConfig: {
+const globalConfig = {
   global: {
-    plugins: unknown[];
-    stubs: Record<string, unknown>;
-  };
-} = {
-  global: {
-    plugins: [],
+    plugins: [] as Pinia[],
     stubs: {
       AppIcon: iconStub,
       AppTopbar: topbarStub,
@@ -553,17 +562,17 @@ describe("Settings page (/settings)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
     await flushPromises();
     const styles = wrapper.findAll(".map-style");
-    await styles[1].trigger("click");
-    expect(styles[1].classes()).toContain("is-active");
-    expect(styles[0].classes()).not.toContain("is-active");
+    await styles[1]!.trigger("click");
+    expect(styles[1]!.classes()).toContain("is-active");
+    expect(styles[0]!.classes()).not.toContain("is-active");
   });
 
   it("toggles unit selection", async () => {
     const wrapper = mount(SettingsPage, globalConfig);
     const buttons = wrapper.findAll(".segmented button");
-    await buttons[1].trigger("click");
-    expect(buttons[1].classes()).toContain("is-active");
-    expect(buttons[0].classes()).not.toContain("is-active");
+    await buttons[1]!.trigger("click");
+    expect(buttons[1]!.classes()).toContain("is-active");
+    expect(buttons[0]!.classes()).not.toContain("is-active");
   });
 
   it("shows delete confirmation modal when delete button is clicked", async () => {
@@ -641,8 +650,8 @@ describe("Settings page (/settings)", () => {
     const tripsStore = useTripsStore();
     tripsStore.tripList = [
       ...DEFAULT_TRIPS,
-      { ...DEFAULT_TRIPS[0], id: "trip-4" },
-      { ...DEFAULT_TRIPS[1], id: "trip-5" },
+      { ...DEFAULT_TRIPS[0]!, id: "trip-4" },
+      { ...DEFAULT_TRIPS[1]!, id: "trip-5" },
     ];
 
     const wrapper = mount(SettingsPage, globalConfig);
@@ -697,7 +706,7 @@ describe("Settings page (/settings)", () => {
   it("uses singular wording for exactly one place and one trip", async () => {
     mockStats.value = { ...DEFAULT_STATS_DATA, placesCount: 1 };
     const tripsStore = useTripsStore();
-    tripsStore.tripList = [DEFAULT_TRIPS[0]];
+    tripsStore.tripList = [DEFAULT_TRIPS[0]!];
 
     const wrapper = mount(SettingsPage, globalConfig);
     await flushPromises();
@@ -719,7 +728,7 @@ describe("Settings page (/settings)", () => {
       "discard",
     );
 
-    await wrapper.findAll(".segmented button")[1].trigger("click");
+    await wrapper.findAll(".segmented button")[1]!.trigger("click");
     await flushPromises();
 
     expect(saveButton.attributes("disabled")).toBeUndefined();
@@ -730,8 +739,8 @@ describe("Settings page (/settings)", () => {
     const wrapper = mount(SettingsPage, globalConfig);
     await flushPromises();
     const unitButtons = wrapper.findAll(".segmented button");
-    await unitButtons[1].trigger("click");
-    await unitButtons[0].trigger("click");
+    await unitButtons[1]!.trigger("click");
+    await unitButtons[0]!.trigger("click");
     await flushPromises();
     expect(wrapper.find(".btn--primary").attributes("disabled")).toBeDefined();
   });
@@ -765,7 +774,7 @@ describe("Settings page (/settings)", () => {
   it("shows saved toast after a successful save", async () => {
     const wrapper = mount(SettingsPage, globalConfig);
     expect(wrapper.find(".saved-bar").classes()).not.toContain("show");
-    await wrapper.findAll(".segmented button")[1].trigger("click");
+    await wrapper.findAll(".segmented button")[1]!.trigger("click");
     await wrapper.vm.$nextTick();
     await wrapper.find(".btn--primary").trigger("click");
     await flushPromises();
@@ -774,25 +783,29 @@ describe("Settings page (/settings)", () => {
 
   it("sends only the fields that changed, not the whole form", async () => {
     const { usePreferences } = await import("~/composables/usePreferences");
-    const savePreferencesMock = vi.fn().mockResolvedValue(true);
+    const savePreferencesMock: SavePreferencesMock = vi
+      .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+      .mockResolvedValue(true);
     vi.mocked(usePreferences).mockReturnValueOnce(
       makePreferencesMock({ savePreferences: savePreferencesMock }),
     );
 
     const wrapper = mount(SettingsPage, globalConfig);
-    await wrapper.findAll(".segmented button")[1].trigger("click");
+    await wrapper.findAll(".segmented button")[1]!.trigger("click");
     await wrapper.find(".btn--primary").trigger("click");
     await flushPromises();
 
     expect(savePreferencesMock).toHaveBeenCalledTimes(1);
-    expect(savePreferencesMock.mock.calls[0][0]).toEqual({
+    expect(savePreferencesMock.mock.calls[0]![0]).toEqual({
       distanceUnit: "km",
     });
   });
 
   it("does not call savePreferences or updateName when nothing changed", async () => {
     const { usePreferences } = await import("~/composables/usePreferences");
-    const savePreferencesMock = vi.fn().mockResolvedValue(true);
+    const savePreferencesMock: SavePreferencesMock = vi
+      .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+      .mockResolvedValue(true);
     vi.mocked(usePreferences).mockReturnValueOnce(
       makePreferencesMock({ savePreferences: savePreferencesMock }),
     );
@@ -809,7 +822,9 @@ describe("Settings page (/settings)", () => {
 
   it("lets a Drifter save an unrelated field without sending paid-only fields (no 402)", async () => {
     const { usePreferences } = await import("~/composables/usePreferences");
-    const savePreferencesMock = vi.fn().mockResolvedValue(true);
+    const savePreferencesMock: SavePreferencesMock = vi
+      .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+      .mockResolvedValue(true);
     vi.mocked(usePreferences).mockReturnValueOnce(
       makePreferencesMock({
         savePreferences: savePreferencesMock,
@@ -826,7 +841,7 @@ describe("Settings page (/settings)", () => {
     await flushPromises();
 
     expect(savePreferencesMock).toHaveBeenCalledTimes(1);
-    const payload = savePreferencesMock.mock.calls[0][0] as Record<
+    const payload = savePreferencesMock.mock.calls[0]![0] as Record<
       string,
       unknown
     >;
@@ -867,7 +882,9 @@ describe("Settings page (/settings)", () => {
 
     it("saves a changed name through updateName, not through preferences", async () => {
       const { usePreferences } = await import("~/composables/usePreferences");
-      const savePreferencesMock = vi.fn().mockResolvedValue(true);
+      const savePreferencesMock: SavePreferencesMock = vi
+        .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+        .mockResolvedValue(true);
       vi.mocked(usePreferences).mockReturnValueOnce(
         makePreferencesMock({ savePreferences: savePreferencesMock }),
       );
@@ -975,7 +992,9 @@ describe("Settings page (/settings)", () => {
 
     it("blocks the save and reports why when the handle breaks the format rules", async () => {
       const { usePreferences } = await import("~/composables/usePreferences");
-      const savePreferencesMock = vi.fn().mockResolvedValue(true);
+      const savePreferencesMock: SavePreferencesMock = vi
+        .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+        .mockResolvedValue(true);
       vi.mocked(usePreferences).mockReturnValueOnce(
         makePreferencesMock({ savePreferences: savePreferencesMock }),
       );
@@ -1008,9 +1027,9 @@ describe("Settings page (/settings)", () => {
       const tiles = wrapper.findAll(".map-style");
       const unlocked = tiles.filter((tile) => !tile.classes("is-locked"));
       expect(unlocked).toHaveLength(1);
-      expect(unlocked[0].text()).toContain("Outdoors");
+      expect(unlocked[0]!.text()).toContain("Outdoors");
       expect(
-        tiles[1].find("input[type=radio]").attributes("disabled"),
+        tiles[1]!.find("input[type=radio]").attributes("disabled"),
       ).toBeDefined();
       expect(wrapper.find('[data-testid="map-style-upgrade"]').exists()).toBe(
         true,
@@ -1022,10 +1041,10 @@ describe("Settings page (/settings)", () => {
       await flushPromises();
 
       const tiles = wrapper.findAll(".map-style");
-      await tiles[2].trigger("click");
+      await tiles[2]!.trigger("click");
 
-      expect(tiles[2].classes()).not.toContain("is-active");
-      expect(tiles[0].classes()).toContain("is-active");
+      expect(tiles[2]!.classes()).not.toContain("is-active");
+      expect(tiles[0]!.classes()).toContain("is-active");
     });
 
     it("disables the public profile toggle with an upgrade hint", async () => {
@@ -1092,7 +1111,7 @@ describe("Settings page (/settings)", () => {
         .filter((button) => button.text().includes("connect"));
       // Only the Google connect button remains.
       expect(connectButtons).toHaveLength(1);
-      expect(connectButtons[0].attributes("data-testid")).toBe(
+      expect(connectButtons[0]!.attributes("data-testid")).toBe(
         "google-connect",
       );
     });
@@ -1130,7 +1149,9 @@ describe("Settings page (/settings)", () => {
 
   it("does not call savePreferences when loadError is set", async () => {
     const { usePreferences } = await import("~/composables/usePreferences");
-    const savePreferencesMock = vi.fn().mockResolvedValue(true);
+    const savePreferencesMock: SavePreferencesMock = vi
+      .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+      .mockResolvedValue(true);
     vi.mocked(usePreferences).mockReturnValueOnce(
       makePreferencesMock({
         savePreferences: savePreferencesMock,
@@ -1304,7 +1325,9 @@ describe("Settings page (/settings)", () => {
 
   it("shows error toast (not success toast) when save fails", async () => {
     const { usePreferences } = await import("~/composables/usePreferences");
-    const savePreferencesMock = vi.fn().mockResolvedValue(false);
+    const savePreferencesMock: SavePreferencesMock = vi
+      .fn<(patch: Partial<UserPreferences>) => Promise<boolean>>()
+      .mockResolvedValue(false);
     vi.mocked(usePreferences).mockReturnValueOnce(
       makePreferencesMock({
         savePreferences: savePreferencesMock,
@@ -1313,12 +1336,12 @@ describe("Settings page (/settings)", () => {
     );
 
     const wrapper = mount(SettingsPage, globalConfig);
-    await wrapper.findAll(".segmented button")[1].trigger("click");
+    await wrapper.findAll(".segmented button")[1]!.trigger("click");
     await wrapper.find(".btn--primary").trigger("click");
     await flushPromises();
     // The error bar has show class; the success bar is hidden via v-else
     const allSavedBars = wrapper.findAll(".saved-bar");
-    expect(allSavedBars[0].classes()).toContain("show");
+    expect(allSavedBars[0]!.classes()).toContain("show");
     // Only one bar is rendered at a time (v-if / v-else)
     expect(allSavedBars).toHaveLength(1);
   });

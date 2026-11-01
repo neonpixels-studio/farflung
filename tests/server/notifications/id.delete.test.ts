@@ -55,7 +55,7 @@ describe("DELETE /api/notifications/:id", () => {
     // column (e.g. userId instead of id) would still pass every assertion
     // above and delete the wrong row(s). eq() is real here (not mocked), so
     // this decodes the actual condition passed to .where().
-    expect(describeEqCondition(deleteChain.where.mock.calls[0][0])).toEqual([
+    expect(describeEqCondition(deleteChain.where.mock.calls[0]![0])).toEqual([
       "notifications.id",
       'literal:"notif-1"',
     ]);
@@ -83,8 +83,8 @@ describe("DELETE /api/notifications/:id", () => {
     // Not just "both were called" — assertOwnership's resolution must
     // actually precede the delete, since that ordering is the entire
     // ownership guarantee this endpoint exists to enforce.
-    expect(mockAssertOwnership.mock.invocationCallOrder[0]).toBeLessThan(
-      deleteChain.delete.mock.invocationCallOrder[0],
+    expect(mockAssertOwnership.mock.invocationCallOrder[0]!).toBeLessThan(
+      deleteChain.delete.mock.invocationCallOrder[0]!,
     );
   });
 

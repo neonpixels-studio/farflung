@@ -309,7 +309,7 @@ describe("rate limit middleware", () => {
     expect(mockSetResponseHeader).toHaveBeenCalledWith(
       event,
       "Retry-After",
-      "30",
+      30,
     );
     // Headers are set before the 429 throws, so the limit/remaining info
     // still reaches the rejected response, not just Retry-After.

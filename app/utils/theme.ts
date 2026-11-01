@@ -1,3 +1,5 @@
+import { ACCENT_COLORS, type AccentColor } from "./accentColors";
+
 export type Theme = "light" | "dark" | "system";
 export type ResolvedTheme = Exclude<Theme, "system">;
 
@@ -49,19 +51,6 @@ export function applyTheme(
     // ignore
   }
 }
-
-export const ACCENT_COLORS = [
-  "violet",
-  "indigo",
-  "blue",
-  "emerald",
-  "amber",
-  "orange",
-  "rose",
-  "graphite",
-] as const;
-
-export type AccentColor = (typeof ACCENT_COLORS)[number];
 
 export const ACCENT_STORAGE_KEY = "farflung:accent";
 export const ACCENT_ATTR = "data-accent";
