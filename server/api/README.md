@@ -30,6 +30,10 @@ The server middleware at `server/middleware/auth.ts` already validates the
 token and sets `event.context.userId` for all `/api/*` routes; `requireUser`
 re-reads that value and throws if it is missing.
 
+The same header also accepts a personal API key (`ff_...`, created in Settings).
+Keys are refused with a 403 on the prefixes in `API_KEY_DENIED_PATH_PREFIXES` in
+that middleware, so add any new sensitive route prefix there.
+
 ### 2. Resolve the DB via getDb()
 
 ```ts

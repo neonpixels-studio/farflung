@@ -206,6 +206,19 @@ async function cleanupOrphanedBlobs(
   }
 }
 
+function buildMediaRowValues(input: MediaRowInput) {
+  return {
+    id: input.mediaId,
+    userId: input.userId,
+    url: input.storageKey,
+    contentType: input.contentType,
+    width: input.dimensions?.width ?? null,
+    height: input.dimensions?.height ?? null,
+    source: input.sourceKey?.source ?? null,
+    sourceId: input.sourceKey?.sourceId ?? null,
+  };
+}
+
 // Inserts the media row. On failure, cleans up the blob(s) already written
 // so storage doesn't end up with an orphaned original and/or thumbnail, then
 // re-throws the original insert error.
@@ -215,16 +228,7 @@ async function insertMediaRow(input: MediaRowInput): Promise<InsertedMediaRow> {
   try {
     const insertedRows = await db
       .insert(media)
-      .values({
-        id: input.mediaId,
-        userId: input.userId,
-        url: input.storageKey,
-        contentType: input.contentType,
-        width: input.dimensions?.width ?? null,
-        height: input.dimensions?.height ?? null,
-        source: input.sourceKey?.source ?? null,
-        sourceId: input.sourceKey?.sourceId ?? null,
-      })
+      .values(buildMediaRowValues(input))
       .returning({ id: media.id, url: media.url });
 
     const inserted = insertedRows[0];

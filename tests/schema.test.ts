@@ -17,6 +17,7 @@ import {
   entryPhotos,
   follows,
   notifications,
+  apiKeys,
   connectedAccounts,
   userPreferences,
   guides,
@@ -588,6 +589,12 @@ const ON_DELETE_POLICY: ReadonlyArray<{
     table: notifications,
     column: "actor_id",
     expected: ON_DELETE.SET_NULL,
+  },
+  {
+    label: "apiKeys.userId",
+    table: apiKeys,
+    column: "user_id",
+    expected: ON_DELETE.CASCADE,
   },
   {
     label: "connectedAccounts.userId",
