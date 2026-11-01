@@ -99,8 +99,8 @@ describe("DELETE /api/entries/:id", () => {
       "e-1",
     );
 
-    const ownershipOrder = mockLoadOwnedOrThrow.mock.invocationCallOrder[0];
-    const deleteOrder = mockDb.delete.mock.invocationCallOrder[0];
+    const ownershipOrder = mockLoadOwnedOrThrow.mock.invocationCallOrder[0]!;
+    const deleteOrder = mockDb.delete.mock.invocationCallOrder[0]!;
     expect(ownershipOrder).toBeLessThan(deleteOrder);
   });
 
@@ -162,8 +162,8 @@ describe("DELETE /api/entries/:id", () => {
 
     await invokeHandler({});
 
-    const selectOrder = mockDb.select.mock.invocationCallOrder[0];
-    const deleteOrder = mockDb.delete.mock.invocationCallOrder[0];
+    const selectOrder = mockDb.select.mock.invocationCallOrder[0]!;
+    const deleteOrder = mockDb.delete.mock.invocationCallOrder[0]!;
     expect(selectOrder).toBeLessThan(deleteOrder);
   });
 
@@ -173,9 +173,9 @@ describe("DELETE /api/entries/:id", () => {
 
     await invokeHandler({});
 
-    const deleteOrder = mockDb.delete.mock.invocationCallOrder[0];
+    const deleteOrder = mockDb.delete.mock.invocationCallOrder[0]!;
     const cleanupOrder =
-      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0];
+      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0]!;
     expect(deleteOrder).toBeLessThan(cleanupOrder);
   });
 

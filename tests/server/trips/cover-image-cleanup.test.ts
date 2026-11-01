@@ -48,7 +48,7 @@ type SelectRows = Record<string, unknown>[];
 function makeDb(options: { deletedRows?: SelectRows; mediaRows?: SelectRows }) {
   const deleteReturning = vi.fn().mockResolvedValue(options.deletedRows ?? []);
   // Declares the predicate parameter so the atomicity test can read
-  // deleteWhere.mock.calls[0][0] without a tuple-index type error under tsc.
+  // deleteWhere.mock.calls[0]![0] without a tuple-index type error under tsc.
   const deleteWhere = vi.fn((_condition: unknown) => ({
     returning: deleteReturning,
   }));
@@ -124,7 +124,7 @@ describe("deleteMediaIfUnreferenced", () => {
     // check followed by an unguarded delete.
     expect(deleteFrom).toHaveBeenCalledWith(media);
     expect(deleteWhere).toHaveBeenCalledTimes(1);
-    const deletePredicate = deleteWhere.mock.calls[0][0];
+    const deletePredicate = deleteWhere.mock.calls[0]![0];
     const { sql, params } = new PgDialect().sqlToQuery(
       deletePredicate as never,
     );

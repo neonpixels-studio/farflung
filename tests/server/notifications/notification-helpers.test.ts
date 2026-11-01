@@ -35,8 +35,8 @@ describe("createNotification", () => {
     });
 
     expect(insertChain.insert).toHaveBeenCalled();
-    const valuesCall = insertChain.insert.mock.results[0].value.values;
-    const insertedValue = valuesCall.mock.calls[0][0] as Record<
+    const valuesCall = insertChain.insert.mock.results[0]!.value.values;
+    const insertedValue = valuesCall.mock.calls[0]![0] as Record<
       string,
       unknown
     >;
@@ -64,8 +64,8 @@ describe("createNotification", () => {
       actorId: "follower-1",
     });
 
-    const valuesCall = insertChain.insert.mock.results[0].value.values;
-    const insertedValue = valuesCall.mock.calls[0][0] as Record<
+    const valuesCall = insertChain.insert.mock.results[0]!.value.values;
+    const insertedValue = valuesCall.mock.calls[0]![0] as Record<
       string,
       unknown
     >;
@@ -85,8 +85,8 @@ describe("createNotification", () => {
       body: "Someone liked your entry",
     });
 
-    const valuesCall = insertChain.insert.mock.results[0].value.values;
-    const insertedValue = valuesCall.mock.calls[0][0] as Record<
+    const valuesCall = insertChain.insert.mock.results[0]!.value.values;
+    const insertedValue = valuesCall.mock.calls[0]![0] as Record<
       string,
       unknown
     >;
@@ -174,10 +174,10 @@ describe("fetchNotificationsForUser", () => {
     // exact regression class. leftJoin(table, condition) — index 1 is the
     // condition; index 0 is just the joined table reference.
     expect(
-      describeEqCondition(selectChain.firstLeftJoin.mock.calls[0][1]),
+      describeEqCondition(selectChain.firstLeftJoin.mock.calls[0]![1]),
     ).toEqual(["notifications.actor_id", "users.id"]);
     expect(
-      describeEqCondition(selectChain.secondLeftJoin.mock.calls[0][1]),
+      describeEqCondition(selectChain.secondLeftJoin.mock.calls[0]![1]),
     ).toEqual(["notifications.actor_id", "user_preferences.user_id"]);
   });
 
@@ -193,7 +193,7 @@ describe("fetchNotificationsForUser", () => {
     // guards the authz boundary itself — a dropped or inverted `where` would
     // leak every user's notifications and still pass every other test here,
     // since the mock returns canned rows regardless of the arguments.
-    expect(describeEqCondition(selectChain.where.mock.calls[0][0])).toEqual([
+    expect(describeEqCondition(selectChain.where.mock.calls[0]![0])).toEqual([
       "notifications.user_id",
       'literal:"user-1"',
     ]);
@@ -352,8 +352,8 @@ describe("notifyAuthorOfLike", () => {
       contentType: "entry",
     });
 
-    const valuesCall = insertChain.insert.mock.results[0].value.values;
-    const insertedValue = valuesCall.mock.calls[0][0] as Record<
+    const valuesCall = insertChain.insert.mock.results[0]!.value.values;
+    const insertedValue = valuesCall.mock.calls[0]![0] as Record<
       string,
       unknown
     >;
@@ -375,8 +375,8 @@ describe("notifyAuthorOfLike", () => {
       contentType: "guide",
     });
 
-    const valuesCall = insertChain.insert.mock.results[0].value.values;
-    const insertedValue = valuesCall.mock.calls[0][0] as Record<
+    const valuesCall = insertChain.insert.mock.results[0]!.value.values;
+    const insertedValue = valuesCall.mock.calls[0]![0] as Record<
       string,
       unknown
     >;

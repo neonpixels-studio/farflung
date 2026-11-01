@@ -24,8 +24,12 @@ const {
   // where() is the terminal of each delete builder; batch() receives the built
   // statements and resolves them together (neon-http runs a batch as one
   // server-side transaction).
-  const mockWhere = vi.fn(() => Promise.resolve(undefined));
-  const mockDelete = vi.fn(() => ({ where: mockWhere }));
+  const mockWhere = vi.fn<(condition: unknown) => Promise<undefined>>(() =>
+    Promise.resolve(undefined),
+  );
+  const mockDelete = vi.fn<(table: unknown) => { where: typeof mockWhere }>(
+    () => ({ where: mockWhere }),
+  );
   const mockBatch = vi.fn((statements: unknown[]) => Promise.all(statements));
 
   // select(photos).from().innerJoin(entries).where() — collects the media ids
@@ -150,14 +154,14 @@ describe("DELETE /api/trips/[id]", () => {
     await callHandler(handler, buildEvent());
 
     expect(mockBatch).toHaveBeenCalledTimes(1);
-    const statements = mockBatch.mock.calls[0][0] as unknown[];
+    const statements = mockBatch.mock.calls[0]![0] as unknown[];
     expect(statements).toHaveLength(2);
 
     // Entries delete first, scoped to trip AND owner; trip delete second.
-    expect(mockDelete.mock.calls[0][0]).toBe(entries);
-    expect(mockWhere.mock.calls[0][0]).toEqual(ownedEntriesFilter);
-    expect(mockDelete.mock.calls[1][0]).toBe(trips);
-    expect(mockWhere.mock.calls[1][0]).toEqual({ __eq: [trips.id, "trip-1"] });
+    expect(mockDelete.mock.calls[0]![0]).toBe(entries);
+    expect(mockWhere.mock.calls[0]![0]).toEqual(ownedEntriesFilter);
+    expect(mockDelete.mock.calls[1]![0]).toBe(trips);
+    expect(mockWhere.mock.calls[1]![0]).toEqual({ __eq: [trips.id, "trip-1"] });
   });
 
   it("scopes the photo lookup to this trip's entry photos for the owner", async () => {
@@ -173,8 +177,8 @@ describe("DELETE /api/trips/[id]", () => {
   it("verifies ownership before deleting", async () => {
     await callHandler(handler, buildEvent());
 
-    const ownershipOrder = mockLoadOwnedTrip.mock.invocationCallOrder[0];
-    const batchOrder = mockBatch.mock.invocationCallOrder[0];
+    const ownershipOrder = mockLoadOwnedTrip.mock.invocationCallOrder[0]!;
+    const batchOrder = mockBatch.mock.invocationCallOrder[0]!;
     expect(ownershipOrder).toBeLessThan(batchOrder);
   });
 
@@ -219,9 +223,9 @@ describe("DELETE /api/trips/[id]", () => {
 
     await callHandler(handler, buildEvent());
 
-    const batchOrder = mockBatch.mock.invocationCallOrder[0];
+    const batchOrder = mockBatch.mock.invocationCallOrder[0]!;
     const cleanupOrder =
-      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0];
+      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0]!;
     expect(batchOrder).toBeLessThan(cleanupOrder);
   });
 
@@ -343,8 +347,8 @@ describe("DELETE /api/trips/[id]", () => {
 
     await callHandler(handler, buildEvent());
 
-    const selectOrder = mockSelect.mock.invocationCallOrder[0];
-    const batchOrder = mockBatch.mock.invocationCallOrder[0];
+    const selectOrder = mockSelect.mock.invocationCallOrder[0]!;
+    const batchOrder = mockBatch.mock.invocationCallOrder[0]!;
     expect(selectOrder).toBeLessThan(batchOrder);
   });
 
@@ -358,9 +362,9 @@ describe("DELETE /api/trips/[id]", () => {
 
     await callHandler(handler, buildEvent());
 
-    const batchOrder = mockBatch.mock.invocationCallOrder[0];
+    const batchOrder = mockBatch.mock.invocationCallOrder[0]!;
     const cleanupOrder =
-      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0];
+      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0]!;
     expect(batchOrder).toBeLessThan(cleanupOrder);
   });
 

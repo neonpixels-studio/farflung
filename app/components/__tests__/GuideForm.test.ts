@@ -81,7 +81,7 @@ describe("GuideForm", () => {
     await wrapper.find("form").trigger("submit");
 
     expect(wrapper.emitted("submit")).toBeTruthy();
-    expect(wrapper.emitted("submit")?.[0][0]).toEqual({
+    expect(wrapper.emitted("submit")?.[0]![0]).toEqual({
       title: "Slow coastlines",
       body: "Start at the north jetty.",
       readTimeMinutes: 7,
@@ -103,7 +103,7 @@ describe("GuideForm", () => {
     await wrapper.find(".guide-form__number").setValue("");
     await wrapper.find("form").trigger("submit");
 
-    expect(wrapper.emitted("submit")?.[0][0]).toMatchObject({
+    expect(wrapper.emitted("submit")?.[0]![0]).toMatchObject({
       readTimeMinutes: undefined,
     });
     expect(wrapper.find(".guide-form__field-error").exists()).toBe(false);

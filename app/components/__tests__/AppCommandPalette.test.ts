@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushPromises } from "@vue/test-utils";
 import { ref } from "vue";
 import AppCommandPalette from "../AppCommandPalette.vue";
+import type { SearchGroups } from "~/composables/useSearch";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -13,7 +14,7 @@ const linkStub = { template: "<a><slot /></a>", props: ["to"] };
 
 // Reactive search state shared across tests
 const mockQuery = ref("");
-const mockResults = ref({
+const mockResults = ref<SearchGroups>({
   places: [],
   trips: [],
   entries: [],
@@ -474,7 +475,7 @@ describe("AppCommandPalette", () => {
     });
     await wrapper.find(".cmdk").trigger("keydown", { key: "ArrowDown" });
     const items = wrapper.findAll(".cmdk__item");
-    expect(items[1].classes()).toContain("is-active");
+    expect(items[1]!.classes()).toContain("is-active");
   });
 
   it("renders footer keyboard hints", () => {

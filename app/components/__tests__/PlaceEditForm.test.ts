@@ -98,7 +98,7 @@ describe("PlaceEditForm", () => {
     await wrapper.find(".place-edit-form__select").setValue("nature");
     await wrapper.find("form").trigger("submit");
 
-    expect(wrapper.emitted("submit")?.[0][0]).toEqual({
+    expect(wrapper.emitted("submit")?.[0]![0]).toEqual({
       name: "Osaka",
       category: "nature",
     });
@@ -110,7 +110,7 @@ describe("PlaceEditForm", () => {
     await wrapper.find('input[placeholder="Place name…"]').setValue("Osaka");
     await wrapper.find("form").trigger("submit");
 
-    expect(wrapper.emitted("submit")?.[0][0]).toEqual({ name: "Osaka" });
+    expect(wrapper.emitted("submit")?.[0]![0]).toEqual({ name: "Osaka" });
   });
 
   it("emits a cleared category as an empty string", async () => {
@@ -119,7 +119,7 @@ describe("PlaceEditForm", () => {
     await wrapper.find(".place-edit-form__select").setValue("");
     await wrapper.find("form").trigger("submit");
 
-    expect(wrapper.emitted("submit")?.[0][0]).toEqual({ category: "" });
+    expect(wrapper.emitted("submit")?.[0]![0]).toEqual({ category: "" });
   });
 
   it("emits cancel instead of submit when nothing changed", async () => {
@@ -195,7 +195,7 @@ describe("PlaceEditForm", () => {
       .setValue("  Osaka  ");
     await wrapper.find("form").trigger("submit");
 
-    expect(wrapper.emitted("submit")?.[0][0]).toEqual({ name: "Osaka" });
+    expect(wrapper.emitted("submit")?.[0]![0]).toEqual({ name: "Osaka" });
   });
 
   it("treats a name that only differs by whitespace as unchanged", async () => {

@@ -71,7 +71,7 @@ function stripUrlDetails(value: string): string {
 
 // Fallback for URL-ish strings `new URL` rejects (e.g. a bad port).
 function dropQueryAndUserInfo(value: string): string {
-  const withoutQuery = value.split(/[?#]/)[0];
+  const [withoutQuery = ""] = value.split(/[?#]/);
   const atIndex = withoutQuery.lastIndexOf("@");
   return atIndex === -1 ? withoutQuery : withoutQuery.slice(atIndex + 1);
 }

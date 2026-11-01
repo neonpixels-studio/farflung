@@ -106,7 +106,7 @@ describe("useHandleAvailability", () => {
     await typeHandle(handle, "a_b-c");
     await settleDebounce();
 
-    expect(mockApiFetch.mock.calls[0][0]).toBe(
+    expect(mockApiFetch.mock.calls[0]![0]).toBe(
       "/api/handles/a_b-c/availability",
     );
   });

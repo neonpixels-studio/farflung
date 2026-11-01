@@ -40,5 +40,9 @@ export async function clerkUpdateName(
   name: { firstName: string; lastName: string | null },
 ): Promise<void> {
   const clerkClient = getClerkClient();
-  await clerkClient.users.updateUser(userId, name);
+  // A null lastName is sent as-is; Clerk's params type only allows a string.
+  await clerkClient.users.updateUser(
+    userId,
+    name as Parameters<typeof clerkClient.users.updateUser>[1],
+  );
 }

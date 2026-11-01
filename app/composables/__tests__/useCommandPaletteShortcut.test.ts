@@ -42,10 +42,10 @@ function mountHost(onTrigger: () => void) {
 }
 
 describe("useCommandPaletteShortcut", () => {
-  let onTrigger: ReturnType<typeof vi.fn>;
+  let onTrigger: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
-    onTrigger = vi.fn();
+    onTrigger = vi.fn<() => void>();
   });
 
   it("calls onTrigger when Cmd+K is pressed while mounted", () => {

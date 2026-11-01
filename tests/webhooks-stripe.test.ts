@@ -176,7 +176,7 @@ describe("stripe webhook handler", () => {
         mockUpsertSubscriptionFromStripeSubscription.mock
           .invocationCallOrder[0],
       ).toBeLessThan(
-        mockRevokePublicProfileOnDowngrade.mock.invocationCallOrder[0],
+        mockRevokePublicProfileOnDowngrade.mock.invocationCallOrder[0]!,
       );
       expect(result).toEqual({ ok: true });
     },
@@ -218,9 +218,9 @@ describe("stripe webhook handler", () => {
     );
 
     expect(
-      mockMarkSubscriptionCanceled.mock.invocationCallOrder[0],
+      mockMarkSubscriptionCanceled.mock.invocationCallOrder[0]!,
     ).toBeLessThan(
-      mockRevokePublicProfileOnCancellation.mock.invocationCallOrder[0],
+      mockRevokePublicProfileOnCancellation.mock.invocationCallOrder[0]!,
     );
   });
 

@@ -106,5 +106,10 @@ export default defineEventHandler(async (event): Promise<TripStop> => {
     .where(eq(tripStops.id, stopId))
     .returning();
 
+  // The stop can be deleted between the load above and this write.
+  if (!updated) {
+    throw createError({ statusCode: 404, statusMessage: "Stop not found" });
+  }
+
   return updated;
 });

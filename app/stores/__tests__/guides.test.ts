@@ -10,7 +10,7 @@ vi.stubGlobal("useApiClient", () => ({ apiFetch: mockApiFetch }));
 // "pinia" (not via a Nuxt auto-import), so no defineStore global stub is
 // needed here — a plain import of the real pinia already resolves it.
 const { useGuidesStore } = await import("../guides");
-import type { FetchGuidesResult } from "../guides";
+import type { FetchGuidesResult, Guide } from "../guides";
 
 describe("useGuidesStore", () => {
   beforeEach(() => {
@@ -212,7 +212,11 @@ describe("useGuidesStore", () => {
       const first = store.fetchGuides();
       const second = store.fetchGuides();
 
-      resolveFetch!({ guides: mockGuides, page: 1, hasMore: false });
+      resolveFetch!({
+        guides: mockGuides as unknown as Guide[],
+        page: 1,
+        hasMore: false,
+      });
       await Promise.all([first, second]);
 
       expect(mockApiFetch).toHaveBeenCalledTimes(1);
@@ -818,7 +822,7 @@ describe("useGuidesStore", () => {
       const result = await store.likeGuide("g-1");
 
       expect(result).toEqual(liked);
-      expect(store.guides[0].likeCount).toBe(1);
+      expect(store.guides[0]!.likeCount).toBe(1);
     });
 
     it("calls POST /api/guides/:id/like", async () => {
@@ -860,7 +864,7 @@ describe("useGuidesStore", () => {
       const result = await store.unlikeGuide("g-1");
 
       expect(result).toEqual(unliked);
-      expect(store.guides[0].likeCount).toBe(0);
+      expect(store.guides[0]!.likeCount).toBe(0);
     });
 
     it("calls DELETE /api/guides/:id/like", async () => {

@@ -9,7 +9,7 @@ export function useAppearanceSync() {
   const { preferences, hasLoaded, fetchPreferences } = usePreferences();
   const { setTheme, setAccent } = useTheme();
 
-  async function syncFromAccount(signedIn: boolean): Promise<void> {
+  async function syncFromAccount(signedIn: boolean | undefined): Promise<void> {
     if (!signedIn) {
       return;
     }

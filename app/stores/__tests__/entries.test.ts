@@ -92,7 +92,7 @@ describe("useEntriesStore", () => {
       expect(mockApiFetch).toHaveBeenNthCalledWith(1, "/api/entries?page=1");
       expect(mockApiFetch).toHaveBeenNthCalledWith(2, "/api/entries?page=2");
       expect(store.entries).toHaveLength(25);
-      expect(store.entries[24].id).toBe("p2-4");
+      expect(store.entries[24]!.id).toBe("p2-4");
     });
 
     it("carries the filters onto every walked page, not just the first", async () => {
@@ -662,7 +662,7 @@ describe("useEntriesStore", () => {
       const result = await store.likeEntry("e-1");
 
       expect(result).toEqual(liked);
-      expect(store.entries[0].likeCount).toBe(1);
+      expect(store.entries[0]!.likeCount).toBe(1);
     });
 
     it("calls POST /api/entries/:id/like", async () => {
@@ -708,7 +708,7 @@ describe("useEntriesStore", () => {
       const result = await store.unlikeEntry("e-1");
 
       expect(result).toEqual(unliked);
-      expect(store.entries[0].likeCount).toBe(0);
+      expect(store.entries[0]!.likeCount).toBe(0);
     });
 
     it("calls DELETE /api/entries/:id/like", async () => {

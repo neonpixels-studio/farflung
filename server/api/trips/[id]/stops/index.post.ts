@@ -96,5 +96,12 @@ export default defineEventHandler(async (event): Promise<TripStop> => {
     .values(newStop)
     .returning();
 
+  if (!inserted) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to create stop",
+    });
+  }
+
   return inserted;
 });

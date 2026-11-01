@@ -549,9 +549,9 @@ describe("Trip Detail page (/trips/[id])", () => {
     tripsStore.currentTripDetail = {
       ...SAMPLE_DETAIL,
       stops: [
-        { ...SAMPLE_DETAIL.stops[2], sortOrder: 2, name: "Third" },
-        { ...SAMPLE_DETAIL.stops[0], sortOrder: 0, name: "First" },
-        { ...SAMPLE_DETAIL.stops[1], sortOrder: 1, name: "Second" },
+        { ...SAMPLE_DETAIL.stops[2]!, sortOrder: 2, name: "Third" },
+        { ...SAMPLE_DETAIL.stops[0]!, sortOrder: 0, name: "First" },
+        { ...SAMPLE_DETAIL.stops[1]!, sortOrder: 1, name: "Second" },
       ],
     };
 
@@ -1113,9 +1113,11 @@ describe("Trip Detail page (/trips/[id])", () => {
     // definePageMeta is a compiler macro stubbed to capture its argument; the
     // page must not declare middleware: "auth" or an anonymous visitor bounces
     // to /login before the visibility-aware GET ever runs.
-    const definePageMetaMock = globalThis.definePageMeta as ReturnType<
-      typeof vi.fn
-    >;
+    const definePageMetaMock = (
+      globalThis as typeof globalThis & {
+        definePageMeta: ReturnType<typeof vi.fn>;
+      }
+    ).definePageMeta;
     definePageMetaMock.mockClear();
 
     mount(TripDetailPage, buildGlobalConfig(pinia));

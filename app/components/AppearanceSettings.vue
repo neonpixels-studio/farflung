@@ -66,8 +66,8 @@
 
 <script setup lang="ts">
 import { usePreferences } from "~/composables/usePreferences";
-import { ACCENT_COLORS } from "~/utils/theme";
-import type { AccentColor, Theme } from "~/utils/theme";
+import { ACCENT_COLORS, type AccentColor } from "~/utils/accentColors";
+import type { Theme } from "~/utils/theme";
 
 const THEME_OPTIONS: {
   value: Theme;

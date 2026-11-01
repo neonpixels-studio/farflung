@@ -414,15 +414,15 @@ describe("PATCH /api/entries/:id", () => {
     // — both now travel in the same atomic database.batch() call, so this is
     // about statement order, not partial-failure blast radius (a failure
     // anywhere in the batch rolls back the whole thing, scalar update included).
-    expect(mockDb.update.mock.invocationCallOrder[0]).toBeLessThan(
-      mockDb.delete.mock.invocationCallOrder[0],
+    expect(mockDb.update.mock.invocationCallOrder[0]!).toBeLessThan(
+      mockDb.delete.mock.invocationCallOrder[0]!,
     );
     // upsertTags is its own separate read/write round trip that must resolve
     // tagIds before the entryTags delete/insert statements can even be built,
     // so a tag-upsert failure never touches the entry's existing tags at all
     // — the destructive delete/insert pair is never reached.
-    expect(mockUpsertTags.mock.invocationCallOrder[0]).toBeLessThan(
-      mockDb.delete.mock.invocationCallOrder[0],
+    expect(mockUpsertTags.mock.invocationCallOrder[0]!).toBeLessThan(
+      mockDb.delete.mock.invocationCallOrder[0]!,
     );
   });
 
@@ -445,7 +445,7 @@ describe("PATCH /api/entries/:id", () => {
     // BEGIN/COMMIT on the neon-http driver — instead of 5 independent,
     // non-atomic round trips.
     expect(mockDb.batch).toHaveBeenCalledTimes(1);
-    expect(mockDb.batch.mock.calls[0][0]).toHaveLength(5);
+    expect(mockDb.batch.mock.calls[0]![0]).toHaveLength(5);
   });
 
   it("propagates a batch failure and skips post-commit media cleanup", async () => {
@@ -607,9 +607,9 @@ describe("PATCH /api/entries/:id", () => {
 
     // The photos-only patch replaces photos via a delete, then cleans up the
     // released media afterwards. The delete must run before the cleanup call.
-    const replaceOrder = mockDb.delete.mock.invocationCallOrder[0];
+    const replaceOrder = mockDb.delete.mock.invocationCallOrder[0]!;
     const cleanupOrder =
-      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0];
+      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0]!;
     expect(replaceOrder).toBeLessThan(cleanupOrder);
     expect(mockDb.transaction).not.toHaveBeenCalled();
   });

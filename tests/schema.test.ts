@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { is } from "drizzle-orm";
+import { getTableName, is } from "drizzle-orm";
 import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import * as schema from "../server/db/schema";
 import latestMigrationSnapshot from "../server/db/migrations/meta/0012_snapshot.json";
@@ -48,75 +48,71 @@ import {
 
 describe("schema table exports", () => {
   it("users table has correct SQL name", () => {
-    expect(users[Symbol.for("drizzle:Name")]).toBe("users");
+    expect(getTableName(users)).toBe("users");
   });
 
   it("media table has correct SQL name", () => {
-    expect(media[Symbol.for("drizzle:Name")]).toBe("media");
+    expect(getTableName(media)).toBe("media");
   });
 
   it("places table has correct SQL name", () => {
-    expect(places[Symbol.for("drizzle:Name")]).toBe("places");
+    expect(getTableName(places)).toBe("places");
   });
 
   it("trips table has correct SQL name", () => {
-    expect(trips[Symbol.for("drizzle:Name")]).toBe("trips");
+    expect(getTableName(trips)).toBe("trips");
   });
 
   it("tripStops table has correct SQL name", () => {
-    expect(tripStops[Symbol.for("drizzle:Name")]).toBe("trip_stops");
+    expect(getTableName(tripStops)).toBe("trip_stops");
   });
 
   it("entries table has correct SQL name", () => {
-    expect(entries[Symbol.for("drizzle:Name")]).toBe("entries");
+    expect(getTableName(entries)).toBe("entries");
   });
 
   it("tags table has correct SQL name", () => {
-    expect(tags[Symbol.for("drizzle:Name")]).toBe("tags");
+    expect(getTableName(tags)).toBe("tags");
   });
 
   it("entryTags table has correct SQL name", () => {
-    expect(entryTags[Symbol.for("drizzle:Name")]).toBe("entry_tags");
+    expect(getTableName(entryTags)).toBe("entry_tags");
   });
 
   it("entryLikes table has correct SQL name", () => {
-    expect(entryLikes[Symbol.for("drizzle:Name")]).toBe("entry_likes");
+    expect(getTableName(entryLikes)).toBe("entry_likes");
   });
 
   it("guideLikes table has correct SQL name", () => {
-    expect(guideLikes[Symbol.for("drizzle:Name")]).toBe("guide_likes");
+    expect(getTableName(guideLikes)).toBe("guide_likes");
   });
 
   it("entryPhotos table has correct SQL name", () => {
-    expect(entryPhotos[Symbol.for("drizzle:Name")]).toBe("entry_photos");
+    expect(getTableName(entryPhotos)).toBe("entry_photos");
   });
 
   it("follows table has correct SQL name", () => {
-    expect(follows[Symbol.for("drizzle:Name")]).toBe("follows");
+    expect(getTableName(follows)).toBe("follows");
   });
 
   it("notifications table has correct SQL name", () => {
-    expect(notifications[Symbol.for("drizzle:Name")]).toBe("notifications");
+    expect(getTableName(notifications)).toBe("notifications");
   });
 
   it("connectedAccounts table has correct SQL name", () => {
-    expect(connectedAccounts[Symbol.for("drizzle:Name")]).toBe(
-      "connected_accounts",
-    );
+    expect(getTableName(connectedAccounts)).toBe("connected_accounts");
   });
 
   it("userPreferences table has correct SQL name", () => {
-    expect(userPreferences[Symbol.for("drizzle:Name")]).toBe(
-      "user_preferences",
-    );
+    expect(getTableName(userPreferences)).toBe("user_preferences");
   });
 
   it("guides table has correct SQL name", () => {
-    expect(guides[Symbol.for("drizzle:Name")]).toBe("guides");
+    expect(getTableName(guides)).toBe("guides");
   });
 
   it("subscriptions table has correct SQL name", () => {
-    expect(subscriptions[Symbol.for("drizzle:Name")]).toBe("subscriptions");
+    expect(getTableName(subscriptions)).toBe("subscriptions");
   });
 });
 
@@ -281,7 +277,7 @@ describe("column presence", () => {
 
   it("entryLikes is keyed by the composite (entry_id, user_id)", () => {
     const [primaryKey] = getTableConfig(entryLikes).primaryKeys;
-    expect(primaryKey.columns.map((column) => column.name)).toEqual([
+    expect(primaryKey!.columns.map((column) => column.name)).toEqual([
       "entry_id",
       "user_id",
     ]);
@@ -289,7 +285,7 @@ describe("column presence", () => {
 
   it("guideLikes is keyed by the composite (guide_id, user_id)", () => {
     const [primaryKey] = getTableConfig(guideLikes).primaryKeys;
-    expect(primaryKey.columns.map((column) => column.name)).toEqual([
+    expect(primaryKey!.columns.map((column) => column.name)).toEqual([
       "guide_id",
       "user_id",
     ]);
@@ -426,8 +422,8 @@ function onDeleteForColumn(
 }
 
 function schemaTables(): ReadonlyArray<PgTable> {
-  return Object.values(schema).filter((value): value is PgTable =>
-    is(value, PgTable),
+  return (Object.values(schema) as unknown[]).filter(
+    (value): value is PgTable => is(value, PgTable),
   );
 }
 

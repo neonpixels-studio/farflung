@@ -143,7 +143,7 @@ describe("GuidesList", () => {
       props: {
         ...BASE_PROPS,
         guides: SAMPLE_GUIDES,
-        likedGuideIds: new Set([SAMPLE_GUIDES[0].id]),
+        likedGuideIds: new Set([SAMPLE_GUIDES[0]!.id]),
       },
     });
 
@@ -163,8 +163,8 @@ describe("GuidesList", () => {
     await wrapper.find(".guide-form form").trigger("submit");
 
     const emitted = wrapper.emitted("submitEdit");
-    expect(emitted?.[0][0]).toBe("g-1");
-    expect(emitted?.[0][1]).toMatchObject({ title: "Tokyo on foot" });
+    expect(emitted?.[0]![0]).toBe("g-1");
+    expect(emitted?.[0]![1]).toMatchObject({ title: "Tokyo on foot" });
   });
 
   it("emits cancelEdit when the edit form is cancelled", async () => {

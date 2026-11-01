@@ -19,7 +19,7 @@ export function useUpgradeAction() {
   const { subscription, fetchSubscription } = useBilling();
   const hasLoadedPlan = ref(false);
 
-  async function loadPlan(signedIn: boolean): Promise<void> {
+  async function loadPlan(signedIn: boolean | undefined): Promise<void> {
     if (!signedIn) {
       return;
     }

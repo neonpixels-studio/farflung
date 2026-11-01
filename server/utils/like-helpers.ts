@@ -295,5 +295,5 @@ export async function likedContentIds(
       ),
     );
 
-  return new Set(rows.map((row) => row.contentId));
+  return new Set(rows.map((row) => row.contentId as string));
 }

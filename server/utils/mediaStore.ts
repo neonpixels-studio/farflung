@@ -30,7 +30,7 @@ export async function putMediaBlob(
   contentType: string,
 ): Promise<void> {
   const store = openStore();
-  await store.set(key, data, {
+  await store.set(key, new Uint8Array(data).buffer, {
     metadata: { [BLOB_CONTENT_TYPE_KEY]: contentType },
   });
 }

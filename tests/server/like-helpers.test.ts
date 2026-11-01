@@ -241,8 +241,8 @@ describe("likeContent", () => {
     // separate update HTTP call), and not the repair racing ahead of the
     // insert it's supposed to count.
     expect(batch).toHaveBeenCalledTimes(1);
-    expect(batch.mock.calls[0][0][0]).toBe(insertResultPromise);
-    expect(batch.mock.calls[0][0][1]).toBe(updateResultPromise);
+    expect(batch.mock.calls[0]![0][0]).toBe(insertResultPromise);
+    expect(batch.mock.calls[0]![0][1]).toBe(updateResultPromise);
   });
 
   it("propagates a rejected batch without a separate, already-committed insert", async () => {
@@ -258,7 +258,7 @@ describe("likeContent", () => {
       likeContent(db, ENTRY_LIKEABLE, "e-1", "liker-2"),
     ).rejects.toThrow(batchError);
     expect(batch).toHaveBeenCalledTimes(1);
-    expect(batch.mock.calls[0][0]).toHaveLength(2);
+    expect(batch.mock.calls[0]![0]).toHaveLength(2);
   });
 
   it("inserts into the guide join table for the guide config", async () => {
@@ -315,8 +315,8 @@ describe("unlikeContent", () => {
     // separate update HTTP call), and not the repair racing ahead of the
     // delete it's supposed to count.
     expect(batch).toHaveBeenCalledTimes(1);
-    expect(batch.mock.calls[0][0][0]).toBe(deleteResultPromise);
-    expect(batch.mock.calls[0][0][1]).toBe(updateResultPromise);
+    expect(batch.mock.calls[0]![0][0]).toBe(deleteResultPromise);
+    expect(batch.mock.calls[0]![0][1]).toBe(updateResultPromise);
   });
 
   it("propagates a rejected batch without a separate, already-committed delete", async () => {
@@ -332,7 +332,7 @@ describe("unlikeContent", () => {
       unlikeContent(db, ENTRY_LIKEABLE, "e-1", "liker-2"),
     ).rejects.toThrow(batchError);
     expect(batch).toHaveBeenCalledTimes(1);
-    expect(batch.mock.calls[0][0]).toHaveLength(2);
+    expect(batch.mock.calls[0]![0]).toHaveLength(2);
   });
 
   it("targets the guide join table for the guide config", async () => {

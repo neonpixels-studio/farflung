@@ -241,7 +241,7 @@ export function useMapbox() {
     // Cancel any in-progress drop-pin before starting a new one
     cancelDropPin();
 
-    function onMapClick(event: mapboxgl.MapMouseEvent): void {
+    const onMapClick = (event: mapboxgl.MapMouseEvent): void => {
       const { lng, lat } = event.lngLat;
 
       if (dropPinMarker) {
@@ -256,7 +256,7 @@ export function useMapbox() {
       dropPinHandler = null;
       dropPinMap = null;
       onCoords({ latitude: lat, longitude: lng });
-    }
+    };
 
     dropPinHandler = onMapClick;
     dropPinMap = map;

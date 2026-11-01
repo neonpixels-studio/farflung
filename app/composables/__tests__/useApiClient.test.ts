@@ -50,7 +50,7 @@ describe("useApiClient", () => {
 
     await apiFetch("/api/health");
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBe("Bearer test-token");
   });
 
@@ -60,7 +60,7 @@ describe("useApiClient", () => {
 
     await apiFetch("/api/health");
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
   });
 
@@ -70,7 +70,7 @@ describe("useApiClient", () => {
 
     await apiFetch("/api/health");
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
   });
 
@@ -88,7 +88,7 @@ describe("useApiClient", () => {
     await apiFetch("/api/health");
 
     expect(mockGetToken).not.toHaveBeenCalled();
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
   });
 
@@ -136,7 +136,7 @@ describe("useApiClient", () => {
         apiFetch("/api/guides/1", { timeout: 60000 }),
         SSR_FETCH_TIMEOUT_MS,
       );
-      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+      expect(mockFetch.mock.calls[0]![1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
     });
 
     it("lets a caller tighten the SSR bound", async () => {
@@ -148,7 +148,7 @@ describe("useApiClient", () => {
         apiFetch("/api/guides/1", { timeout: 100 }),
         100,
       );
-      expect(mockFetch.mock.calls[0][1].timeout).toBe(100);
+      expect(mockFetch.mock.calls[0]![1].timeout).toBe(100);
     });
 
     it("treats timeout: 0 as unset rather than failing immediately", async () => {
@@ -157,7 +157,7 @@ describe("useApiClient", () => {
       await expect(apiFetch("/api/guides/1", { timeout: 0 })).resolves.toEqual({
         ok: true,
       });
-      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+      expect(mockFetch.mock.calls[0]![1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
     });
 
     it("treats a negative timeout as unset", async () => {
@@ -165,7 +165,7 @@ describe("useApiClient", () => {
 
       await apiFetch("/api/guides/1", { timeout: -1 });
 
-      expect(mockFetch.mock.calls[0][1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
+      expect(mockFetch.mock.calls[0]![1].timeout).toBe(SSR_FETCH_TIMEOUT_MS);
     });
 
     it("disables ofetch retries server-side unless the caller opts in", async () => {
@@ -175,9 +175,9 @@ describe("useApiClient", () => {
       await apiFetch("/api/guides/1", { retry: 2 });
       await apiFetch("/api/guides/1", { retry: undefined });
 
-      expect(mockFetch.mock.calls[0][1].retry).toBe(0);
-      expect(mockFetch.mock.calls[1][1].retry).toBe(2);
-      expect(mockFetch.mock.calls[2][1].retry).toBe(0);
+      expect(mockFetch.mock.calls[0]![1].retry).toBe(0);
+      expect(mockFetch.mock.calls[1]![1].retry).toBe(2);
+      expect(mockFetch.mock.calls[2]![1].retry).toBe(0);
     });
 
     it("applies no timeout client-side", async () => {
@@ -187,7 +187,7 @@ describe("useApiClient", () => {
 
       await apiFetch("/api/guides/1");
 
-      expect(mockFetch.mock.calls[0][1].timeout).toBeUndefined();
+      expect(mockFetch.mock.calls[0]![1].timeout).toBeUndefined();
       expect(vi.getTimerCount()).toBe(0);
     });
   });
@@ -200,7 +200,7 @@ describe("useApiClient", () => {
       headers: { "X-Custom-Header": "custom-value" },
     });
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBe("Bearer test-token");
     expect(calledHeaders.get("X-Custom-Header")).toBe("custom-value");
   });
@@ -214,7 +214,7 @@ describe("useApiClient", () => {
       headers: existingHeaders as unknown as Record<string, string>,
     });
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Accept")).toBe("application/json");
     expect(calledHeaders.get("Authorization")).toBe("Bearer test-token");
   });
@@ -240,7 +240,7 @@ describe("useApiClient", () => {
 
     await apiFetch("https://external.example.com/resource");
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
   });
 
@@ -250,7 +250,7 @@ describe("useApiClient", () => {
 
     await apiFetch("//external.example.com/resource");
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
   });
 
@@ -260,7 +260,7 @@ describe("useApiClient", () => {
 
     await apiFetch("/some-page");
 
-    const calledHeaders = mockFetch.mock.calls[0][1].headers as Headers;
+    const calledHeaders = mockFetch.mock.calls[0]![1].headers as Headers;
     expect(calledHeaders.get("Authorization")).toBeNull();
   });
 

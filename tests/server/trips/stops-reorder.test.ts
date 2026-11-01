@@ -28,7 +28,9 @@ const {
   mockInArray,
 } = vi.hoisted(() => {
   const mockUpdateWhere = vi.fn().mockResolvedValue(undefined);
-  const mockSet = vi.fn(() => ({ where: mockUpdateWhere }));
+  const mockSet = vi.fn<
+    (values: Record<string, unknown>) => { where: typeof mockUpdateWhere }
+  >(() => ({ where: mockUpdateWhere }));
   const mockUpdate = vi.fn(() => ({ set: mockSet }));
   // The handler now issues its per-stop updates as one database.batch() call
   // instead of Promise.all — mirror that with the same "await everything,
@@ -167,7 +169,7 @@ describe("PUT /api/trips/[id]/stops/reorder", () => {
     // BEGIN/COMMIT on the neon-http driver) rather than as independent,
     // non-atomic round trips.
     expect(mockBatch).toHaveBeenCalledTimes(1);
-    expect(mockBatch.mock.calls[0][0]).toHaveLength(3);
+    expect(mockBatch.mock.calls[0]![0]).toHaveLength(3);
   });
 
   it("acquires row locks in a fixed, sorted order regardless of the caller's stopIds order", async () => {

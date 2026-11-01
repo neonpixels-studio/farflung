@@ -186,21 +186,21 @@ describe("Trips page (/trips)", () => {
   it("filters to upcoming trips when Upcoming tab is clicked", async () => {
     const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
     const tabs = wrapper.findAll(".seg-tabs button");
-    await tabs[2].trigger("click");
+    await tabs[2]!.trigger("click");
     expect(wrapper.findAll(".tcard")).toHaveLength(2);
   });
 
   it("filters to past trips when Past tab is clicked", async () => {
     const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
     const tabs = wrapper.findAll(".seg-tabs button");
-    await tabs[3].trigger("click");
+    await tabs[3]!.trigger("click");
     expect(wrapper.findAll(".tcard")).toHaveLength(3);
   });
 
   it("filters to ongoing trips when Ongoing tab is clicked", async () => {
     const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
     const tabs = wrapper.findAll(".seg-tabs button");
-    await tabs[1].trigger("click");
+    await tabs[1]!.trigger("click");
     expect(wrapper.findAll(".tcard")).toHaveLength(1);
   });
 
@@ -374,7 +374,7 @@ describe("Trips page (/trips)", () => {
     const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
     const cards = wrapper.findAll(".tcard");
     cards.forEach((card, index) => {
-      const expectedId = SAMPLE_TRIPS[index].id;
+      const expectedId = SAMPLE_TRIPS[index]!.id;
       expect(card.attributes("href")).toBe(`/trips/${expectedId}`);
     });
   });
@@ -404,7 +404,7 @@ describe("Trips page (/trips)", () => {
     it("creates a trip with the entered name and closes the form", async () => {
       const tripsStore = useTripsStore();
       const createdTrip: Trip = {
-        ...SAMPLE_TRIPS[0],
+        ...SAMPLE_TRIPS[0]!,
         id: "new-trip-id",
         name: "Patagonia loop",
       };
@@ -424,7 +424,7 @@ describe("Trips page (/trips)", () => {
 
     it("does not submit when the name is blank", async () => {
       const tripsStore = useTripsStore();
-      vi.spyOn(tripsStore, "createTrip").mockResolvedValue(SAMPLE_TRIPS[0]);
+      vi.spyOn(tripsStore, "createTrip").mockResolvedValue(SAMPLE_TRIPS[0]!);
 
       const wrapper = mount(TripsPage, buildGlobalConfig(pinia));
       await wrapper.find(".trips-head button").trigger("click");

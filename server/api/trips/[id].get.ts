@@ -26,7 +26,7 @@ interface TripFacts {
 }
 
 interface TripDetailResponse {
-  trip: Trip;
+  trip: Trip & { coverImageUrl: string | null };
   stops: TripStop[];
   facts: TripFacts;
 }

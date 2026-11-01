@@ -52,7 +52,7 @@ function resolveRouteKey(event: H3Event): string | null {
   // the set h3 routes to a handler. A path h3 won't route (e.g. a doubled
   // trailing slash) matches nothing here and stays unmetered, since it does
   // no handler work to abuse.
-  const pathWithoutQuery = event.path.split("?")[0];
+  const [pathWithoutQuery = ""] = event.path.split("?");
   const pattern = matchPolicyRoutePattern(method, pathWithoutQuery);
   if (!pattern) {
     return null;
@@ -111,11 +111,7 @@ function applyRateLimitHeaders(event: H3Event, result: RateLimitResult): void {
   if (result.allowed) {
     return;
   }
-  setResponseHeader(
-    event,
-    "Retry-After",
-    String(secondsUntil(result.resetAt, now)),
-  );
+  setResponseHeader(event, "Retry-After", secondsUntil(result.resetAt, now));
 }
 
 export default defineEventHandler((event) => {

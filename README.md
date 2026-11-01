@@ -253,6 +253,12 @@ Run once (CI mode):
 npm run test:ci
 ```
 
+Run the type checker (requires `npx nuxt prepare` first; CI runs it too):
+
+```bash
+npm run typecheck
+```
+
 Run end-to-end tests (requires `.env.e2e`):
 
 ```bash

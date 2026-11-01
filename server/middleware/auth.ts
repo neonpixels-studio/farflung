@@ -98,7 +98,7 @@ function isWebhookPath(path: string): boolean {
 // matching route patterns so /api/guides/<id>, /api/guides/<id>/, and
 // /api/guides/<id>?x=1 all resolve to the same canonical route.
 function pathname(event: H3Event): string {
-  const withoutQuery = event.path.split("?")[0];
+  const [withoutQuery = ""] = event.path.split("?");
   return withoutQuery.length > 1
     ? withoutQuery.replace(/\/+$/, "")
     : withoutQuery;

@@ -1,6 +1,7 @@
 import { useApiClient } from "~/composables/useApiClient";
 import { extractErrorMessage } from "~/utils/extractErrorMessage";
-import type { AccentColor, Theme } from "~/utils/theme";
+import type { AccentColor } from "~/utils/accentColors";
+import type { Theme } from "~/utils/theme";
 import type { DISTANCE_UNIT } from "../../server/db/schema";
 
 export interface UserPreferences {

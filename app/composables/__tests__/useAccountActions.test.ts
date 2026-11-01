@@ -56,7 +56,7 @@ describe("useAccountActions", () => {
 
       await updateName("Cher", "");
 
-      expect(mockApiFetch.mock.calls[0][1].body).toEqual({
+      expect(mockApiFetch.mock.calls[0]![1].body).toEqual({
         firstName: "Cher",
         lastName: "",
       });
@@ -109,9 +109,7 @@ describe("useAccountActions", () => {
     });
 
     it("reports a failure when Clerk has not loaded", async () => {
-      vi.mocked(globalThis.useClerkInstance).mockReturnValueOnce(
-        shallowRef(null),
-      );
+      vi.mocked(useClerkInstance).mockReturnValueOnce(shallowRef(null));
       const { signOut, signOutError } = useAccountActions();
 
       const result = await signOut();
@@ -249,9 +247,7 @@ describe("useAccountActions", () => {
       // null>). This must not be treated as a signOut() failure — there's no
       // instance to call it on — but it still needs to get the user off the
       // now-deleted account's page.
-      vi.mocked(globalThis.useClerkInstance).mockReturnValueOnce(
-        shallowRef(null),
-      );
+      vi.mocked(useClerkInstance).mockReturnValueOnce(shallowRef(null));
       mockApiFetch.mockResolvedValue({ ok: true });
       const { deleteAccount, deleteError } = useAccountActions();
 

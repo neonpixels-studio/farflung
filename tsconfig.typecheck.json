@@ -1,0 +1,21 @@
+{
+  // Covers the code none of the generated .nuxt/tsconfig.*.json projects include.
+  "extends": "./.nuxt/tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vitest/globals", "node"]
+  },
+  "include": [
+    ".nuxt/nuxt.d.ts",
+    ".nuxt/nuxt.node.d.ts",
+    "tests/**/*.ts",
+    "e2e/**/*.ts",
+    "netlify/**/*.ts",
+    "netlify/**/*.mts",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "playwright.config.ts",
+    "drizzle.config.ts"
+  ],
+  "exclude": []
+}

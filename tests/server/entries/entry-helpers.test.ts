@@ -125,7 +125,7 @@ describe("upsertTags", () => {
     expect(result).toEqual(["tag-beach", "tag-hiking"]);
     expect(database.batch).toHaveBeenCalledTimes(1);
     const batchedStatements = (database.batch as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as unknown[];
+      .calls[0]![0] as unknown[];
     expect(batchedStatements).toHaveLength(2);
     expect(database.insert).toHaveBeenCalledTimes(2);
   });

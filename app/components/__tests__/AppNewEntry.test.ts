@@ -19,7 +19,7 @@ const mockCreatePlace = vi.fn();
 const mockUpload = vi.fn();
 const mockSaveDraft = vi.fn();
 const mockClearDraft = vi.fn();
-const mockLoadDraft = vi.fn<[], EntryDraft | null>();
+const mockLoadDraft = vi.fn<() => EntryDraft | null>();
 
 const tripsStoreTrips = ref<
   Array<{ id: string; name: string; status: string }>
@@ -240,17 +240,17 @@ describe("AppNewEntry", () => {
   it("renders visibility toggle with Private and Public options", () => {
     const wrapper = mountOpen();
     const buttons = wrapper.find(".segmented").findAll("button");
-    expect(buttons[0].text()).toBe("Private");
-    expect(buttons[1].text()).toBe("Public");
-    expect(buttons[0].classes()).toContain("is-active");
+    expect(buttons[0]!.text()).toBe("Private");
+    expect(buttons[1]!.text()).toBe("Public");
+    expect(buttons[0]!.classes()).toContain("is-active");
   });
 
   it("switches visibility when Public is clicked", async () => {
     const wrapper = mountOpen();
     const buttons = wrapper.find(".segmented").findAll("button");
-    await buttons[1].trigger("click");
-    expect(buttons[1].classes()).toContain("is-active");
-    expect(buttons[0].classes()).not.toContain("is-active");
+    await buttons[1]!.trigger("click");
+    expect(buttons[1]!.classes()).toContain("is-active");
+    expect(buttons[0]!.classes()).not.toContain("is-active");
   });
 
   it("starts with no tags by default", () => {
@@ -272,7 +272,7 @@ describe("AppNewEntry", () => {
     await tagInput.setValue("iceland");
     await tagInput.trigger("keydown.enter");
     const removeButtons = wrapper.findAll(".tag-x");
-    await removeButtons[0].trigger("click");
+    await removeButtons[0]!.trigger("click");
     expect(wrapper.find(".tags-input").text()).not.toContain("iceland");
   });
 
@@ -346,7 +346,7 @@ describe("AppNewEntry", () => {
     ];
     const wrapper = mountOpen();
     const chips = wrapper.findAll(".chip");
-    await chips[0].trigger("click");
+    await chips[0]!.trigger("click");
     const locationField = wrapper
       .find(".chip-suggest")
       .element.closest(".field");
@@ -466,7 +466,7 @@ describe("AppNewEntry", () => {
   it("saves the resolved placeId into the draft", async () => {
     placesStorePlaces.value = [{ id: "p-1", name: "Old Harbour" }];
     const wrapper = mountOpen();
-    await wrapper.findAll(".chip")[0].trigger("click");
+    await wrapper.findAll(".chip")[0]!.trigger("click");
     await wrapper.find(".btn--ghost").trigger("click");
     expect(mockSaveDraft).toHaveBeenCalledWith(
       expect.objectContaining({ location: "Old Harbour", placeId: "p-1" }),
@@ -520,7 +520,7 @@ describe("AppNewEntry", () => {
       expect(titleInputValue(wrapper)).toBe("");
 
       mockLoadDraft.mockReturnValue(LATE_DRAFT);
-      capturedDraftReadyCallbacks[0](LATE_DRAFT);
+      capturedDraftReadyCallbacks[0]!(LATE_DRAFT);
       await wrapper.vm.$nextTick();
 
       expect(titleInputValue(wrapper)).toBe("Restored after hydration");
@@ -537,7 +537,7 @@ describe("AppNewEntry", () => {
       );
       await titleInput.setValue("Typed while waiting");
 
-      capturedDraftReadyCallbacks[0](LATE_DRAFT);
+      capturedDraftReadyCallbacks[0]!(LATE_DRAFT);
       await wrapper.vm.$nextTick();
 
       expect(titleInputValue(wrapper)).toBe("Typed while waiting");
@@ -551,7 +551,7 @@ describe("AppNewEntry", () => {
       await wrapper.vm.$nextTick();
       await wrapper.find('input[placeholder="add tag…"]').setValue("icel");
 
-      capturedDraftReadyCallbacks[0](LATE_DRAFT);
+      capturedDraftReadyCallbacks[0]!(LATE_DRAFT);
       await wrapper.vm.$nextTick();
 
       // The draft must not have been applied over the half-typed tag: title
@@ -578,7 +578,7 @@ describe("AppNewEntry", () => {
       await wrapper.vm.$nextTick();
 
       mockLoadDraft.mockReturnValue(LATE_DRAFT);
-      capturedDraftReadyCallbacks[0](LATE_DRAFT);
+      capturedDraftReadyCallbacks[0]!(LATE_DRAFT);
       await wrapper.vm.$nextTick();
 
       expect(titleInputValue(wrapper)).toBe("Restored after hydration");
@@ -605,7 +605,7 @@ describe("AppNewEntry", () => {
       ];
       await wrapper.vm.$nextTick();
 
-      capturedDraftReadyCallbacks[0](LATE_DRAFT);
+      capturedDraftReadyCallbacks[0]!(LATE_DRAFT);
       await wrapper.vm.$nextTick();
 
       expect(titleInputValue(wrapper)).toBe("Typed while waiting");
@@ -617,7 +617,7 @@ describe("AppNewEntry", () => {
 
       const wrapper = mountOpen();
       await wrapper.vm.$nextTick();
-      const staleCallback = capturedDraftReadyCallbacks[0];
+      const staleCallback = capturedDraftReadyCallbacks[0]!;
 
       await wrapper.setProps({ open: false });
       await wrapper.setProps({ open: true });
@@ -635,7 +635,7 @@ describe("AppNewEntry", () => {
 
       const wrapper = mountOpen();
       await wrapper.vm.$nextTick();
-      const staleCallback = capturedDraftReadyCallbacks[0];
+      const staleCallback = capturedDraftReadyCallbacks[0]!;
 
       await wrapper.setProps({ entry: SAMPLE_ENTRY });
       await wrapper.vm.$nextTick();
@@ -716,7 +716,7 @@ describe("AppNewEntry", () => {
     await wrapper.find(".btn--primary").trigger("click");
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
-    return mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    return mockCreateEntry.mock.calls[0]![0] as Record<string, unknown>;
   }
 
   it("sends the selected place's id as placeId when a suggestion is clicked", async () => {
@@ -728,7 +728,7 @@ describe("AppNewEntry", () => {
 
     const wrapper = mountOpen();
     const chips = wrapper.findAll(".chip");
-    await chips[0].trigger("click");
+    await chips[0]!.trigger("click");
 
     const callArg = await publishAndReadPayload(wrapper);
     expect(callArg.placeId).toBe("p-1");
@@ -755,7 +755,7 @@ describe("AppNewEntry", () => {
     }));
 
     const wrapper = mountOpen();
-    await wrapper.findAll(".chip")[0].trigger("click");
+    await wrapper.findAll(".chip")[0]!.trigger("click");
     // User then hand-edits the field to something that is not a saved place.
     await wrapper.get('[data-test="location-input"]').setValue("Elsewhere");
 
@@ -835,7 +835,10 @@ describe("AppNewEntry", () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     const occurredAt = callArg.occurredAt as string;
 
     // Asserts the payload shape: occurred_at is anchored at UTC midnight of the
@@ -937,7 +940,10 @@ describe("AppNewEntry", () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     expect(callArg.placeId).toBe("place-new");
     // Publish must reuse the place created via the button, not mint a second.
     expect(mockCreatePlace).toHaveBeenCalledTimes(1);
@@ -957,7 +963,10 @@ describe("AppNewEntry", () => {
     await wrapper.vm.$nextTick();
 
     expect(mockCreatePlace).not.toHaveBeenCalled();
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     expect(callArg.placeId).toBeUndefined();
   });
 
@@ -978,7 +987,10 @@ describe("AppNewEntry", () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     expect(callArg.placeId).toBe("p-1");
     expect(mockCreatePlace).not.toHaveBeenCalled();
   });
@@ -1107,7 +1119,10 @@ describe("AppNewEntry", () => {
 
     expect(mockCreatePlace).toHaveBeenCalledWith({ name: "Blue Lagoon" });
     expect(mockCreatePlace).toHaveBeenCalledTimes(1);
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     expect(callArg.placeId).toBe("place-auto");
     expect(wrapper.emitted("close")).toBeTruthy();
   });
@@ -1235,7 +1250,10 @@ describe("AppNewEntry", () => {
 
     expect(mockCreatePlace).toHaveBeenCalledWith({ name: "Blue Lagoon" });
     expect(mockCreatePlace).toHaveBeenCalledTimes(1);
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     expect(callArg.placeId).toBe("place-auto");
   });
 
@@ -1264,7 +1282,10 @@ describe("AppNewEntry", () => {
     await flushPromises();
 
     expect(mockCreatePlace).not.toHaveBeenCalled();
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     expect(callArg.placeId).toBe("p-1");
   });
 
@@ -1304,7 +1325,10 @@ describe("AppNewEntry", () => {
     // snapshot taken at publish time, not the now-empty field.
     expect(mockFetchPlaces).toHaveBeenCalled();
     expect(mockCreatePlace).toHaveBeenCalledWith({ name: "Blue Lagoon" });
-    const callArg = mockCreateEntry.mock.calls[0][0] as Record<string, unknown>;
+    const callArg = mockCreateEntry.mock.calls[0]![0] as Record<
+      string,
+      unknown
+    >;
     expect(callArg.placeId).toBe("place-auto");
   });
 
@@ -1370,7 +1394,7 @@ describe("AppNewEntry — edit mode", () => {
     const wrapper = mountEdit();
     expect(titleInputValue(wrapper)).toBe("Harbor at 4am");
     expect(wrapper.find(".tags-input").text()).toContain("iceland");
-    const publicButton = wrapper.find(".segmented").findAll("button")[1];
+    const publicButton = wrapper.find(".segmented").findAll("button")[1]!;
     expect(publicButton.classes()).toContain("is-active");
   });
 

@@ -50,7 +50,7 @@ describe("Pricing page (/pricing)", () => {
   it("switches to yearly pricing when yearly button is clicked", async () => {
     const wrapper = mount(PricingPage, globalConfig);
     const buttons = wrapper.findAll(".billing button");
-    await buttons[1].trigger("click");
+    await buttons[1]!.trigger("click");
     expect(wrapper.html()).toContain("$6");
     expect(wrapper.html()).toContain("$12");
     expect(wrapper.html()).toContain("/mo·yr");
@@ -115,10 +115,10 @@ describe("Pricing page (/pricing)", () => {
     const wrapper = mount(PricingPage, globalConfig);
 
     const buttons = wrapper.findAll(".billing button");
-    await buttons[1].trigger("click");
+    await buttons[1]!.trigger("click");
 
     const checkoutButtons = wrapper.findAll(".plan-checkout-btn");
-    expect(checkoutButtons[0].attributes("data-cycle")).toBe("yearly");
+    expect(checkoutButtons[0]!.attributes("data-cycle")).toBe("yearly");
   });
 
   it("still shows the free Drifter tier as a plain link when signed in", () => {

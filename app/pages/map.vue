@@ -292,7 +292,7 @@ const {
 } = useStats();
 
 const mapPanelRef = ref<HTMLElement | null>(null);
-const activeMapInstance = ref<MapInstance | null>(null);
+const activeMapInstance = shallowRef<MapInstance | null>(null);
 const mapboxReady = ref(false);
 const isUnmounted = ref(false);
 

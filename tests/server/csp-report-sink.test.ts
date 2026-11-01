@@ -53,15 +53,15 @@ describe("reportCspViolations", () => {
       buildViolation({ effectiveDirective: null }),
       buildViolation({ effectiveDirective: null, violatedDirective: null }),
     ]);
-    expect(mockCaptureMessage.mock.calls[0][0]).toBe(
+    expect(mockCaptureMessage.mock.calls[0]![0]).toBe(
       "CSP violation: script-src",
     );
-    expect(mockCaptureMessage.mock.calls[1][0]).toBe("CSP violation: unknown");
+    expect(mockCaptureMessage.mock.calls[1]![0]).toBe("CSP violation: unknown");
   });
 
   it("groups violations with no blocked URI under a stable fingerprint", () => {
     reportCspViolations([buildViolation({ blockedUri: null })]);
-    expect(mockCaptureMessage.mock.calls[0][1].fingerprint).toEqual([
+    expect(mockCaptureMessage.mock.calls[0]![1].fingerprint).toEqual([
       "csp-violation",
       "script-src-elem",
       "none",

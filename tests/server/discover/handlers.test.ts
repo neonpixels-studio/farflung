@@ -46,7 +46,7 @@ import {
 const mockRequireUser = vi.mocked(requireUser);
 const mockGetDb = vi.mocked(getDb);
 const mockGetQuery = vi.mocked(
-  globalThis.getQuery as (event: unknown) => Record<string, unknown>,
+  getQuery as (event: unknown) => Record<string, unknown>,
 );
 const mockFetchFeaturedTrips = vi.mocked(fetchFeaturedTrips);
 const mockFetchTrendingPlaces = vi.mocked(fetchTrendingPlaces);

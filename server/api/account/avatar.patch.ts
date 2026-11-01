@@ -45,9 +45,8 @@ export default defineEventHandler(async (event) => {
     return { ok: true };
   }
 
-  const contentType = (getHeader(event, "content-type") ?? "")
-    .split(";")[0]
-    .trim();
+  const contentType =
+    (getHeader(event, "content-type") ?? "").split(";")[0]?.trim() ?? "";
   assertAvatarContentTypeAllowed(contentType);
 
   const declaredLength = Number(getHeader(event, "content-length") ?? 0);
@@ -58,7 +57,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Empty request body" });
   }
 
-  const fileBlob = new Blob([rawBody], { type: contentType });
+  const fileBlob = new Blob([new Uint8Array(rawBody)], { type: contentType });
   const imageUrl = await clerkSetProfileImage(userId, fileBlob);
 
   return { imageUrl };

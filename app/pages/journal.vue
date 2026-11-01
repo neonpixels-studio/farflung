@@ -360,7 +360,7 @@ function selectTab(tab: FeedTab): void {
   activeTab.value = tab;
 }
 
-function queryWithoutTagFilter(): Record<string, unknown> {
+function queryWithoutTagFilter(): typeof route.query {
   const next = { ...route.query };
   delete next[TAG_QUERY_PARAM];
   delete next[TAG_NAME_QUERY_PARAM];

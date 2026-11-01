@@ -31,7 +31,7 @@ describe("ProfileFollowingList", () => {
 
     const links = wrapper.findAll("a.person");
     expect(links).toHaveLength(3);
-    expect(links[0].attributes("href")).toBe("/u/user-2");
+    expect(links[0]!.attributes("href")).toBe("/u/user-2");
     expect(wrapper.html()).toMatchSnapshot();
   });
 

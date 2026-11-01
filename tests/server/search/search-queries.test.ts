@@ -424,7 +424,7 @@ describe("runSearch", () => {
     const guideRows = [{ id: "g-1", title: "48 hours in Kyoto" }];
     const entryRows = [{ id: "e-1", title: "Harbor at 4am" }];
     const chain = makeTableQueryChain(
-      new Map([
+      new Map<unknown, Record<string, unknown>[]>([
         [guides, guideRows],
         [entries, entryRows],
       ]),

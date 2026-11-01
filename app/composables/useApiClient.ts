@@ -34,7 +34,10 @@ export function useApiClient(
   // handling this request — which can hang. Client-side this resolves to the
   // same plain global $fetch used before (see useRequestFetch's own
   // implementation), so this is a no-op there.
-  const requestFetch = useRequestFetch();
+  const requestFetch = useRequestFetch() as <Result>(
+    url: string,
+    options?: Parameters<typeof $fetch>[1],
+  ) => Promise<Result>;
 
   function isApiPath(url: string): boolean {
     // Only inject the token for /api/* paths. Protocol-relative URLs like

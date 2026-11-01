@@ -32,7 +32,9 @@ const {
 
   const mockReturning = vi.fn().mockResolvedValue([UPDATED_TRIP]);
   const mockWhere = vi.fn(() => ({ returning: mockReturning }));
-  const mockSet = vi.fn(() => ({ where: mockWhere }));
+  const mockSet = vi.fn<
+    (values: Record<string, unknown>) => { where: typeof mockWhere }
+  >(() => ({ where: mockWhere }));
   const mockUpdate = vi.fn(() => ({ set: mockSet }));
 
   const mockLoadOwnedOrThrow = vi.fn().mockResolvedValue({
@@ -146,8 +148,8 @@ describe("PATCH /api/trips/[id]", () => {
   it("verifies ownership before updating", async () => {
     await callHandler(handler, buildEvent());
 
-    const ownershipOrder = mockLoadOwnedOrThrow.mock.invocationCallOrder[0];
-    const updateOrder = mockUpdate.mock.invocationCallOrder[0];
+    const ownershipOrder = mockLoadOwnedOrThrow.mock.invocationCallOrder[0]!;
+    const updateOrder = mockUpdate.mock.invocationCallOrder[0]!;
     expect(ownershipOrder).toBeLessThan(updateOrder);
   });
 
@@ -287,9 +289,9 @@ describe("PATCH /api/trips/[id]", () => {
 
     await callHandler(handler, buildEvent());
 
-    const updateOrder = mockUpdate.mock.invocationCallOrder[0];
+    const updateOrder = mockUpdate.mock.invocationCallOrder[0]!;
     const cleanupOrder =
-      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0];
+      mockDeleteMediaIfUnreferenced.mock.invocationCallOrder[0]!;
     expect(updateOrder).toBeLessThan(cleanupOrder);
   });
 

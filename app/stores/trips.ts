@@ -63,6 +63,7 @@ export interface PatchTripPayload {
   visibility?: TripVisibility;
   startDate?: string | null;
   endDate?: string | null;
+  coverImageId?: string | null;
 }
 
 export interface CreateStopPayload {
@@ -291,10 +292,7 @@ export const useTripsStore = defineStore("trips", () => {
     }
   }
 
-  function sumNullableField<T extends Record<string, unknown>>(
-    items: T[],
-    key: keyof T,
-  ): number | null {
+  function sumNullableField<T>(items: T[], key: keyof T): number | null {
     return items.reduce<number | null>((accumulator, item) => {
       const value = item[key];
 

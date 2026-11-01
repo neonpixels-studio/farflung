@@ -59,7 +59,7 @@ import { getDb } from "../../server/db/index";
 const mockEnsureUser = vi.mocked(ensureUser);
 const mockGetDb = vi.mocked(getDb);
 const mockReadBody = vi.mocked(
-  globalThis.readBody as (event: unknown) => Promise<unknown>,
+  readBody as (event: unknown) => Promise<unknown>,
 );
 
 // ---------------------------------------------------------------------------
@@ -372,7 +372,7 @@ describe("PATCH /api/preferences", () => {
 
     await (patchPreferences as (e: unknown) => unknown)({});
 
-    const written = db._values.mock.calls[0][0] as Record<string, unknown>;
+    const written = db._values.mock.calls[0]![0] as Record<string, unknown>;
     expect(written).toMatchObject({ bio: "Hi" });
     expect(written).not.toHaveProperty("displayName");
   });
@@ -420,20 +420,20 @@ describe("PATCH /api/preferences", () => {
       async (handle) => {
         const { db, outcome } = await patchHandle(handle);
         await outcome;
-        expect(db._values.mock.calls[0][0]).toMatchObject({ handle });
+        expect(db._values.mock.calls[0]![0]).toMatchObject({ handle });
       },
     );
 
     it("trims surrounding whitespace before validating", async () => {
       const { db, outcome } = await patchHandle("  dan-h  ");
       await outcome;
-      expect(db._values.mock.calls[0][0]).toMatchObject({ handle: "dan-h" });
+      expect(db._values.mock.calls[0]![0]).toMatchObject({ handle: "dan-h" });
     });
 
     it("clears the handle for an empty string", async () => {
       const { db, outcome } = await patchHandle("   ");
       await outcome;
-      expect(db._values.mock.calls[0][0]).toMatchObject({ handle: null });
+      expect(db._values.mock.calls[0]![0]).toMatchObject({ handle: null });
     });
   });
 

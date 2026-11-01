@@ -125,7 +125,7 @@ export async function upsertTags(
   }[][];
 
   const idByName = new Map(
-    lockOrderedNames.map((name, index) => [name, results[index][0].id]),
+    lockOrderedNames.map((name, index) => [name, results[index]![0]!.id]),
   );
 
   return uniqueNames.map((name) => idByName.get(name)!);

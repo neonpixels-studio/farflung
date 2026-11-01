@@ -390,7 +390,7 @@ describe("AppNotifications", () => {
       const dismissButtons = wrapper.findAll(".notif__dismiss");
       const middleButton = dismissButtons[1];
       const survivingNotification = SAMPLE_NOTIFICATIONS[2] as AppNotification;
-      middleButton?.element.focus();
+      (middleButton?.element as HTMLElement | undefined)?.focus();
       expect(document.activeElement).toBe(middleButton?.element);
 
       await middleButton?.trigger("click");
@@ -413,7 +413,7 @@ describe("AppNotifications", () => {
       const dismissButtons = wrapper.findAll(".notif__dismiss");
       const lastButton = dismissButtons[dismissButtons.length - 1];
       const survivingNotification = SAMPLE_NOTIFICATIONS[1] as AppNotification;
-      lastButton?.element.focus();
+      (lastButton?.element as HTMLElement | undefined)?.focus();
 
       await lastButton?.trigger("click");
       await flushPromises();
@@ -435,7 +435,7 @@ describe("AppNotifications", () => {
         attachTo: document.body,
       });
       const dismissButton = wrapper.find(".notif__dismiss");
-      dismissButton.element.focus();
+      (dismissButton.element as HTMLElement).focus();
 
       await dismissButton.trigger("click");
       await flushPromises();
@@ -492,7 +492,7 @@ describe("AppNotifications", () => {
       const dismissButtons = wrapper.findAll(".notif__dismiss");
       expect(dismissButtons).toHaveLength(12);
       const lastVisibleButton = dismissButtons[11];
-      lastVisibleButton?.element.focus();
+      (lastVisibleButton?.element as HTMLElement | undefined)?.focus();
 
       await lastVisibleButton?.trigger("click");
       await flushPromises();

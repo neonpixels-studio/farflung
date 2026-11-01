@@ -114,7 +114,7 @@ function renderSelectField(
 async function captureProfileSelection(): Promise<Record<string, unknown>> {
   const built = buildSelectChain([]);
   await fetchProfileRow(built.chain as unknown as Database, "user-1");
-  return built.select.mock.calls[0][0] as Record<string, unknown>;
+  return built.select.mock.calls[0]![0] as Record<string, unknown>;
 }
 
 describe("fetchProfileRow", () => {
@@ -338,7 +338,7 @@ describe("fetchProfileVisibility", () => {
   it("defaults a prefs-less profile to private (coalesce publicProfile to false)", async () => {
     const built = buildSelectChain([]);
     await fetchProfileVisibility(built.chain as unknown as Database, "user-1");
-    const selection = built.select.mock.calls[0][0] as Record<string, unknown>;
+    const selection = built.select.mock.calls[0]![0] as Record<string, unknown>;
     const publicProfileSql = renderSelectField(selection, "publicProfile");
     expect(publicProfileSql).toMatch(
       /coalesce\("?user_preferences"?\."?public_profile"?,\s*false\)/,
@@ -348,7 +348,7 @@ describe("fetchProfileVisibility", () => {
   it("selects no COUNT subqueries (the whole point of this lean sibling)", async () => {
     const built = buildSelectChain([]);
     await fetchProfileVisibility(built.chain as unknown as Database, "user-1");
-    const selection = built.select.mock.calls[0][0] as Record<string, unknown>;
+    const selection = built.select.mock.calls[0]![0] as Record<string, unknown>;
     expect(Object.keys(selection).sort()).toEqual([
       "publicProfile",
       "subscriptionPlan",
@@ -1027,7 +1027,7 @@ describe("requireViewableProfileTarget", () => {
     // discard) three correlated COUNT subqueries on every followers/trips/
     // guides request — this pins the lean selection shape so that can't
     // silently creep back in.
-    const selection = built.select.mock.calls[0][0] as Record<string, unknown>;
+    const selection = built.select.mock.calls[0]![0] as Record<string, unknown>;
     expect(Object.keys(selection).sort()).toEqual([
       "publicProfile",
       "subscriptionPlan",

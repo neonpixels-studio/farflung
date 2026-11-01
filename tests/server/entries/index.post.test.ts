@@ -355,7 +355,7 @@ describe("POST /api/entries", () => {
     ).rejects.toThrow(batchError);
 
     expect(mockDb.batch).toHaveBeenCalledTimes(1);
-    expect(mockDb.batch.mock.calls[0][0]).toHaveLength(2);
+    expect(mockDb.batch.mock.calls[0]![0]).toHaveLength(2);
     expect(mockDb.delete).not.toHaveBeenCalled();
   });
 });
