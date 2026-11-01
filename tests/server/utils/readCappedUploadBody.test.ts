@@ -17,7 +17,7 @@ Object.assign(globalThis, {
     Object.assign(new Error(options.statusMessage), options),
 });
 
-const { readCappedUploadBody } =
+const { discardUploadBody, readCappedUploadBody } =
   await import("../../../server/utils/readCappedUploadBody");
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -301,5 +301,47 @@ describe("readCappedUploadBody — Buffer/string body path (other presets or ups
         MAX_BYTES,
       ),
     ).rejects.toMatchObject({ statusCode: 413 });
+  });
+});
+
+describe("discardUploadBody", () => {
+  it("consumes an unread Node stream so bytes aren't left on the socket", async () => {
+    const request = new PassThrough();
+    request.write(Buffer.from("unread"));
+
+    await discardUploadBody(buildNodeStreamEvent(request));
+
+    expect(request.isPaused()).toBe(false);
+    expect(request.readableFlowing).toBe(true);
+  });
+
+  it("cancels a Web ReadableStream body", async () => {
+    const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>({ cancel });
+
+    await discardUploadBody(buildWebStreamEvent(body));
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not throw when the Web stream can't be cancelled", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const body = new ReadableStream<Uint8Array>();
+    body.getReader();
+
+    await expect(
+      discardUploadBody(buildWebStreamEvent(body)),
+    ).resolves.toBeUndefined();
+
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("leaves an already-buffered body alone", async () => {
+    await expect(
+      discardUploadBody(buildBodyPropertyEvent(Buffer.from("buffered"))),
+    ).resolves.toBeUndefined();
   });
 });

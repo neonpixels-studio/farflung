@@ -159,6 +159,7 @@ export const users = pgTable("users", {
 
 export const MEDIA_SOURCE = {
   INSTAGRAM: "instagram",
+  BACKFILL: "backfill",
 } as const;
 
 export const media = pgTable(
