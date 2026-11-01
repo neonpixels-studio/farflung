@@ -553,6 +553,19 @@
             </div>
           </section>
 
+          <!-- API keys -->
+          <section id="api-keys" class="sect">
+            <div class="sect__head">
+              <div class="label">// 08 — api keys</div>
+              <h3 class="display" style="margin-top: 8px">API keys</h3>
+              <p>
+                Let your own scripts call the FarFlung API as you. A key can't
+                change your account, billing, connections, or other keys.
+              </p>
+            </div>
+            <ApiKeysSettings />
+          </section>
+
           <!-- Danger -->
           <section id="danger" class="sect danger">
             <div class="sect__head">
@@ -689,6 +702,7 @@ const sections = [
   { id: "appearance", label: "Appearance" },
   { id: "prefs", label: "Units & map" },
   { id: "privacy", label: "Privacy" },
+  { id: "api-keys", label: "API keys" },
   { id: "danger", label: "Danger zone" },
 ];
 

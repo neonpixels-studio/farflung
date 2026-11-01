@@ -191,3 +191,27 @@ export function readCappedUploadBody(
 
   return readCappedNodeStream(event, maxBytes);
 }
+
+// Throws away an upload body the route has decided not to read. A Node
+// `IncomingMessage` is resumed so its bytes are consumed rather than left queued
+// on a keep-alive socket; the deployed Netlify preset's Web `ReadableStream` is
+// cancelled, which tells the runtime nothing further is wanted. A failure here
+// can't affect the response being returned, so it is logged and not rethrown.
+export async function discardUploadBody(event: H3Event): Promise<void> {
+  const requestBody = (event.node.req as unknown as { body?: unknown }).body;
+
+  if (isWebReadableStream(requestBody)) {
+    try {
+      await requestBody.cancel();
+    } catch (cancelError) {
+      console.error("discardUploadBody: cancel failed", cancelError);
+    }
+    return;
+  }
+
+  if (Buffer.isBuffer(requestBody) || typeof requestBody === "string") {
+    return;
+  }
+
+  event.node.req.resume();
+}

@@ -159,6 +159,7 @@ export const users = pgTable("users", {
 
 export const MEDIA_SOURCE = {
   INSTAGRAM: "instagram",
+  BACKFILL: "backfill",
 } as const;
 
 export const media = pgTable(
@@ -550,6 +551,29 @@ export const guideLikes = pgTable(
     primaryKey({ columns: [table.guideId, table.userId] }),
     index("guide_likes_user_id_idx").on(table.userId),
   ],
+);
+
+// ---------------------------------------------------------------------------
+// api_keys — long-lived, revocable bearer keys for scripts. Only the SHA-256 of
+// a key is stored; the raw value is shown once, at creation.
+// ---------------------------------------------------------------------------
+
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: ON_DELETE.CASCADE }),
+    name: text("name").notNull(),
+    prefix: text("prefix").notNull(),
+    keyHash: text("key_hash").notNull().unique(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    lastUsedAt: timestamp("last_used_at"),
+    expiresAt: timestamp("expires_at"),
+    revokedAt: timestamp("revoked_at"),
+  },
+  (table) => [index("api_keys_user_id_idx").on(table.userId)],
 );
 
 // ---------------------------------------------------------------------------

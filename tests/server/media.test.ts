@@ -4,7 +4,7 @@
  * The Netlify Blobs store abstraction and the database are mocked so no network
  * or database access is needed.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Hoist mock factories so they are available inside vi.mock() closures, which
@@ -16,11 +16,13 @@ const {
   mockRequireUser,
   mockPutMediaBlob,
   mockGetMediaBlob,
+  mockMediaBlobExists,
   mockRemoveMediaBlob,
   mockToThumbnailKey,
   mockProbeImageDimensions,
   mockGenerateThumbnail,
   mockReadCappedUploadBody,
+  mockDiscardUploadBody,
   mockDbInsertValues,
   mockDbInsertReturning,
   mockDbSelectFrom,
@@ -60,6 +62,7 @@ const {
     mockRequireUser: vi.fn(),
     mockPutMediaBlob: vi.fn().mockResolvedValue(undefined),
     mockGetMediaBlob: vi.fn(),
+    mockMediaBlobExists: vi.fn(),
     mockRemoveMediaBlob: vi.fn().mockResolvedValue(undefined),
     // Mirrors the real implementation's suffix convention so route tests can
     // assert on the derived key without re-mocking it per test.
@@ -67,6 +70,7 @@ const {
     mockProbeImageDimensions: vi.fn(),
     mockGenerateThumbnail: vi.fn(),
     mockReadCappedUploadBody: vi.fn(),
+    mockDiscardUploadBody: vi.fn().mockResolvedValue(undefined),
     mockDbInsertValues,
     mockDbInsertReturning,
     mockDbSelectFrom,
@@ -93,6 +97,7 @@ vi.mock("../../server/utils/auth", () => ({
 vi.mock("../../server/utils/mediaStore", () => ({
   putMediaBlob: mockPutMediaBlob,
   getMediaBlob: mockGetMediaBlob,
+  mediaBlobExists: mockMediaBlobExists,
   removeMediaBlob: mockRemoveMediaBlob,
   toThumbnailKey: mockToThumbnailKey,
 }));
@@ -116,6 +121,7 @@ vi.mock("../../server/utils/readCappedUploadBody", async () => {
   >("../../server/utils/readCappedUploadBody");
   return {
     readCappedUploadBody: mockReadCappedUploadBody,
+    discardUploadBody: mockDiscardUploadBody,
     createFileTooLargeError: actual.createFileTooLargeError,
   };
 });
@@ -214,6 +220,7 @@ const sampleUploadBuffer = Buffer.from("fake-image-data");
 describe("POST /api/media", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetQuery.mockReturnValue({});
     mockEnsureUser.mockResolvedValue("user-1");
     stubHeaders("image/jpeg");
     resetDbMocks();
@@ -499,6 +506,208 @@ describe("POST /api/media", () => {
     expect(mockRemoveMediaBlob).toHaveBeenCalledTimes(1);
     expect(mockRemoveMediaBlob).toHaveBeenCalledWith(
       expect.stringMatching(/^user-1\//),
+    );
+  });
+});
+
+describe("POST /api/media with source/sourceId", () => {
+  const SOURCE_QUERY = { source: "backfill", sourceId: "photo-42" };
+  const EXISTING_ROW = {
+    id: "media-existing",
+    url: "user-1/media-existing",
+    width: 640,
+    height: 480,
+  };
+
+  function callWithQuery(query: Record<string, unknown>) {
+    mockGetQuery.mockReturnValue(query);
+    return callHandler(postHandler, buildEvent()) as Promise<{
+      id: string;
+      url: string;
+      thumbnailUrl: string | null;
+      width: number | null;
+      height: number | null;
+    }>;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockEnsureUser.mockResolvedValue("user-1");
+    stubHeaders("image/jpeg");
+    resetDbMocks();
+    mockAssertPhotoLimit.mockResolvedValue(undefined);
+    mockPutMediaBlob.mockReset().mockResolvedValue(undefined);
+    mockRemoveMediaBlob.mockReset().mockResolvedValue(undefined);
+    mockMediaBlobExists.mockReset().mockResolvedValue(true);
+    mockToThumbnailKey.mockImplementation(
+      (storageKey: string) => `${storageKey}-thumb`,
+    );
+    mockProbeImageDimensions.mockResolvedValue({ width: 800, height: 600 });
+    mockGenerateThumbnail.mockResolvedValue(Buffer.from("thumb-bytes"));
+    mockReadCappedUploadBody.mockReset().mockResolvedValue(sampleUploadBuffer);
+  });
+
+  afterEach(() => {
+    mockGetQuery.mockReset();
+  });
+
+  it.each([
+    ["source without sourceId", { source: "backfill" }],
+    ["sourceId without source", { sourceId: "photo-42" }],
+    ["the reserved instagram source", { source: "instagram", sourceId: "1" }],
+    ["an unknown source", { source: "nope", sourceId: "1" }],
+    ["a repeated source param", { source: ["backfill"], sourceId: "1" }],
+    ["a blank sourceId", { source: "backfill", sourceId: "   " }],
+    ["a repeated sourceId param", { source: "backfill", sourceId: ["1"] }],
+    [
+      "an oversized sourceId",
+      { source: "backfill", sourceId: "x".repeat(256) },
+    ],
+  ])("rejects %s with 400 before any work", async (_label, query) => {
+    await expect(callWithQuery(query)).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(mockDbSelectFrom).not.toHaveBeenCalled();
+    expect(mockAssertPhotoLimit).not.toHaveBeenCalled();
+    expect(mockPutMediaBlob).not.toHaveBeenCalled();
+  });
+
+  it("accepts a 255 character sourceId and stores it trimmed", async () => {
+    const sourceId = "x".repeat(255);
+
+    await callWithQuery({ source: "backfill", sourceId: `  ${sourceId}  ` });
+
+    expect(mockDbInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "backfill", sourceId }),
+    );
+  });
+
+  it("sets the source fields and returns 201 on the first upload", async () => {
+    const result = await callWithQuery(SOURCE_QUERY);
+
+    expect(result.id).toBe("media-123");
+    expect(mockSetResponseStatus).toHaveBeenCalledWith(expect.anything(), 201);
+    expect(mockDbInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "backfill", sourceId: "photo-42" }),
+    );
+    expect(mockPutMediaBlob).toHaveBeenCalled();
+  });
+
+  it("returns the existing row with 200 and skips the upload on a repeat", async () => {
+    mockDbSelectLimit.mockResolvedValueOnce([EXISTING_ROW]);
+
+    const result = await callWithQuery(SOURCE_QUERY);
+
+    expect(Object.keys(result).sort()).toEqual(
+      ["height", "id", "thumbnailUrl", "url", "width"].sort(),
+    );
+    expect(result.id).toBe("media-existing");
+    expect(result.width).toBe(640);
+    expect(result.height).toBe(480);
+    expect(result.url).toMatch(/\/api\/media\/media-existing/);
+    expect(result.thumbnailUrl).toMatch(
+      /\/api\/media\/media-existing\/thumbnail/,
+    );
+    expect(mockSetResponseStatus).toHaveBeenCalledWith(expect.anything(), 200);
+    expect(mockSetResponseStatus).not.toHaveBeenCalledWith(
+      expect.anything(),
+      201,
+    );
+
+    expect(mockAssertPhotoLimit).not.toHaveBeenCalled();
+    expect(mockReadCappedUploadBody).not.toHaveBeenCalled();
+    expect(mockProbeImageDimensions).not.toHaveBeenCalled();
+    expect(mockGenerateThumbnail).not.toHaveBeenCalled();
+    expect(mockPutMediaBlob).not.toHaveBeenCalled();
+    expect(mockRemoveMediaBlob).not.toHaveBeenCalled();
+    expect(mockGetMediaBlob).not.toHaveBeenCalled();
+    expect(mockDbInsertValues).not.toHaveBeenCalled();
+    expect(mockDiscardUploadBody).toHaveBeenCalledTimes(1);
+  });
+
+  it("looks up the thumbnail by the same derived key the thumbnail route reads", async () => {
+    mockDbSelectLimit.mockResolvedValueOnce([EXISTING_ROW]);
+
+    await callWithQuery(SOURCE_QUERY);
+
+    expect(mockMediaBlobExists).toHaveBeenCalledWith(
+      "user-1/media-existing-thumb",
+    );
+  });
+
+  it("returns a null thumbnailUrl for an existing row with no thumbnail blob", async () => {
+    mockDbSelectLimit.mockResolvedValueOnce([EXISTING_ROW]);
+    mockMediaBlobExists.mockResolvedValue(false);
+
+    const result = await callWithQuery(SOURCE_QUERY);
+
+    expect(result.thumbnailUrl).toBeNull();
+    expect(result.url).toMatch(/\/api\/media\/media-existing/);
+  });
+
+  describe("when the insert loses a race", () => {
+    function uniqueViolation(constraint: string) {
+      return Object.assign(new Error("Failed query"), {
+        cause: { code: "23505", constraint },
+      });
+    }
+
+    it("removes its blobs and returns the winning row with 200", async () => {
+      mockDbSelectLimit
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([EXISTING_ROW]);
+      mockDbInsertReturning.mockRejectedValueOnce(
+        uniqueViolation("media_user_source_source_id_unique"),
+      );
+
+      const result = await callWithQuery(SOURCE_QUERY);
+
+      expect(result.id).toBe("media-existing");
+      expect(mockSetResponseStatus).toHaveBeenCalledWith(
+        expect.anything(),
+        200,
+      );
+      const storedKeys = mockPutMediaBlob.mock.calls.map((call) => call[0]);
+      const removedKeys = mockRemoveMediaBlob.mock.calls.map((call) => call[0]);
+      expect(storedKeys).toHaveLength(2);
+      expect(removedKeys.sort()).toEqual([...storedKeys].sort());
+    });
+
+    it("rethrows a unique violation on a different constraint", async () => {
+      const otherViolation = uniqueViolation("some_other_unique");
+      mockDbSelectLimit.mockResolvedValueOnce([]);
+      mockDbInsertReturning.mockRejectedValueOnce(otherViolation);
+
+      await expect(callWithQuery(SOURCE_QUERY)).rejects.toBe(otherViolation);
+    });
+
+    it("ignores message text that merely names the constraint", async () => {
+      const messageOnly = new Error("media_user_source_source_id_unique 23505");
+      mockDbSelectLimit.mockResolvedValueOnce([]);
+      mockDbInsertReturning.mockRejectedValueOnce(messageOnly);
+
+      await expect(callWithQuery(SOURCE_QUERY)).rejects.toBe(messageOnly);
+    });
+
+    it("rethrows when the winning row can't be found afterwards", async () => {
+      const violation = uniqueViolation("media_user_source_source_id_unique");
+      mockDbSelectLimit.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+      mockDbInsertReturning.mockRejectedValueOnce(violation);
+
+      await expect(callWithQuery(SOURCE_QUERY)).rejects.toBe(violation);
+    });
+  });
+
+  it("leaves an upload without the params unchanged", async () => {
+    mockGetQuery.mockReturnValue({});
+
+    await callHandler(postHandler, buildEvent());
+
+    expect(mockSetResponseStatus).toHaveBeenCalledWith(expect.anything(), 201);
+    expect(mockDbSelectFrom).not.toHaveBeenCalled();
+    expect(mockAssertPhotoLimit).toHaveBeenCalledWith("user-1");
+    expect(mockDbInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ source: null, sourceId: null }),
     );
   });
 });

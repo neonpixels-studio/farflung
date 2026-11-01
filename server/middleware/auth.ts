@@ -1,4 +1,9 @@
 import type { H3Event } from "h3";
+import {
+  findActiveApiKey,
+  isApiKeyToken,
+  recordApiKeyUse,
+} from "../utils/apiKeys";
 import { requireClerkSecretKey, verifyClerkToken } from "../utils/clerk";
 
 const API_PATH_PREFIX = "/api/";
@@ -70,6 +75,17 @@ const OPTIONAL_AUTH_GET_PATTERNS = [
   PUBLIC_READ_HANDLE_PATH,
 ];
 
+// Routes an API key may never reach, even when it is otherwise valid: keys can't
+// mint or revoke keys, and can't touch the account, billing, or connected
+// services. To protect a new sensitive route, add its prefix here.
+const API_KEY_DENIED_PATH_PREFIXES = [
+  "/api/api-keys",
+  "/api/account",
+  "/api/billing",
+  "/api/connections",
+  "/api/webhooks",
+];
+
 function isApiPath(path: string): boolean {
   return path.startsWith(API_PATH_PREFIX);
 }
@@ -110,6 +126,32 @@ function extractBearerToken(event: H3Event): string | null {
   return token ?? null;
 }
 
+function isApiKeyDeniedPath(event: H3Event): boolean {
+  const path = pathname(event).replace(/\/{2,}/g, "/");
+  return API_KEY_DENIED_PATH_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+}
+
+// Handled ahead of the webhook and callback branches in the handler below,
+// because those skip bearer auth and would otherwise never see the deny-list.
+async function authenticateApiKey(
+  event: H3Event,
+  token: string,
+): Promise<void> {
+  const apiKey = await findActiveApiKey(token);
+  if (!apiKey) {
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+  }
+  if (isApiKeyDeniedPath(event)) {
+    throw createError({ statusCode: 403, statusMessage: "Forbidden" });
+  }
+
+  await recordApiKeyUse(apiKey);
+  event.context.userId = apiKey.userId;
+  event.context.authMethod = "api_key";
+}
+
 async function verifyBearerToken(event: H3Event): Promise<string> {
   const token = extractBearerToken(event);
   if (!token) {
@@ -119,7 +161,9 @@ async function verifyBearerToken(event: H3Event): Promise<string> {
   // surfaces as a 500 (server misconfiguration), not a 401 (invalid token).
   const secretKey = requireClerkSecretKey();
   try {
-    return await verifyClerkToken(token, secretKey);
+    const userId = await verifyClerkToken(token, secretKey);
+    event.context.authMethod = "clerk";
+    return userId;
   } catch (error) {
     console.error("verifyBearerToken: token verification failed", error);
     throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
@@ -142,6 +186,12 @@ async function resolveOptionalUser(event: H3Event): Promise<void> {
 
 export default defineEventHandler(async (event) => {
   if (!isApiPath(event.path)) {
+    return;
+  }
+
+  const token = extractBearerToken(event);
+  if (token && isApiKeyToken(token)) {
+    await authenticateApiKey(event, token);
     return;
   }
 

@@ -9,7 +9,7 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
     <!--v-if-->
     <div data-v-a376170b="" class="set-layout">
       <!-- Side nav -->
-      <nav data-v-a376170b="" class="set-nav"><a data-v-a376170b="" href="#profile" class="is-active">Profile</a><a data-v-a376170b="" href="#account" class="">Email &amp; password</a><a data-v-a376170b="" href="#connections" class="">Connections</a><a data-v-a376170b="" href="#billing" class="">Plan &amp; billing</a><a data-v-a376170b="" href="#appearance" class="">Appearance</a><a data-v-a376170b="" href="#prefs" class="">Units &amp; map</a><a data-v-a376170b="" href="#privacy" class="">Privacy</a><a data-v-a376170b="" href="#danger" class="">Danger zone</a></nav>
+      <nav data-v-a376170b="" class="set-nav"><a data-v-a376170b="" href="#profile" class="is-active">Profile</a><a data-v-a376170b="" href="#account" class="">Email &amp; password</a><a data-v-a376170b="" href="#connections" class="">Connections</a><a data-v-a376170b="" href="#billing" class="">Plan &amp; billing</a><a data-v-a376170b="" href="#appearance" class="">Appearance</a><a data-v-a376170b="" href="#prefs" class="">Units &amp; map</a><a data-v-a376170b="" href="#privacy" class="">Privacy</a><a data-v-a376170b="" href="#api-keys" class="">API keys</a><a data-v-a376170b="" href="#danger" class="">Danger zone</a></nav>
       <div data-v-a376170b="" class="set-sections">
         <!-- Profile -->
         <section data-v-a376170b="" id="profile" class="sect">
@@ -170,6 +170,14 @@ exports[`Settings page (/settings) > renders without crashing and matches snapsh
               <p data-v-a376170b=""> Appear in the community Explore feed for nearby travelers. </p>
             </div><label data-v-a376170b="" class="switch"><input data-v-a376170b="" type="checkbox"><span data-v-a376170b=""></span></label>
           </div>
+        </section><!-- API keys -->
+        <section data-v-a376170b="" id="api-keys" class="sect">
+          <div data-v-a376170b="" class="sect__head">
+            <div data-v-a376170b="" class="label">// 08 — api keys</div>
+            <h3 data-v-a376170b="" class="display" style="margin-top: 8px;">API keys</h3>
+            <p data-v-a376170b=""> Let your own scripts call the FarFlung API as you. A key can't change your account, billing, connections, or other keys. </p>
+          </div>
+          <api-keys-settings-stub data-v-a376170b=""></api-keys-settings-stub>
         </section><!-- Danger -->
         <section data-v-a376170b="" id="danger" class="sect danger">
           <div data-v-a376170b="" class="sect__head">

@@ -351,6 +351,7 @@ const globalConfig: {
       InputTextarea: textareaStub,
       AppAlert: alertStub,
       PlanManageButton: planManageButtonStub,
+      ApiKeysSettings: true,
       NuxtLink: { template: "<a><slot /></a>", props: ["to"] },
     },
   },
@@ -383,14 +384,14 @@ describe("Settings page (/settings)", () => {
     expect(wrapper.html()).toMatchSnapshot();
   });
 
-  it("renders the side navigation with all 8 sections", () => {
+  it("renders the side navigation with all 9 sections", () => {
     const wrapper = mount(SettingsPage, globalConfig);
-    expect(wrapper.findAll(".set-nav a")).toHaveLength(8);
+    expect(wrapper.findAll(".set-nav a")).toHaveLength(9);
   });
 
-  it("renders all 8 settings sections", () => {
+  it("renders all 9 settings sections", () => {
     const wrapper = mount(SettingsPage, globalConfig);
-    expect(wrapper.findAll(".sect")).toHaveLength(8);
+    expect(wrapper.findAll(".sect")).toHaveLength(9);
   });
 
   it("shows an upgrade CTA on the free Drifter plan", () => {

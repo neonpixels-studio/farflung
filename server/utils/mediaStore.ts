@@ -54,6 +54,14 @@ export async function getMediaBlob(key: string): Promise<{
   return { data: result.data as ArrayBuffer, contentType };
 }
 
+// Existence check that reads only the blob's metadata, so callers that just
+// need to know whether a thumbnail exists don't download its bytes.
+export async function mediaBlobExists(key: string): Promise<boolean> {
+  const store = openStore();
+  const metadata = await store.getMetadata(key);
+  return metadata !== null;
+}
+
 export async function removeMediaBlob(key: string): Promise<void> {
   const store = openStore();
   await store.delete(key);
